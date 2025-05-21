@@ -6,15 +6,27 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { ChevronLeft, Star, TrendingUp, Users, Calendar, DollarSign } from "lucide-react"
+import {
+  ChevronLeft,
+  Star,
+  TrendingUp,
+  Users,
+  Calendar,
+  DollarSign,
+  Check,
+  Sparkles,
+  AlertTriangle,
+} from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useToast } from "@/components/ui/use-toast"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Logo } from "@/components/logo"
+import { getWebtoonById } from "@/data/webtoons"
+import { Slider } from "@/components/ui/slider"
 
 // 투자자 증가 추이 데이터 타입
 interface InvestmentGrowthData {
@@ -36,28 +48,42 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("summary")
 
-  // 웹툰 상세 정보 데이터
+  // 웹툰 상세 정보 데이터 부분을 수정합니다.
+  // 이제 ID를 기반으로 웹툰 정보를 가져오고, 필요한 속성에 기본값을 제공합니다.
+  const webtoonData = getWebtoonById(id)
+
+  // 웹툰 데이터가 없는 경우 기본값 설정
   const webtoon = {
     id,
-    title: "황녀, 반역자를 각인시키다",
-    ageRating: "15",
-    genre: "로맨스, 판타지",
-    director: "김민지",
-    productionCompany: "웹툰 스튜디오",
-    distributor: "글로벌 엔터테인먼트",
-    currentRaised: 320000000,
-    goalAmount: 500000000,
-    expectedROI: 15,
-    daysLeft: 7,
-    totalInvestors: 1250,
-    summary: `"황녀, 반역자를 각인시키다"는 판타지 로맨스 웹툰으로, 반역자로 몰린 황녀 아리아나가 자신의 결백을 증명하고 왕국을 되찾기 위한 여정을 그립니다.
-
-아리아나는 어릴 적 친구이자 현재 적국의 왕자인 카이든과 재회하게 되고, 그들은 함께 아리아나를 모함한 진짜 반역자를 찾아 나섭니다.
-
-이 작품은 웹툰으로 큰 인기를 얻었으며, 현재 드라마 제작이 진행 중입니다. 주요 배우 캐스팅이 완료되었으며, 2023년 3분기에 촬영을 시작할 예정입니다.`,
-    updateLog:
-      "제작팀이 주요 캐릭터 캐스팅을 완료했습니다. 대본 수정 작업이 진행 중입니다. 2023년 3분기에 촬영 시작 예정입니다.",
+    title: webtoonData?.title || "웹툰 정보를 찾을 수 없습니다",
+    ageRating: webtoonData?.ageRating || "15",
+    genre: webtoonData?.genre || "정보 없음",
+    director: webtoonData?.director || "정보 없음",
+    productionCompany: webtoonData?.productionCompany || "정보 없음",
+    distributor: webtoonData?.distributor || "정보 없음",
+    currentRaised: webtoonData?.currentRaised || 0,
+    goalAmount: webtoonData?.goalAmount || 100000000,
+    expectedROI: webtoonData?.expectedROI ? Number.parseFloat(webtoonData.expectedROI) : 15,
+    daysLeft: webtoonData?.daysLeft || 0,
+    totalInvestors: webtoonData?.totalInvestors || 0,
+    summary: webtoonData?.description || "웹툰 정보를 찾을 수 없습니다.",
+    updateLog: webtoonData?.updateLog || "정보 없음",
+    isDramatized: webtoonData?.isDramatized || false,
+    status: webtoonData?.status || "ongoing",
   }
+
+  // 투자 버튼 비활성화 조건 확인
+  const isInvestmentDisabled = webtoon.isDramatized || webtoon.status === "completed"
+
+  // 상태 메시지를 얻기 위한 함수
+  const getStatusMessage = () => {
+    if (webtoon.isDramatized) return "이미 드라마화가 완료된 작품입니다"
+    if (webtoon.status === "completed") return "이미 투자가 마감된 작품입니다"
+    return ""
+  }
+
+  // 진행률 계산 부분도 안전하게 수정
+  const progress = webtoon.goalAmount > 0 ? (webtoon.currentRaised / webtoon.goalAmount) * 100 : 0
 
   // 투자자 증가 추이 데이터
   const investmentGrowthData: InvestmentGrowthData[] = [
@@ -68,7 +94,25 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     { date: "2023-05", investors: 1250, amount: 320000000 },
   ]
 
-  const progress = (webtoon.currentRaised / webtoon.goalAmount) * 100
+  // 최소, 최대 투자 금액 설정
+  const MIN_INVESTMENT = 10000
+  const MAX_INVESTMENT = 10000000
+  const STEP_SIZE = 10000
+
+  // 투자 금액 범위 배열 생성 (선택 버튼용)
+  const investmentRanges = [
+    { label: "1만원", value: 10000 },
+    { label: "5만원", value: 50000 },
+    { label: "10만원", value: 100000 },
+    { label: "50만원", value: 500000 },
+    { label: "100만원", value: 1000000 },
+  ]
+
+  useEffect(() => {
+    // URL 파라미터 또는 localStorage에서 초기 favorite 상태를 가져올 수 있음
+    // 지금은 예시로 false로 설정
+    setIsFavorite(false)
+  }, [id])
 
   const handleFavorite = () => {
     setIsFavorite(!isFavorite)
@@ -81,14 +125,22 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   }
 
   const handleInvest = () => {
-    if (investmentAmount >= 10000) {
+    if (investmentAmount >= MIN_INVESTMENT && !isInvestmentDisabled) {
       setIsConfirmDialogOpen(true)
     }
   }
 
   const confirmInvestment = () => {
     setIsConfirmDialogOpen(false)
-    const expectedReturn = Math.round(investmentAmount * (1 + webtoon.expectedROI / 100))
+    const expectedReturn = Math.round(
+      investmentAmount *
+        (1 +
+          (typeof webtoon.expectedROI === "string"
+            ? Number.parseFloat(webtoon.expectedROI.split("-")[0])
+            : webtoon.expectedROI) /
+            100),
+    )
+
     toast({
       title: "투자가 완료되었습니다",
       description: `₩${investmentAmount.toLocaleString()} 투자 완료! 예상 수익: ₩${expectedReturn.toLocaleString()}`,
@@ -99,12 +151,27 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     // 숫자만 입력 가능하도록 처리
     const value = e.target.value.replace(/[^0-9]/g, "")
     const numValue = Number.parseInt(value, 10) || 0
-    setInvestmentAmount(numValue)
-    setIsValidAmount(numValue >= 10000)
+
+    // 범위 내의 값으로 제한
+    const limitedValue = Math.min(Math.max(numValue, 0), MAX_INVESTMENT)
+
+    setInvestmentAmount(limitedValue)
+    setIsValidAmount(limitedValue >= MIN_INVESTMENT)
   }
 
+  // 예상 수익률 계산 부분도 안전하게 수정
   // 예상 수익금 계산
-  const expectedReturn = Math.round(investmentAmount * (1 + webtoon.expectedROI / 100))
+  const expectedROIValue =
+    typeof webtoon.expectedROI === "string"
+      ? Number.parseFloat(webtoon.expectedROI.split("-")[0] || "15")
+      : webtoon.expectedROI || 15
+  const expectedReturn = Math.round(investmentAmount * (1 + expectedROIValue / 100))
+
+  // 슬라이더 값 변경 핸들러
+  const handleSliderChange = (value: number[]) => {
+    setInvestmentAmount(value[0])
+    setIsValidAmount(value[0] >= MIN_INVESTMENT)
+  }
 
   // 투자자 증가 그래프 렌더링
   const renderInvestorGrowthGraph = () => {
@@ -219,16 +286,33 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       {/* 웹툰 이미지 */}
       <div className="relative h-80 w-full bg-light flex items-center justify-center">
         <Image
-          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-zqb39Eu363TJiELHoKxfK5QXreOHct.png"
-          alt="썸네일 이미지"
+          src={webtoonData?.thumbnail || "/gray-placeholder.png"}
+          alt={webtoon.title}
           fill
           className="object-cover"
         />
 
-        {/* 남은 일수 표시 */}
-        <div className="absolute top-4 left-4 bg-yellow text-dark text-xs font-medium px-3 py-1 rounded-full z-10">
-          {webtoon.daysLeft}일 남음
-        </div>
+        {/* 드라마화 완료 뱃지 표시 */}
+        {webtoon.isDramatized && (
+          <div className="absolute top-4 left-4 bg-green text-light text-xs font-medium px-3 py-1 rounded-full z-10 flex items-center">
+            <Sparkles className="h-3 w-3 mr-1" />
+            드라마화 완료
+          </div>
+        )}
+
+        {/* 남은 일수 표시 (드라마화 안된 경우만) */}
+        {!webtoon.isDramatized && webtoon.status === "ongoing" && (
+          <div className="absolute top-4 left-4 bg-yellow text-dark text-xs font-medium px-3 py-1 rounded-full z-10">
+            {webtoon.daysLeft}일 남음
+          </div>
+        )}
+
+        {/* 투자 마감 표시 (드라마화 안됐지만 완료된 경우) */}
+        {!webtoon.isDramatized && webtoon.status === "completed" && (
+          <div className="absolute top-4 left-4 bg-gray text-light text-xs font-medium px-3 py-1 rounded-full z-10">
+            투자 마감
+          </div>
+        )}
 
         {/* 진행률 표시 */}
         <div className="absolute top-4 right-4 bg-darkblue/80 text-light text-xs font-medium px-3 py-1 rounded-full z-10">
@@ -249,16 +333,19 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
         {/* 주요 정보 카드 */}
         <Card className="rounded-xl mb-6 border-gray/20 bg-light dark:bg-darkblue/30">
           <CardContent className="p-4">
+            {/* 웹툰 상세 정보 카드 부분에서 toLocaleString() 호출 전에 안전 검사 추가 */}
             <div className="flex justify-between items-center mb-2">
               <div>
                 <p className="text-sm text-gray">현재 모금액</p>
                 <p className="font-bold text-lg text-darkblue dark:text-light">
-                  ₩{webtoon.currentRaised.toLocaleString()}
+                  ₩{typeof webtoon.currentRaised === "number" ? webtoon.currentRaised.toLocaleString() : "0"}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray">목표 금액</p>
-                <p className="font-medium text-darkblue dark:text-light">₩{webtoon.goalAmount.toLocaleString()}</p>
+                <p className="font-medium text-darkblue dark:text-light">
+                  ₩{typeof webtoon.goalAmount === "number" ? webtoon.goalAmount.toLocaleString() : "0"}
+                </p>
               </div>
             </div>
 
@@ -390,7 +477,34 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
         {/* 투자 섹션 */}
         <Card className="rounded-xl mb-6 border-gray/20 bg-light dark:bg-darkblue/30">
           <CardContent className="p-4 space-y-4">
-            <h3 className="font-bold text-darkblue dark:text-light">투자하기</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-darkblue dark:text-light">투자하기</h3>
+
+              {/* 투자 상태 메시지 표시 */}
+              {isInvestmentDisabled && (
+                <div className="text-sm flex items-center text-gray">
+                  <AlertTriangle className="h-4 w-4 mr-1 text-yellow" />
+                  {getStatusMessage()}
+                </div>
+              )}
+            </div>
+
+            {/* 드라마화 완료된 경우에만 보여줄 메시지 */}
+            {webtoon.isDramatized && (
+              <div className="bg-green/10 rounded-lg p-3 text-sm text-darkblue dark:text-light flex items-center">
+                <Check className="h-4 w-4 mr-2 text-green" />이 웹툰은 이미 드라마화가 완료되었습니다. 다른 작품에
+                투자해보세요!
+              </div>
+            )}
+
+            {/* 투자가 마감된 경우에만 보여줄 메시지 */}
+            {!webtoon.isDramatized && webtoon.status === "completed" && (
+              <div className="bg-yellow/10 rounded-lg p-3 text-sm text-darkblue dark:text-light flex items-center">
+                <Check className="h-4 w-4 mr-2 text-yellow" />이 웹툰의 투자가 마감되었습니다. 다른 투자 가능한 작품을
+                확인해보세요!
+              </div>
+            )}
+
             <div>
               <label
                 htmlFor="investment-amount"
@@ -407,10 +521,50 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   value={investmentAmount}
                   onChange={handleAmountChange}
                   inputMode="numeric"
+                  disabled={isInvestmentDisabled}
                 />
               </div>
               {!isValidAmount && <p className="text-xs text-red-500 mt-1">최소 투자 금액은 10,000원입니다.</p>}
             </div>
+
+            {/* 슬라이더 추가 */}
+            <div className="pt-4">
+              <Slider
+                defaultValue={[MIN_INVESTMENT]}
+                max={MAX_INVESTMENT}
+                min={0}
+                step={STEP_SIZE}
+                value={[investmentAmount]}
+                onValueChange={handleSliderChange}
+                disabled={isInvestmentDisabled}
+                className={isInvestmentDisabled ? "opacity-50" : ""}
+              />
+              <div className="flex justify-between mt-2 text-xs text-gray">
+                <span>0원</span>
+                <span>500만원</span>
+                <span>1,000만원</span>
+              </div>
+            </div>
+
+            {/* 빠른 선택 버튼 추가 */}
+            <div className="flex flex-wrap gap-2 pt-2">
+              {investmentRanges.map((range) => (
+                <Button
+                  key={range.value}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setInvestmentAmount(range.value)
+                    setIsValidAmount(range.value >= MIN_INVESTMENT)
+                  }}
+                  className={`rounded-full ${isInvestmentDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                  disabled={isInvestmentDisabled}
+                >
+                  {range.label}
+                </Button>
+              ))}
+            </div>
+
             <div>
               <p className="text-sm text-gray">예상 수익금</p>
               <p className="text-lg font-bold text-green">₩{expectedReturn.toLocaleString()}</p>
@@ -420,9 +574,11 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
         <div className="flex gap-3">
           <Button
-            className="flex-1 bg-green hover:bg-green/90 rounded-xl h-12 text-light"
+            className={`flex-1 rounded-xl h-12 text-light ${
+              isInvestmentDisabled ? "bg-gray hover:bg-gray/90" : "bg-green hover:bg-green/90"
+            }`}
             onClick={handleInvest}
-            disabled={!isValidAmount}
+            disabled={!isValidAmount || isInvestmentDisabled}
           >
             💰 투자하기
           </Button>
@@ -447,11 +603,13 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">투자 확인</DialogTitle>
           </DialogHeader>
           <div className="text-center py-4">
+            {/* 투자 확인 다이얼로그에서도 안전 검사 추가 */}
             <span className="block text-sm text-gray">
-              입력하신 금액 {investmentAmount.toLocaleString()}원을 투자하시겠습니까?
+              입력하신 금액 {typeof investmentAmount === "number" ? investmentAmount.toLocaleString() : "0"}원을
+              투자하시겠습니까?
             </span>
             <span className="block text-sm text-gray mt-2">
-              예상 수익금은 {expectedReturn.toLocaleString()}원입니다.
+              예상 수익금은 {typeof expectedReturn === "number" ? expectedReturn.toLocaleString() : "0"}원입니다.
             </span>
           </div>
           <DialogFooter className="flex gap-3 sm:justify-center">

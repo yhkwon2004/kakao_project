@@ -6,17 +6,17 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
+import type { Webtoon } from "@/data/webtoons"
 
 interface WebtoonCardProps {
-  id: string
-  title: string
-  daysLeft?: number
-  fundingPercentage?: number
-  status?: "ongoing" | "completed"
+  webtoon: Webtoon
   onClick?: () => void
 }
 
-export function WebtoonCard({ id, title, daysLeft, fundingPercentage, status, onClick }: WebtoonCardProps) {
+export function WebtoonCard({ webtoon, onClick }: WebtoonCardProps) {
+  // 웹툰 데이터에서 필요한 정보 추출
+  const { id, title, daysLeft, fundingPercentage, status, thumbnail } = webtoon
+
   // 완료된 웹툰 여부 확인
   // fundingPercentage가 100%이거나 status가 'completed'인 경우 완료된 웹툰으로 간주
   const isCompleted = status === "completed" || fundingPercentage === 100
@@ -47,7 +47,7 @@ export function WebtoonCard({ id, title, daysLeft, fundingPercentage, status, on
             - 이미지 소스가 다양해도 일관된 모양을 유지함
           */}
           <Image
-            src={`/abstract-geometric-shapes.png?height=300&width=225&query=${encodeURIComponent(title)}`}
+            src={thumbnail || `/gray-placeholder.png`}
             alt={title}
             fill
             className="object-cover object-center rounded-t-xl transition-transform duration-300 hover:scale-105"
