@@ -24,6 +24,7 @@ export function MyPageScreen() {
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [points, setPoints] = useState(150000)
+  const [isChangingTheme, setIsChangingTheme] = useState(false)
 
   // Load user info
   useEffect(() => {
@@ -101,29 +102,42 @@ export function MyPageScreen() {
   }
 
   const toggleTheme = async () => {
+    setIsChangingTheme(true)
     const newTheme = isDarkMode ? "light" : "dark"
     setTheme(newTheme)
 
     // Save theme preference to database
     if (userEmail) {
-      await supabase.from("users").update({ theme: newTheme }).eq("email", userEmail)
+      try {
+        await supabase.from("users").update({ theme: newTheme }).eq("email", userEmail)
+        console.log("Theme updated successfully:", newTheme)
+      } catch (error) {
+        console.error("Error updating theme:", error)
+      }
     }
+
+    // Reset animation state after transition
+    setTimeout(() => {
+      setIsChangingTheme(false)
+    }, 500)
   }
 
   return (
-    <div className="flex flex-col pb-20 bg-light dark:bg-dark">
+    <div
+      className={`flex flex-col pb-20 bg-light dark:bg-dark transition-colors duration-300 ${isChangingTheme ? "theme-transition" : ""}`}
+    >
       {/* Header - 로고 일관성을 위해 수정 */}
-      <div className="flex justify-between items-center p-4 border-b border-gray/10">
+      <div className="flex justify-between items-center p-4 border-b border-gray/10 transition-colors duration-300">
         <Logo size="md" showSubtitle={false} />
-        <Button variant="ghost" size="icon" className="rounded-full" onClick={toggleTheme}>
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={toggleTheme} aria-label="Toggle theme">
           {isDarkMode ? <Sun className="h-5 w-5 text-yellow" /> : <Moon className="h-5 w-5 text-darkblue" />}
         </Button>
       </div>
 
       {/* Profile section */}
       <div className="p-4">
-        <Card className="rounded-xl overflow-hidden border-gray/20 bg-light dark:bg-darkblue/30">
-          <CardHeader className="p-6 bg-gradient-to-r from-green/10 to-yellow/10">
+        <Card className="rounded-xl overflow-hidden border-gray/20 bg-light dark:bg-darkblue/30 transition-colors duration-300">
+          <CardHeader className="p-6 bg-gradient-to-r from-green/10 to-yellow/10 transition-colors duration-300">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 border-2 border-light relative">
                 {profileImage ? (
@@ -140,20 +154,23 @@ export function MyPageScreen() {
                 onClick={() => router.push("/mypage/settings")}
               >
                 <div className="text-left">
-                  <h2 className="text-xl font-bold text-darkblue dark:text-light">{userName}</h2>
-                  <p className="text-gray">투자자</p>
+                  <h2 className="text-xl font-bold text-darkblue dark:text-light transition-colors duration-300">
+                    {userName}
+                  </h2>
+                  <p className="text-gray transition-colors duration-300">투자자</p>
                 </div>
-                <ChevronRight className="h-5 w-5 text-gray" />
+                <ChevronRight className="h-5 w-5 text-gray transition-colors duration-300" />
               </Button>
             </div>
           </CardHeader>
           <CardContent className="p-6">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray">사용 가능 포인트</p>
-                <p className="text-2xl font-bold text-green">₩{points.toLocaleString()}</p>
+                <p className="text-sm text-gray transition-colors duration-300">사용 가능 포인트</p>
+                <p className="text-2xl font-bold text-green transition-colors duration-300">
+                  ₩{points.toLocaleString()}
+                </p>
               </div>
-              <Button className="rounded-xl bg-green hover:bg-green/90 text-light">포인트 충전</Button>
             </div>
           </CardContent>
         </Card>
@@ -161,22 +178,32 @@ export function MyPageScreen() {
 
       {/* Theme setting */}
       <div className="p-4">
-        <Card className="rounded-xl mb-4 border-gray/20 bg-light dark:bg-darkblue/30">
+        <Card className="rounded-xl mb-4 border-gray/20 bg-light dark:bg-darkblue/30 transition-colors duration-300">
           <CardContent className="p-4">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                {isDarkMode ? <Moon className="h-5 w-5 text-yellow" /> : <Sun className="h-5 w-5 text-yellow" />}
+                {isDarkMode ? (
+                  <Moon className="h-5 w-5 text-yellow transition-transform duration-300" />
+                ) : (
+                  <Sun className="h-5 w-5 text-yellow transition-transform duration-300" />
+                )}
                 <div>
-                  <span className="font-medium text-darkblue dark:text-light">🎨 테마 설정</span>
-                  <p className="text-xs text-gray mt-1">현재 테마: {isDarkMode ? "다크 모드" : "라이트 모드"}</p>
+                  <span className="font-medium text-darkblue dark:text-light transition-colors duration-300">
+                    🎨 테마 설정
+                  </span>
+                  <p className="text-xs text-gray mt-1 transition-colors duration-300">
+                    현재 테마: {isDarkMode ? "다크 모드" : "라이트 모드"}
+                  </p>
                 </div>
               </div>
               <Button
                 variant="outline"
-                className="rounded-xl border-green text-green hover:bg-green/10"
+                className={`rounded-xl border-green text-green hover:bg-green/10 transition-all duration-300 ${isChangingTheme ? "scale-105" : ""}`}
                 onClick={toggleTheme}
+                aria-label="Toggle theme"
+                disabled={isChangingTheme}
               >
-                {isDarkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}
+                {isDarkMode ? "라이트모드 전환" : "다크모드 전환"}
               </Button>
             </div>
           </CardContent>
@@ -185,23 +212,25 @@ export function MyPageScreen() {
 
       {/* Menu section */}
       <div className="p-4">
-        <Card className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/30">
+        <Card className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/30 transition-colors duration-300">
           <CardContent className="p-0">
             <ul className="divide-y divide-gray/10">
               {menuItems.map((item) => (
                 <li key={item.id}>
                   <button
-                    className="flex items-center justify-between w-full p-4 text-left hover:bg-light dark:hover:bg-darkblue/50"
+                    className="flex items-center justify-between w-full p-4 text-left hover:bg-light dark:hover:bg-darkblue/50 transition-colors duration-300"
                     onClick={() => router.push(item.href)}
                   >
                     <div className="flex items-center gap-3">
-                      <item.icon className="h-5 w-5 text-gray" />
+                      <item.icon className="h-5 w-5 text-gray transition-colors duration-300" />
                       <div>
-                        <span className="font-medium text-darkblue dark:text-light">{item.label}</span>
-                        <p className="text-xs text-gray mt-1">{item.description}</p>
+                        <span className="font-medium text-darkblue dark:text-light transition-colors duration-300">
+                          {item.label}
+                        </span>
+                        <p className="text-xs text-gray mt-1 transition-colors duration-300">{item.description}</p>
                       </div>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-gray flex-shrink-0" />
+                    <ChevronRight className="h-5 w-5 text-gray flex-shrink-0 transition-colors duration-300" />
                   </button>
                 </li>
               ))}
@@ -214,7 +243,7 @@ export function MyPageScreen() {
       <div className="p-4 mt-auto">
         <Button
           variant="outline"
-          className="w-full rounded-xl border-green text-green hover:bg-green/10"
+          className="w-full rounded-xl border-green text-green hover:bg-green/10 transition-colors duration-300"
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4 mr-2" />

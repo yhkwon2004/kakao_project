@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ChevronLeft, ChevronRight, TrendingUp, BarChart3 } from "lucide-react"
+import { ChevronLeft, ChevronRight, TrendingUp } from "lucide-react"
 import { useState } from "react"
 import { Logo } from "@/components/logo"
 
@@ -20,6 +20,7 @@ export function InvestmentHistoryScreen() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("all")
   const [activeChartTab, setActiveChartTab] = useState("line")
+  // 바 차트 버튼이 제거되어 항상 라인 차트만 표시됩니다
 
   // 투자 내역 데이터
   const investments = [
@@ -270,18 +271,10 @@ export function InvestmentHistoryScreen() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-8 w-8 rounded-full ${activeChartTab === "line" ? "bg-yellow/20" : ""}`}
+                className="h-8 w-8 rounded-full bg-yellow/20"
                 onClick={() => setActiveChartTab("line")}
               >
                 <TrendingUp className="h-4 w-4 text-darkblue dark:text-light" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`h-8 w-8 rounded-full ${activeChartTab === "bar" ? "bg-yellow/20" : ""}`}
-                onClick={() => setActiveChartTab("bar")}
-              >
-                <BarChart3 className="h-4 w-4 text-darkblue dark:text-light" />
               </Button>
             </div>
           </CardHeader>

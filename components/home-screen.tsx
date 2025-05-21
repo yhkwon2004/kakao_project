@@ -431,7 +431,7 @@ export function HomeScreen() {
                         <Progress
                           value={investment.fundingPercentage}
                           className="h-1.5 bg-gray/20"
-                          indicatorClassName={investment.status === "completed" ? "bg-green" : "bg-yellow"}
+                          indicatorClassName={investment.fundingPercentage === 100 ? "bg-green" : "bg-yellow"}
                         />
                       </div>
                     </div>

@@ -22,7 +22,7 @@ interface LogoProps {
   showSubtitle?: boolean
 }
 
-export function Logo({ className, size = "md", showSubtitle = true }: LogoProps) {
+export function Logo({ className, size = "md", showSubtitle = false }: LogoProps) {
   const router = useRouter()
   const [logoImage, setLogoImage] = useState<string | null>(null)
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart, ChevronRight, PieChart, TrendingUp } from "lucide-react"
+import { PieChart, TrendingUp, ChevronRight } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { useState } from "react"
 
@@ -82,32 +82,72 @@ export function AssetScreen() {
         </div>
 
         {/* 그래프 영역 */}
-        <div className="ml-10 h-full flex items-end">
-          {investmentGrowthData.map((data, index) => (
-            <div key={data.month} className="flex-1 flex flex-col items-center">
-              {/* 투자금액 막대 */}
-              <div className="relative w-full flex justify-center">
-                <div
-                  className="w-6 bg-green rounded-t-md"
-                  style={{ height: `${(data.amount / 1500000) * 100}%` }}
-                ></div>
-
-                {/* 수익금액 막대 (투자금액 위에 쌓임) */}
-                {data.profit > 0 && (
-                  <div
-                    className="absolute bottom-0 w-6 bg-profit rounded-t-md"
-                    style={{
-                      height: `${(data.profit / 1500000) * 100}%`,
-                      transform: `translateY(-${(data.amount / 1500000) * 100}%)`,
-                    }}
-                  ></div>
-                )}
-              </div>
-
-              {/* X축 레이블 */}
-              <span className="text-xs text-gray mt-2">{data.month}</span>
-            </div>
+        <div className="ml-10 h-full relative">
+          {/* 가로 그리드 라인 */}
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="absolute w-full border-t border-gray/10" style={{ top: `${i * 33.33}%` }}></div>
           ))}
+
+          {/* 투자금액 라인 */}
+          <svg className="absolute inset-0 h-full w-full overflow-visible">
+            <polyline
+              points={investmentGrowthData
+                .map((d, i) => `${(i / (investmentGrowthData.length - 1)) * 100}% ${100 - (d.amount / 1500000) * 100}%`)
+                .join(" ")}
+              fill="none"
+              stroke="#45858C"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {investmentGrowthData.map((d, i) => (
+              <circle
+                key={i}
+                cx={`${(i / (investmentGrowthData.length - 1)) * 100}%`}
+                cy={`${100 - (d.amount / 1500000) * 100}%`}
+                r="4"
+                fill="#45858C"
+              />
+            ))}
+          </svg>
+
+          {/* 수익금액 라인 */}
+          <svg className="absolute inset-0 h-full w-full overflow-visible">
+            <polyline
+              points={investmentGrowthData
+                .map((d, i) => {
+                  const totalHeight = d.amount + d.profit
+                  return `${(i / (investmentGrowthData.length - 1)) * 100}% ${100 - (totalHeight / 1500000) * 100}%`
+                })
+                .join(" ")}
+              fill="none"
+              stroke="#F9DF52"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {investmentGrowthData.map((d, i) => {
+              const totalHeight = d.amount + d.profit
+              return (
+                <circle
+                  key={i}
+                  cx={`${(i / (investmentGrowthData.length - 1)) * 100}%`}
+                  cy={`${100 - (totalHeight / 1500000) * 100}%`}
+                  r="4"
+                  fill="#F9DF52"
+                />
+              )
+            })}
+          </svg>
+
+          {/* X축 레이블 */}
+          <div className="absolute bottom-0 left-0 right-0 flex justify-between">
+            {investmentGrowthData.map((data, index) => (
+              <span key={index} className="text-xs text-gray">
+                {data.month}
+              </span>
+            ))}
+          </div>
         </div>
 
         {/* 범례 */}
@@ -144,9 +184,6 @@ export function AssetScreen() {
             <div className="flex justify-between items-center">
               <h2 className="font-bold text-darkblue dark:text-light">자산 요약</h2>
               <div className="flex gap-2">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                  <BarChart className="h-4 w-4 text-darkblue dark:text-light" />
-                </Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                   <PieChart className="h-4 w-4 text-darkblue dark:text-light" />
                 </Button>
