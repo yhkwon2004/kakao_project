@@ -3,9 +3,6 @@
 **팬이 웹툰에 투자하고, 드라마로 수익을 창출하는 새로운 문화 펀딩 플랫폼**
 
 👉 [실시간 데모 앱 보기](https://kakaofanance.vercel.app/)  
-👉 GitHub 저장소: [kakao_project](git@github.com:yhkwon2004/kakao_project.git)
-
----
 
 ## 🧩 프로젝트 소개
 
@@ -164,19 +161,3 @@ kakao_project/
 - **Chart**: Recharts.js
 
 ---
-
-## 📦 설치 및 실행
-
-```bash
-# 1. Clone
-git clone git@github.com:yhkwon2004/kakao_project.git
-cd kakao_project
-
-# 2. 환경변수 설정
-cp .env.example .env.local
-# 필요한 환경변수 (Supabase URL, Key 등) 입력
-
-# 3. 설치 및 실행
-npm install
-npm run dev
-```
