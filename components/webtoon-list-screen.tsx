@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChevronLeft, Search, Filter } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { WebtoonCard } from "@/components/webtoon-card"
+import { investmentWebtoons } from "@/data/webtoons"
 
 export function WebtoonListScreen() {
   const router = useRouter()
@@ -19,108 +20,11 @@ export function WebtoonListScreen() {
   const [showFilters, setShowFilters] = useState(false)
 
   // 웹툰 데이터 (진행 중 + 완료된 프로젝트 혼합)
-  const allWebtoons = [
-    {
-      id: "1",
-      title: "이번 생은 가주가 되겠습니다",
-      daysLeft: 5,
-      fundingPercentage: 72,
-      category: "판타지",
-      status: "ongoing" as const,
-    },
-    {
-      id: "2",
-      title: "토끼와 육포범의 공생관계",
-      daysLeft: 3,
-      fundingPercentage: 85,
-      category: "로맨스",
-      status: "ongoing" as const,
-    },
-    {
-      id: "3",
-      title: "황녀, 반역자를 각인시키다",
-      daysLeft: 7,
-      fundingPercentage: 65,
-      category: "판타지",
-      status: "ongoing" as const,
-    },
-    {
-      id: "4",
-      title: "나쁜 비서 [19세 완전판]",
-      daysLeft: 0,
-      fundingPercentage: 100,
-      category: "로맨스",
-      status: "completed" as const,
-    },
-    {
-      id: "5",
-      title: "검술명가 막내아들",
-      daysLeft: 10,
-      fundingPercentage: 45,
-      category: "액션",
-      status: "ongoing" as const,
-    },
-    {
-      id: "6",
-      title: "철혈검가 사냥개의 회귀",
-      daysLeft: 0,
-      fundingPercentage: 100,
-      category: "액션",
-      status: "completed" as const,
-    },
-    {
-      id: "7",
-      title: "계약 남편이 남자 주인공과 달았다",
-      daysLeft: 15,
-      fundingPercentage: 30,
-      category: "로맨스",
-      status: "ongoing" as const,
-    },
-    {
-      id: "8",
-      title: "흑막 범고래 아기님",
-      daysLeft: 0,
-      fundingPercentage: 100,
-      category: "판타지",
-      status: "completed" as const,
-    },
-    {
-      id: "9",
-      title: "마법사의 신부",
-      daysLeft: 0,
-      fundingPercentage: 100,
-      category: "로맨스",
-      status: "completed" as const,
-    },
-    {
-      id: "10",
-      title: "그림자 기사단의 귀환",
-      daysLeft: 9,
-      fundingPercentage: 70,
-      category: "액션",
-      status: "ongoing" as const,
-    },
-    {
-      id: "11",
-      title: "황제의 귀환",
-      daysLeft: 4,
-      fundingPercentage: 90,
-      category: "판타지",
-      status: "ongoing" as const,
-    },
-    {
-      id: "12",
-      title: "용사의 귀환",
-      daysLeft: 0,
-      fundingPercentage: 100,
-      category: "액션",
-      status: "completed" as const,
-    },
-  ]
+  const allWebtoons = investmentWebtoons
 
   // 필터링된 웹툰 가져오기
   const getFilteredWebtoons = () => {
-    return allWebtoons.filter((webtoon) => {
+    return investmentWebtoons.filter((webtoon) => {
       // 검색어 필터링
       if (searchQuery && !webtoon.title.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false
@@ -132,20 +36,23 @@ export function WebtoonListScreen() {
       }
 
       // 진행률 필터링
-      if (progressFilter === "high" && webtoon.fundingPercentage < 70) {
+      if (progressFilter === "high" && (webtoon.fundingPercentage || 0) < 70) {
         return false
-      } else if (progressFilter === "medium" && (webtoon.fundingPercentage < 40 || webtoon.fundingPercentage >= 70)) {
+      } else if (
+        progressFilter === "medium" &&
+        ((webtoon.fundingPercentage || 0) < 40 || (webtoon.fundingPercentage || 0) >= 70)
+      ) {
         return false
-      } else if (progressFilter === "low" && webtoon.fundingPercentage >= 40) {
+      } else if (progressFilter === "low" && (webtoon.fundingPercentage || 0) >= 40) {
         return false
       }
 
       // 남은 시간 필터링
-      if (timeFilter === "urgent" && webtoon.daysLeft > 3) {
+      if (timeFilter === "urgent" && (webtoon.daysLeft || 0) > 3) {
         return false
-      } else if (timeFilter === "soon" && (webtoon.daysLeft <= 3 || webtoon.daysLeft > 7)) {
+      } else if (timeFilter === "soon" && ((webtoon.daysLeft || 0) <= 3 || (webtoon.daysLeft || 0) > 7)) {
         return false
-      } else if (timeFilter === "plenty" && webtoon.daysLeft <= 7) {
+      } else if (timeFilter === "plenty" && (webtoon.daysLeft || 0) <= 7) {
         return false
       }
 
@@ -265,15 +172,7 @@ export function WebtoonListScreen() {
         {filteredWebtoons.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {filteredWebtoons.map((webtoon) => (
-              <WebtoonCard
-                key={webtoon.id}
-                id={webtoon.id}
-                title={webtoon.title}
-                daysLeft={webtoon.daysLeft}
-                fundingPercentage={webtoon.fundingPercentage}
-                status={webtoon.status}
-                onClick={() => router.push(`/webtoon/${webtoon.id}`)}
-              />
+              <WebtoonCard key={webtoon.id} webtoon={webtoon} onClick={() => router.push(`/webtoon/${webtoon.id}`)} />
             ))}
           </div>
         ) : (
