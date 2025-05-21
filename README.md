@@ -63,6 +63,14 @@
 
 ---
 
+## 🔍 DB Schema (Supabase)
+
+![DB Schema](./supabase-schema-ugbdytdsoqimkrsboyif.svg)
+
+> Supabase에서 관리되는 Kakao FANance의 전체 DB 구조 시각화입니다.
+> 주요 테이블: `users`, `webtoons`, `webtoon_details`, `investments`, `favorites`, `asset_history`, `sessions` 등
+
+
 ## 🛠 사용 기술
 
 - **Frontend**: React (Next.js), TailwindCSS
