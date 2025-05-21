@@ -13,10 +13,6 @@ import { WebtoonCard } from "@/components/webtoon-card"
 import { getUserFromStorage } from "@/lib/auth"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
-// 드라마화된 인기 웹툰 데이터
-// 사용자가 제공한 실제 이미지를 사용하도록 업데이트
-// 이미지 경로는 사용자가 제공한 이미지 URL로 설정
-import { featuredDramas, investmentWebtoons } from "@/data/webtoons"
 
 export function HomeScreen() {
   const router = useRouter()
@@ -47,12 +43,98 @@ export function HomeScreen() {
     }
   }, [showSearch])
 
-  // 이 부분을 수정하여 중앙 데이터 소스에서 가져오도록 변경
-  // featuredDramas 변수 선언 부분을 삭제하고 import로 대체
+  // 드라마화된 인기 웹툰 데이터
+  // 사용자가 제공한 실제 이미지를 사용하도록 업데이트
+  // 이미지 경로는 사용자가 제공한 이미지 URL로 설정
+  const featuredDramas = [
+    {
+      id: "true-beauty",
+      title: "여신강림",
+      image:
+        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%EC%97%AC%EC%8B%A0%EA%B0%95%EB%A6%BC_%EB%93%9C%EB%9D%BC%EB%A7%88_%ED%8F%AC%EC%8A%A4%ED%84%B0.jpg-wiWvFhEiHgYlJpk1m3530szn1Dfvdv.jpeg", // 사용자가 제공한 이미지 URL
+      year: "2020",
+    },
+    {
+      id: "yumis-cells",
+      title: "유미의 세포들",
+      image:
+        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/style_67ea22f475ba5-979x1400-tdEapD1etTYOtKnwXofMCOb6N1cwsN.webp", // 사용자가 제공한 이미지 URL
+      year: "2021",
+    },
+    {
+      id: "sweet-home",
+      title: "스위트홈",
+      image:
+        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/joC9jLgox2rNOdrqI5eUvSFEzhKdz_xUTQOVIbABztVSJQ28-OfsRJpinIbYC01o_oV5jZXQI_yijVJKSaE9oQ-nLGgWspPX2F2vBXcKllueyD8hkQJdb.webp", // 사용자가 제공한 이미지 URL
+      year: "2020",
+    },
+    {
+      id: "itaewon-class",
+      title: "이태원 클라쓰",
+      image:
+        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/4c6aR0E32TLnWOD0kdhBsii9WF3XjHyWjKkeEmbVTRXMPrRbDNfFptd-FxOQ7d_fyQ6ahJwSQwOSlLwBFPI5ZQ-Zd6EQipgn4GR9Tmu6cv6ksjm1OwIq0.webp", // 사용자가 제공한 이미지 URL
+      year: "2020",
+    },
+    {
+      id: "uncanny-counter",
+      title: "경이로운 소문",
+      image:
+        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%EA%B2%BD%EC%9D%B4%EB%A1%9C%EC%9A%B4_%EC%86%8C%EB%AC%B8_%EB%93%9C%EB%9D%BC%EB%A7%88.jpg-nPUDLa6Bml0nVOzFOVNeuTdikEMb0N.jpeg", // 사용자가 제공한 이미지 URL
+      year: "2020",
+    },
+  ]
 
   // Webtoon data (ongoing + completed projects)
-  // allWebtoons 변수 선언 부분을 삭제하고 import로 대체
-  // 이 부분은 이제 data/webtoons.ts에서 가져옵니다
+  const allWebtoons = [
+    {
+      id: "1",
+      title: "이번 생은 가주가 되겠습니다",
+      daysLeft: 5,
+      fundingPercentage: 72,
+      category: "판타지",
+      status: "ongoing" as const,
+    },
+    {
+      id: "2",
+      title: "토끼와 육포범의 공생관계",
+      daysLeft: 3,
+      fundingPercentage: 85,
+      category: "로맨스",
+      status: "ongoing" as const,
+    },
+    {
+      id: "3",
+      title: "황녀, 반역자를 각인시키다",
+      daysLeft: 7,
+      fundingPercentage: 65,
+      category: "판타지",
+      status: "ongoing" as const,
+    },
+    {
+      id: "4",
+      title: "나쁜 비서 [19세 완전판]",
+      daysLeft: 0,
+      fundingPercentage: 100,
+      category: "로맨스",
+      status: "completed" as const,
+    },
+    {
+      id: "5",
+      title: "검술명가 막내아들",
+      daysLeft: 10,
+      fundingPercentage: 45,
+      category: "액션",
+      status: "ongoing" as const,
+    },
+    {
+      id: "6",
+      title: "철혈검가 사냥개의 회귀",
+      daysLeft: 0,
+      fundingPercentage: 100,
+      category: "액션",
+      status: "completed" as const,
+    },
+  ]
 
   // Popular investment projects
   // 인기 투자 프로젝트 - 투자 금액 기준으로 정렬하여 상위 3개만 표시
@@ -109,11 +191,11 @@ export function HomeScreen() {
 
   // 인기 투자 프로젝트를 총 투자 금액 기준으로 정렬하고 상위 3개만 선택
   // 총 투자 금액이 높은 순으로 정렬하여 사용자에게 가장 인기 있는 프로젝트를 보여줌
-  const top3Investments = investmentWebtoons.slice(0, 3)
+  const top3Investments = [...popularInvestments].sort((a, b) => b.totalInvestment - a.totalInvestment).slice(0, 3)
 
   // Filtered webtoons based on search and filters
   const getFilteredWebtoons = () => {
-    return investmentWebtoons.filter((webtoon) => {
+    return allWebtoons.filter((webtoon) => {
       // Search filter
       if (searchQuery && !webtoon.title.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false
@@ -125,23 +207,20 @@ export function HomeScreen() {
       }
 
       // Progress filter
-      if (progressFilter === "high" && (webtoon.fundingPercentage || 0) < 70) {
+      if (progressFilter === "high" && webtoon.fundingPercentage < 70) {
         return false
-      } else if (
-        progressFilter === "medium" &&
-        ((webtoon.fundingPercentage || 0) < 40 || (webtoon.fundingPercentage || 0) >= 70)
-      ) {
+      } else if (progressFilter === "medium" && (webtoon.fundingPercentage < 40 || webtoon.fundingPercentage >= 70)) {
         return false
-      } else if (progressFilter === "low" && (webtoon.fundingPercentage || 0) >= 40) {
+      } else if (progressFilter === "low" && webtoon.fundingPercentage >= 40) {
         return false
       }
 
       // Time filter
-      if (timeFilter === "urgent" && (webtoon.daysLeft || 0) > 3) {
+      if (timeFilter === "urgent" && webtoon.daysLeft > 3) {
         return false
-      } else if (timeFilter === "soon" && ((webtoon.daysLeft || 0) <= 3 || (webtoon.daysLeft || 0) > 7)) {
+      } else if (timeFilter === "soon" && (webtoon.daysLeft <= 3 || webtoon.daysLeft > 7)) {
         return false
-      } else if (timeFilter === "plenty" && (webtoon.daysLeft || 0) <= 7) {
+      } else if (timeFilter === "plenty" && webtoon.daysLeft <= 7) {
         return false
       }
 
@@ -263,11 +342,7 @@ export function HomeScreen() {
         <div className="overflow-x-auto pb-2">
           <div className="flex gap-3 min-w-max">
             {featuredDramas.map((drama) => (
-              <div
-                key={drama.id}
-                className="w-[120px] flex-shrink-0 cursor-pointer"
-                onClick={() => router.push(`/webtoon/${drama.id}`)}
-              >
+              <div key={drama.id} className="w-[120px] flex-shrink-0">
                 {/* 
                   웹툰 썸네일 표준화:
                   - 사용자가 제공한 이미지를 사용
@@ -276,16 +351,14 @@ export function HomeScreen() {
                 */}
                 <div className="relative h-[160px] w-[120px] rounded-xl overflow-hidden mb-2">
                   <Image
-                    src={drama.thumbnail || "/placeholder.svg"}
-                    alt={drama.titleKorean || drama.title}
+                    src={drama.image || "/placeholder.svg"}
+                    alt={drama.title}
                     fill
                     className="object-cover object-center transition-transform duration-300 hover:scale-105"
                   />
                 </div>
-                <h3 className="font-medium text-sm text-darkblue dark:text-light truncate">
-                  {drama.titleKorean || drama.title}
-                </h3>
-                <p className="text-xs text-gray">{drama.productionPeriod?.split(" ~ ")[0].split(".")[0] || ""}</p>
+                <h3 className="font-medium text-sm text-darkblue dark:text-light truncate">{drama.title}</h3>
+                <p className="text-xs text-gray">{drama.year}</p>
               </div>
             ))}
           </div>
@@ -373,7 +446,15 @@ export function HomeScreen() {
         {filteredWebtoons.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {filteredWebtoons.slice(0, 6).map((webtoon) => (
-              <WebtoonCard key={webtoon.id} webtoon={webtoon} onClick={() => router.push(`/webtoon/${webtoon.id}`)} />
+              <WebtoonCard
+                key={webtoon.id}
+                id={webtoon.id}
+                title={webtoon.title}
+                daysLeft={webtoon.daysLeft}
+                fundingPercentage={webtoon.fundingPercentage}
+                status={webtoon.status}
+                onClick={() => router.push(`/webtoon/${webtoon.id}`)}
+              />
             ))}
           </div>
         ) : (

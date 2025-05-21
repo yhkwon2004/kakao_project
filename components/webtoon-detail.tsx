@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Logo } from "@/components/logo"
-import { getWebtoonById } from "@/data/webtoons"
 
 // 투자자 증가 추이 데이터 타입
 interface InvestmentGrowthData {
@@ -37,30 +36,28 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("summary")
 
-  // 웹툰 상세 정보 데이터 부분을 수정합니다.
-  // 이제 ID를 기반으로 웹툰 정보를 가져오고, 필요한 속성에 기본값을 제공합니다.
-  const webtoonData = getWebtoonById(id)
-
-  // 웹툰 데이터가 없는 경우 기본값 설정
+  // 웹툰 상세 정보 데이터
   const webtoon = {
     id,
-    title: webtoonData?.title || "웹툰 정보를 찾을 수 없습니다",
-    ageRating: webtoonData?.ageRating || "15",
-    genre: webtoonData?.genre || "정보 없음",
-    director: webtoonData?.director || "정보 없음",
-    productionCompany: webtoonData?.productionCompany || "정보 없음",
-    distributor: webtoonData?.distributor || "정보 없음",
-    currentRaised: webtoonData?.currentRaised || 0,
-    goalAmount: webtoonData?.goalAmount || 100000000,
-    expectedROI: webtoonData?.expectedROI ? Number.parseFloat(webtoonData.expectedROI) : 15,
-    daysLeft: webtoonData?.daysLeft || 0,
-    totalInvestors: webtoonData?.totalInvestors || 0,
-    summary: webtoonData?.description || "웹툰 정보를 찾을 수 없습니다.",
-    updateLog: webtoonData?.updateLog || "정보 없음",
-  }
+    title: "황녀, 반역자를 각인시키다",
+    ageRating: "15",
+    genre: "로맨스, 판타지",
+    director: "김민지",
+    productionCompany: "웹툰 스튜디오",
+    distributor: "글로벌 엔터테인먼트",
+    currentRaised: 320000000,
+    goalAmount: 500000000,
+    expectedROI: 15,
+    daysLeft: 7,
+    totalInvestors: 1250,
+    summary: `"황녀, 반역자를 각인시키다"는 판타지 로맨스 웹툰으로, 반역자로 몰린 황녀 아리아나가 자신의 결백을 증명하고 왕국을 되찾기 위한 여정을 그립니다.
 
-  // 진행률 계산 부분도 안전하게 수정
-  const progress = webtoon.goalAmount > 0 ? (webtoon.currentRaised / webtoon.goalAmount) * 100 : 0
+아리아나는 어릴 적 친구이자 현재 적국의 왕자인 카이든과 재회하게 되고, 그들은 함께 아리아나를 모함한 진짜 반역자를 찾아 나섭니다.
+
+이 작품은 웹툰으로 큰 인기를 얻었으며, 현재 드라마 제작이 진행 중입니다. 주요 배우 캐스팅이 완료되었으며, 2023년 3분기에 촬영을 시작할 예정입니다.`,
+    updateLog:
+      "제작팀이 주요 캐릭터 캐스팅을 완료했습니다. 대본 수정 작업이 진행 중입니다. 2023년 3분기에 촬영 시작 예정입니다.",
+  }
 
   // 투자자 증가 추이 데이터
   const investmentGrowthData: InvestmentGrowthData[] = [
@@ -70,6 +67,8 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     { date: "2023-04", investors: 850, amount: 255000000 },
     { date: "2023-05", investors: 1250, amount: 320000000 },
   ]
+
+  const progress = (webtoon.currentRaised / webtoon.goalAmount) * 100
 
   const handleFavorite = () => {
     setIsFavorite(!isFavorite)
@@ -104,13 +103,8 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     setIsValidAmount(numValue >= 10000)
   }
 
-  // 예상 수익률 계산 부분도 안전하게 수정
   // 예상 수익금 계산
-  const expectedROIValue =
-    typeof webtoon.expectedROI === "string"
-      ? Number.parseFloat(webtoon.expectedROI.split("-")[0] || "15")
-      : webtoon.expectedROI || 15
-  const expectedReturn = Math.round(investmentAmount * (1 + expectedROIValue / 100))
+  const expectedReturn = Math.round(investmentAmount * (1 + webtoon.expectedROI / 100))
 
   // 투자자 증가 그래프 렌더링
   const renderInvestorGrowthGraph = () => {
@@ -255,19 +249,16 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
         {/* 주요 정보 카드 */}
         <Card className="rounded-xl mb-6 border-gray/20 bg-light dark:bg-darkblue/30">
           <CardContent className="p-4">
-            {/* 웹툰 상세 정보 카드 부분에서 toLocaleString() 호출 전에 안전 검사 추가 */}
             <div className="flex justify-between items-center mb-2">
               <div>
                 <p className="text-sm text-gray">현재 모금액</p>
                 <p className="font-bold text-lg text-darkblue dark:text-light">
-                  ₩{typeof webtoon.currentRaised === "number" ? webtoon.currentRaised.toLocaleString() : "0"}
+                  ₩{webtoon.currentRaised.toLocaleString()}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-gray">목표 금액</p>
-                <p className="font-medium text-darkblue dark:text-light">
-                  ₩{typeof webtoon.goalAmount === "number" ? webtoon.goalAmount.toLocaleString() : "0"}
-                </p>
+                <p className="font-medium text-darkblue dark:text-light">₩{webtoon.goalAmount.toLocaleString()}</p>
               </div>
             </div>
 
@@ -456,13 +447,11 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">투자 확인</DialogTitle>
           </DialogHeader>
           <div className="text-center py-4">
-            {/* 투자 확인 다이얼로그에서도 안전 검사 추가 */}
             <span className="block text-sm text-gray">
-              입력하신 금액 {typeof investmentAmount === "number" ? investmentAmount.toLocaleString() : "0"}원을
-              투자하시겠습니까?
+              입력하신 금액 {investmentAmount.toLocaleString()}원을 투자하시겠습니까?
             </span>
             <span className="block text-sm text-gray mt-2">
-              예상 수익금은 {typeof expectedReturn === "number" ? expectedReturn.toLocaleString() : "0"}원입니다.
+              예상 수익금은 {expectedReturn.toLocaleString()}원입니다.
             </span>
           </div>
           <DialogFooter className="flex gap-3 sm:justify-center">
