@@ -466,17 +466,17 @@ export function InvestmentVisualizationScreen() {
               >
                 <div className="flex">
                   {/* 썸네일 */}
-                  <div className="w-24 h-24 relative flex-shrink-0">
+                  <div className="w-24 h-24 relative flex-shrink-0 rounded-xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800">
                     {investment.thumbnail ? (
                       <Image
                         src={investment.thumbnail || "/placeholder.svg"}
                         alt={investment.title}
                         fill
-                        className="object-cover"
+                        className="object-cover rounded-xl hover:scale-105 transition-transform duration-300"
                         sizes="96px"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gray/20 flex items-center justify-center">
+                      <div className="w-full h-full bg-gray/20 flex items-center justify-center rounded-xl">
                         <TrendingUp className="w-8 h-8 text-gray" />
                       </div>
                     )}

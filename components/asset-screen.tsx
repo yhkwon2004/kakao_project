@@ -14,8 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+import Image from "next/image"
 // 파일 상단에 webtoons 데이터를 import 합니다.
-import { getWebtoonById } from "@/data/webtoons"
+import { getWebtoonById, allWebtoons } from "@/data/webtoons"
 
 // 투자 성장 데이터 타입
 interface InvestmentGrowthData {
@@ -38,6 +39,7 @@ interface Investment {
   fundingPercentage?: number // 웹툰 모집 수치
   currentRaised?: number // 현재 모인 금액
   goalAmount?: number // 목표 금액
+  thumbnail?: string // 썸네일 이미지 URL
 }
 
 // 완료된 프로젝트 데이터 타입
@@ -95,6 +97,40 @@ const defaultCompletedProjects: CompletedProject[] = [
   },
 ]
 
+// 웹툰 ID로 웹툰 제목 가져오기
+const getWebtoonTitle = (id: string): string => {
+  const webtoon = getWebtoonById(id)
+  return webtoon ? webtoon.title : "투자 프로젝트"
+}
+
+// 웹툰 ID로 썸네일 URL 가져오기
+const getWebtoonThumbnail = (id: string): string => {
+  // 특정 웹툰 ID에 대한 하드코딩된 썸네일 경로
+  if (id === "bad-secretary") {
+    return "/images/나쁜-비서.jpg"
+  }
+
+  // 철혈검가 사냥개의 회귀 썸네일 추가
+  if (id === "blood-sword-family-hunting-dog") {
+    return "/images/철혈검가-사냥개의-회귀.png"
+  }
+
+  // 웹툰 데이터에서 찾기
+  const webtoon = getWebtoonById(id)
+  if (webtoon && webtoon.thumbnail) {
+    return webtoon.thumbnail
+  }
+
+  // ID로 찾지 못한 경우 제목으로 검색
+  const webtoonByTitle = allWebtoons.find((w) => w.title.includes(id) || (w.id && w.id.includes(id)))
+  if (webtoonByTitle && webtoonByTitle.thumbnail) {
+    return webtoonByTitle.thumbnail
+  }
+
+  // 기본 썸네일 반환
+  return "/webtoon-scene.png"
+}
+
 // 종료된 프로젝트 데이터 초기화 함수를 수정하여 게스트 계정만 종료된 프로젝트를 가지도록 변경
 const initializeCompletedProjects = () => {
   // 현재 로그인한 사용자 정보 가져오기
@@ -119,6 +155,7 @@ const initializeCompletedProjects = () => {
       status: "완료됨",
       slug: project.slug,
       date: project.investmentDate,
+      thumbnail: project.thumbnail,
     }))
 
     // 기존 투자 데이터와 병합
@@ -400,24 +437,43 @@ export function AssetScreen() {
           const parsedInvestments = JSON.parse(storedInvestments)
           // 날짜 정보가 없는 경우 현재 날짜 추가
           parsedInvestments.forEach((inv: any) => {
+            // 웹툰 데이터 가져오기
+            const webtoonData = getWebtoonById(inv.id)
+
+            // 썸네일 설정 (ID 기반 하드코딩된 썸네일 우선)
+            let thumbnailUrl = ""
+            if (inv.id === "bad-secretary") {
+              thumbnailUrl = "/images/나쁜-비서.png"
+            } else if (inv.id === "blood-sword-family-hunting-dog") {
+              thumbnailUrl = "/images/철혈검가-사냥개의-회귀.webp"
+            } else if (webtoonData && webtoonData.thumbnail) {
+              thumbnailUrl = webtoonData.thumbnail
+            } else if (inv.thumbnail) {
+              thumbnailUrl = inv.thumbnail
+            } else {
+              thumbnailUrl = "/webtoon-scene.png"
+            }
+
             const investment: Investment = {
               id: inv.id || `inv-${Math.random().toString(36).substr(2, 9)}`,
-              title: inv.title || "투자 프로젝트",
+              title: webtoonData ? webtoonData.title : inv.title || "투자 프로젝트",
               amount: inv.amount || 0,
               progress: inv.progress || 0,
               expectedROI: inv.expectedROI || 0,
               status: inv.status || "진행중",
-              slug: inv.slug || "",
+              slug: inv.slug || inv.id,
               date: inv.date || getCurrentDate(),
               isCompleted: inv.progress === 100,
+              thumbnail: thumbnailUrl,
             }
+
             // 웹툰 데이터 연동
-            const webtoonData = getWebtoonById(inv.id)
             if (webtoonData) {
               investment.fundingPercentage = webtoonData.fundingPercentage
               investment.currentRaised = webtoonData.currentRaised
               investment.goalAmount = webtoonData.goalAmount
             }
+
             // 맵에 추가 (중복 방지)
             investmentMap.set(investment.id, investment)
           })
@@ -437,16 +493,34 @@ export function AssetScreen() {
 
             // 이미 맵에 있는지 확인 (중복 방지)
             if (!investmentMap.has(projectId)) {
+              // 웹툰 데이터 가져오기
+              const webtoonData = getWebtoonById(projectId)
+
+              // 썸네일 설정 (ID 기반 하드코딩된 썸네일 우선)
+              let thumbnailUrl = ""
+              if (projectId === "bad-secretary") {
+                thumbnailUrl = "/images/나쁜-비서.png"
+              } else if (projectId === "blood-sword-family-hunting-dog") {
+                thumbnailUrl = "/images/철혈검가-사냥개의-회귀.webp"
+              } else if (project.thumbnail) {
+                thumbnailUrl = project.thumbnail
+              } else if (webtoonData && webtoonData.thumbnail) {
+                thumbnailUrl = webtoonData.thumbnail
+              } else {
+                thumbnailUrl = "/webtoon-scene.png"
+              }
+
               const completedInvestment: Investment = {
                 id: projectId,
-                title: project.title || "완료된 프로젝트",
+                title: webtoonData ? webtoonData.title : project.title || "완료된 프로젝트",
                 amount: project.investedAmount || 0,
                 progress: 100, // 완료된 프로젝트는 100%
                 expectedROI: project.roi || 15,
                 status: "완료됨",
-                slug: project.slug || "",
+                slug: project.slug || projectId,
                 date: project.investmentDate || "2023-04-01",
                 isCompleted: true,
+                thumbnail: thumbnailUrl,
               }
               // 맵에 추가
               investmentMap.set(projectId, completedInvestment)
@@ -915,45 +989,77 @@ export function AssetScreen() {
                 className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow border-gray/20 bg-light dark:bg-darkblue/30 p-4"
                 onClick={() => router.push(`/webtoon/${investment.slug || investment.id}`)}
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="font-bold text-darkblue dark:text-light">{investment.title}</h3>
-                    <p className="text-xs text-gray">{investment.status}</p>
+                <div className="flex gap-4">
+                  {/* 썸네일 이미지 */}
+                  <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0 bg-gray/10 border border-gray/20">
+                    {investment.id === "bad-secretary" ? (
+                      <img src="/images/나쁜-비서.jpg" alt={investment.title} className="w-full h-full object-cover" />
+                    ) : investment.id === "blood-sword-family-hunting-dog" ? (
+                      <img
+                        src="/images/철혈검가-사냥개의-회귀.png"
+                        alt={investment.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : investment.thumbnail ? (
+                      <Image
+                        src={investment.thumbnail || "/placeholder.svg"}
+                        alt={investment.title}
+                        width={96}
+                        height={96}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray/20 text-gray">
+                        <span className="text-xs">이미지 없음</span>
+                      </div>
+                    )}
                   </div>
-                  <ChevronRight className="h-5 w-5 text-gray" />
-                </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-2">
-                  <div>
-                    <p className="text-xs text-gray">투자 금액</p>
-                    <p className="font-medium text-darkblue dark:text-light">
-                      ₩{(investment.amount || 0).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray">예상 수익률</p>
-                    <p className="font-medium text-profit">{investment.expectedROI}%</p>
-                  </div>
-                </div>
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-darkblue dark:text-light text-sm">{investment.title}</h3>
+                        <p className="text-xs text-gray mt-0.5">{investment.status}</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-gray" />
+                    </div>
 
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <p className="text-xs text-gray">제작 진행도</p>
-                    <p className="text-xs text-darkblue dark:text-light">
-                      {investment.fundingPercentage || investment.progress}%
-                    </p>
-                  </div>
-                  <Progress value={investment.fundingPercentage || investment.progress} className="h-2 bg-gray/20" />
-                  {investment.currentRaised && investment.goalAmount && (
-                    <p className="text-xs text-gray mt-1">
-                      ₩{investment.currentRaised.toLocaleString()} / ₩{investment.goalAmount.toLocaleString()}
-                    </p>
-                  )}
-                </div>
+                    <div className="grid grid-cols-2 gap-4 mb-2">
+                      <div>
+                        <p className="text-xs text-gray">투자 금액</p>
+                        <p className="font-medium text-darkblue dark:text-light">
+                          ₩{(investment.amount || 0).toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray">예상 수익률</p>
+                        <p className="font-medium text-profit">{investment.expectedROI}%</p>
+                      </div>
+                    </div>
 
-                {/* 투자 날짜 표시 */}
-                <div className="mt-2">
-                  <p className="text-xs text-gray">투자일: {formatDateToKorean(investment.date)}</p>
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="text-xs text-gray">제작 진행도</p>
+                        <p className="text-xs text-darkblue dark:text-light">
+                          {investment.fundingPercentage || investment.progress}%
+                        </p>
+                      </div>
+                      <Progress
+                        value={investment.fundingPercentage || investment.progress}
+                        className="h-2 bg-gray/20"
+                      />
+                      {investment.currentRaised && investment.goalAmount && (
+                        <p className="text-xs text-gray mt-1">
+                          ₩{investment.currentRaised.toLocaleString()} / ₩{investment.goalAmount.toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* 투자 날짜 표시 */}
+                    <div className="mt-2">
+                      <p className="text-xs text-gray">투자일: {formatDateToKorean(investment.date)}</p>
+                    </div>
+                  </div>
                 </div>
               </Card>
             ))
