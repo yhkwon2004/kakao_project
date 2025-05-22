@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -63,6 +63,7 @@ export function CommunityScreen() {
   const [newComment, setNewComment] = useState("")
   const [posts, setPosts] = useState<Post[]>([])
   const [currentUser, setCurrentUser] = useState("권용현")
+  const [profileImage, setProfileImage] = useState<string | null>(null)
 
   // 로컬 스토리지에서 데이터 로드
   useEffect(() => {
@@ -70,6 +71,7 @@ export function CommunityScreen() {
     const user = getUserFromStorage()
     if (user && user.name) {
       setCurrentUser(user.name)
+      setProfileImage(user.profileImage || null)
     }
 
     const storedPosts = localStorage.getItem("communityPosts")
@@ -344,6 +346,10 @@ export function CommunityScreen() {
         <div className="flex justify-between">
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8 bg-yellow/20 text-darkblue dark:text-light">
+              <AvatarImage
+                src={post.author === currentUser && profileImage ? profileImage : "/placeholder.svg"}
+                alt={post.author}
+              />
               <AvatarFallback>{post.authorInitial}</AvatarFallback>
             </Avatar>
             <div>
@@ -393,13 +399,17 @@ export function CommunityScreen() {
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between">
         <Button
-          variant="ghost"
+          variant={post.liked ? "subtle" : "ghost"}
           size="sm"
-          className={`${post.liked ? "text-green" : "text-gray"} hover:text-green hover:bg-green/10`}
+          className={`${
+            post.liked ? "bg-red-100 text-red-500 font-medium border border-red-200" : "text-gray"
+          } hover:text-red-500 hover:bg-red-50 transition-all duration-300 transform ${post.liked ? "scale-105" : ""}`}
           onClick={(e) => handleLike(post.id, e)}
         >
-          <ThumbsUp className={`h-4 w-4 mr-1 ${post.liked ? "fill-green" : ""}`} />
-          {post.likes}
+          <ThumbsUp
+            className={`h-5 w-5 mr-1.5 transition-all duration-300 ${post.liked ? "fill-red-500 scale-110" : ""}`}
+          />
+          <span className={post.liked ? "font-semibold" : ""}>{post.likes}</span>
         </Button>
         <Button variant="ghost" size="sm" className="text-gray hover:text-darkblue dark:hover:text-light">
           <MessageCircle className="h-4 w-4 mr-1" />
@@ -424,6 +434,10 @@ export function CommunityScreen() {
         {comments.map((comment) => (
           <div key={comment.id} className="flex gap-3 p-3 bg-light/50 dark:bg-darkblue/20 rounded-lg">
             <Avatar className="h-8 w-8 bg-yellow/20 text-darkblue dark:text-light flex-shrink-0">
+              <AvatarImage
+                src={comment.author === currentUser && profileImage ? profileImage : "/placeholder.svg"}
+                alt={comment.author}
+              />
               <AvatarFallback>{comment.authorInitial}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
@@ -456,7 +470,10 @@ export function CommunityScreen() {
           </Button>
           <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.push("/mypage")}>
             <Avatar className="h-8 w-8 bg-light border border-gray/20">
-              <AvatarFallback className="text-darkblue">{currentUser.charAt(0)}</AvatarFallback>
+              <AvatarImage src={profileImage || "/placeholder.svg"} alt={currentUser} />
+              <AvatarFallback className="text-darkblue dark:text-light bg-yellow/20">
+                {currentUser.charAt(0)}
+              </AvatarFallback>
             </Avatar>
           </Button>
         </div>
@@ -669,13 +686,19 @@ export function CommunityScreen() {
 
               <div className="flex justify-between border-t border-gray/10 pt-4">
                 <Button
-                  variant="ghost"
+                  variant={selectedPost.liked ? "subtle" : "ghost"}
                   size="sm"
-                  className={`${selectedPost.liked ? "text-green" : "text-gray"} hover:text-green hover:bg-green/10`}
+                  className={`${
+                    selectedPost.liked ? "bg-red-100 text-red-500 font-medium border border-red-200" : "text-gray"
+                  } hover:text-red-500 hover:bg-red-50 transition-all duration-300 transform ${selectedPost.liked ? "scale-105" : ""}`}
                   onClick={(e) => handleLike(selectedPost.id, e)}
                 >
-                  <ThumbsUp className={`h-4 w-4 mr-1 ${selectedPost.liked ? "fill-green" : ""}`} />
-                  좋아요 {selectedPost.likes}
+                  <ThumbsUp
+                    className={`h-5 w-5 mr-1.5 transition-all duration-300 ${
+                      selectedPost.liked ? "fill-red-500 scale-110" : ""
+                    }`}
+                  />
+                  <span className={selectedPost.liked ? "font-semibold" : ""}>좋아요 {selectedPost.likes}</span>
                 </Button>
                 <Button variant="ghost" size="sm" className="text-gray hover:text-darkblue dark:hover:text-light">
                   <MessageCircle className="h-4 w-4 mr-1" />

@@ -351,7 +351,7 @@ export function InvestmentVisualizationScreen() {
             <div className="w-10 h-10 relative rounded-md overflow-hidden flex-shrink-0">
               {item.thumbnail ? (
                 <Image
-                  src={`/abstract-geometric-shapes.png?height=40&width=40&query=${encodeURIComponent(item.label)}`}
+                  src={item.thumbnail || "/placeholder.svg"}
                   alt={item.label}
                   fill
                   className="object-cover"
@@ -431,7 +431,7 @@ export function InvestmentVisualizationScreen() {
                   <div className="w-24 h-24 relative flex-shrink-0">
                     {investment.thumbnail ? (
                       <Image
-                        src={`/abstract-geometric-shapes.png?height=96&width=96&query=${encodeURIComponent(investment.title)}`}
+                        src={investment.thumbnail || "/placeholder.svg"}
                         alt={investment.title}
                         fill
                         className="object-cover"

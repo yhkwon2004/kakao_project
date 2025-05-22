@@ -82,7 +82,7 @@ export function MileageScreen() {
       name: "웹툰 OST 앨범",
       description: "드라마화된 웹툰의 OST 앨범입니다.",
       price: 2000,
-      image: "/webtoon-ost-album.png",
+      image: "/placeholder.svg?height=200&width=200&query=웹툰 OST 앨범",
       stock: 20,
     },
     {
@@ -464,12 +464,7 @@ export function MileageScreen() {
                       className="border border-gray/20 rounded-xl overflow-hidden bg-light dark:bg-darkblue/20"
                     >
                       <div className="relative h-40 w-full">
-                        <Image
-                          src={`/placeholder.svg?height=200&width=200&query=${goods.name}`}
-                          alt={goods.name}
-                          fill
-                          className="object-cover"
-                        />
+                        <Image src={goods.image || "/placeholder.svg"} alt={goods.name} fill className="object-cover" />
                       </div>
                       <div className="p-3">
                         <div className="flex justify-between items-start mb-2">
@@ -515,7 +510,7 @@ export function MileageScreen() {
               <div className="flex items-center gap-4 mb-4">
                 <div className="relative h-20 w-20 flex-shrink-0">
                   <Image
-                    src={`/placeholder.svg?height=100&width=100&query=${selectedGoods.name}`}
+                    src={selectedGoods.image || "/placeholder.svg"}
                     alt={selectedGoods.name}
                     fill
                     className="object-cover rounded-lg"

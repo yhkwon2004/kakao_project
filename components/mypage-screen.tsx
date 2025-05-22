@@ -41,7 +41,7 @@ export function MyPageScreen() {
   const [userName, setUserName] = useState("사용자")
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [points, setPoints] = useState(550000)
+  const [points, setPoints] = useState(150000)
   const [mileage, setMileage] = useState(0)
   const [isChangingTheme, setIsChangingTheme] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -302,10 +302,7 @@ export function MyPageScreen() {
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 border-2 border-light relative">
                 {profileImage ? (
-                  <AvatarImage
-                    src={profileImage || "/placeholder.svg?height=64&width=64&query=profile"}
-                    alt={userName}
-                  />
+                  <AvatarImage src={profileImage || "/placeholder.svg"} alt={userName} />
                 ) : (
                   <AvatarFallback>
                     <User className="h-8 w-8" />
@@ -331,9 +328,7 @@ export function MyPageScreen() {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-gray transition-colors duration-300">잔액</p>
-                <p
-                  className={`text-2xl font-bold ${points < 50000 ? "text-yellow" : "text-green"} transition-colors duration-300`}
-                >
+                <p className="text-2xl font-bold text-green transition-colors duration-300">
                   {points.toLocaleString()}원
                 </p>
               </div>
@@ -344,42 +339,6 @@ export function MyPageScreen() {
                 충전하기
               </Button>
             </div>
-
-            {/* 잔액 부족 경고 배너 */}
-            {points < 50000 && (
-              <div className="mt-4 bg-yellow/10 border border-yellow/30 rounded-lg p-3 animate-pulse">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="text-yellow mr-2"
-                    >
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                      <line x1="12" y1="9" x2="12" y2="13"></line>
-                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                    <p className="text-sm font-medium text-darkblue dark:text-light">
-                      잔액이 부족합니다! 원활한 투자를 위해 충전하세요.
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    className="bg-green hover:bg-green/90 text-light ml-2"
-                    onClick={() => router.push("/mypage/payment")}
-                  >
-                    지금 충전하기
-                  </Button>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>

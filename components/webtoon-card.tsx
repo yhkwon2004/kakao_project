@@ -47,7 +47,7 @@ export function WebtoonCard({ webtoon, onClick }: WebtoonCardProps) {
             - 이미지 소스가 다양해도 일관된 모양을 유지함
           */}
           <Image
-            src={thumbnail || `/placeholder.svg?height=300&width=225&query=${encodeURIComponent(title)}`}
+            src={thumbnail || `/gray-placeholder.png`}
             alt={title}
             fill
             className="object-cover object-center rounded-t-xl transition-transform duration-300 hover:scale-105"

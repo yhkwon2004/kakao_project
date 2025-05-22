@@ -274,10 +274,7 @@ export function HomeScreen() {
                 */}
                 <div className="relative h-[160px] w-[120px] rounded-xl overflow-hidden mb-2">
                   <Image
-                    src={
-                      drama.thumbnail ||
-                      `/placeholder.svg?height=160&width=120&query=${encodeURIComponent(drama.titleKorean || drama.title)}`
-                    }
+                    src={drama.thumbnail || "/placeholder.svg"}
                     alt={drama.titleKorean || drama.title}
                     fill
                     className="object-cover object-center transition-transform duration-300 hover:scale-105"
