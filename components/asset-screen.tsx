@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -159,10 +159,11 @@ export function AssetScreen() {
   const [userName, setUserName] = useState("사용자")
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<"week" | "month" | "3months" | "6months" | "year" | "all" | "custom">(
-    "all",
+    "week",
   )
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
+  const [graphAnimated, setGraphAnimated] = useState(false)
 
   // 자산 요약 데이터
   const [assetSummary, setAssetSummary] = useState({
@@ -488,6 +489,17 @@ export function AssetScreen() {
     }
   }, [dateRange])
 
+  // 그래프 데이터가 변경될 때마다 애니메이션 재설정
+  useEffect(() => {
+    if (investmentGrowthData.length > 0) {
+      setGraphAnimated(false)
+      const timer = setTimeout(() => {
+        setGraphAnimated(true)
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [investmentGrowthData])
+
   // 투자 요약 계산
   const calculateAssetSummary = (investmentData: Investment[]) => {
     const totalInvested = investmentData.reduce((sum, inv) => sum + (inv.amount || 0), 0)
@@ -582,6 +594,11 @@ export function AssetScreen() {
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeDasharray={graphAnimated ? "0" : "1000"}
+              strokeDashoffset={graphAnimated ? "0" : "1000"}
+              style={{
+                transition: "stroke-dashoffset 1.5s ease-in-out, stroke-dasharray 1.5s ease-in-out",
+              }}
             />
             {investmentGrowthData.map((d, i) => (
               <circle
@@ -592,6 +609,10 @@ export function AssetScreen() {
                 fill="#45858C"
                 stroke="#FFFFFF"
                 strokeWidth="1"
+                opacity={graphAnimated ? "1" : "0"}
+                style={{
+                  transition: `opacity 0.3s ease-in-out ${i * 0.1}s`,
+                }}
               />
             ))}
           </svg>
@@ -610,6 +631,11 @@ export function AssetScreen() {
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeDasharray={graphAnimated ? "0" : "1000"}
+              strokeDashoffset={graphAnimated ? "0" : "1000"}
+              style={{
+                transition: "stroke-dashoffset 1.5s ease-in-out 0.5s, stroke-dasharray 1.5s ease-in-out 0.5s",
+              }}
             />
             {investmentGrowthData.map((d, i) => {
               const totalHeight = d.amount + d.profit
@@ -622,6 +648,10 @@ export function AssetScreen() {
                   fill="#F9DF52"
                   stroke="#FFFFFF"
                   strokeWidth="1"
+                  opacity={graphAnimated ? "1" : "0"}
+                  style={{
+                    transition: `opacity 0.3s ease-in-out ${0.5 + i * 0.1}s`,
+                  }}
                 />
               )
             })}
@@ -641,20 +671,15 @@ export function AssetScreen() {
           </div>
         </div>
 
-        {/* 범례 */}
-        <div className="absolute top-2 right-2 flex flex-col gap-1 bg-light/80 dark:bg-darkblue/80 p-2 rounded-md text-xs">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-green rounded-sm"></div>
-            <span className="text-darkblue dark:text-light">투자금액</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-profit rounded-sm"></div>
-            <span className="text-darkblue dark:text-light">수익금액</span>
-          </div>
-        </div>
-
         {/* 현재 날짜 표시 */}
-        <div className="absolute top-2 left-14 bg-green/10 text-green px-2 py-1 rounded-full text-xs">
+        <div
+          className="absolute top-2 left-14 bg-green/10 text-green px-2 py-1 rounded-full text-xs"
+          style={{
+            opacity: graphAnimated ? "1" : "0",
+            transform: graphAnimated ? "translateX(0)" : "translateX(-10px)",
+            transition: "opacity 0.5s ease-in-out 1s, transform 0.5s ease-in-out 1s",
+          }}
+        >
           {new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })} 기준
         </div>
       </div>
@@ -676,7 +701,8 @@ export function AssetScreen() {
         <Logo size="md" showSubtitle={false} />
         <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.push("/mypage")}>
           <Avatar className="h-8 w-8 bg-light border border-gray/20">
-            <AvatarFallback className="text-darkblue">{userName.charAt(0)}</AvatarFallback>
+            <AvatarImage src={profileImage || "/placeholder.svg"} alt={userName} />
+            <AvatarFallback className="text-darkblue dark:text-light bg-yellow/20">{userName.charAt(0)}</AvatarFallback>
           </Avatar>
         </Button>
       </div>
@@ -702,9 +728,15 @@ export function AssetScreen() {
                   ₩{(assetSummary.totalInvested || 0).toLocaleString()}
                 </p>
               </div>
-              <div>
+              <div
+                className="cursor-pointer hover:bg-gray/5 p-2 -m-2 rounded-lg transition-colors"
+                onClick={() => router.push("/asset/visualization")}
+              >
                 <p className="text-sm text-gray">총 프로젝트</p>
-                <p className="text-xl font-bold text-darkblue dark:text-light">{assetSummary.totalProjects}</p>
+                <div className="flex items-center">
+                  <p className="text-xl font-bold text-darkblue dark:text-light">{assetSummary.totalProjects}</p>
+                  <ChevronRight className="h-4 w-4 ml-1 text-gray" />
+                </div>
               </div>
               <div>
                 <p className="text-sm text-gray">예상 수익</p>
@@ -801,6 +833,24 @@ export function AssetScreen() {
               </div>
             </div>
             {renderInvestmentGrowthGraph()}
+            {/* 범례 - 그래프 밖으로 이동 */}
+            <div
+              className="mt-4 flex justify-center items-center gap-6 bg-light/80 dark:bg-darkblue/20 p-2 rounded-md text-sm"
+              style={{
+                opacity: graphAnimated ? "1" : "0",
+                transform: graphAnimated ? "translateY(0)" : "translateY(10px)",
+                transition: "opacity 0.5s ease-in-out 1.5s, transform 0.5s ease-in-out 1.5s",
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-green rounded-sm"></div>
+                <span className="text-darkblue dark:text-light">투자금액</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-profit rounded-sm"></div>
+                <span className="text-darkblue dark:text-light">수익금액</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

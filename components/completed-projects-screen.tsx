@@ -228,10 +228,7 @@ export function CompletedProjectsScreen() {
                 <div className="flex gap-3 mb-3">
                   <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0">
                     <img
-                      src={
-                        project.thumbnail ||
-                        `/placeholder.svg?height=80&width=80&query=${encodeURIComponent(project.title) || "/placeholder.svg"}`
-                      }
+                      src={`/abstract-geometric-shapes.png?height=80&width=80&query=${encodeURIComponent(project.title)}`}
                       alt={project.title}
                       className="w-full h-full object-cover"
                     />
