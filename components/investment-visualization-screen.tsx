@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, ChevronRight, TrendingUp } from "lucide-react"
 import { getUserFromStorage } from "@/lib/auth"
 import { Progress } from "@/components/ui/progress"
-import { allWebtoons } from "@/data/webtoons"
+import { allWebtoons, getWebtoonById } from "@/data/webtoons"
 
 // 투자 데이터 타입
 interface Investment {
@@ -22,6 +22,9 @@ interface Investment {
   date: string
   isCompleted?: boolean
   thumbnail?: string
+  fundingPercentage?: number // 웹툰 모집 수치
+  currentRaised?: number // 현재 모인 금액
+  goalAmount?: number // 목표 금액
 }
 
 // 차트 데이터 타입
@@ -82,6 +85,17 @@ export function InvestmentVisualizationScreen() {
     return "/webtoon-scene.png"
   }
 
+  // 웹툰 제목 가져오기
+  const getWebtoonTitle = (slug?: string, defaultTitle = "투자 프로젝트"): string => {
+    if (slug) {
+      const webtoon = getWebtoonById(slug)
+      if (webtoon && webtoon.title) {
+        return webtoon.title
+      }
+    }
+    return defaultTitle
+  }
+
   // 투자 데이터 로드
   useEffect(() => {
     // 사용자 정보 로드
@@ -102,9 +116,12 @@ export function InvestmentVisualizationScreen() {
           const parsedInvestments = JSON.parse(storedInvestments)
           // 날짜 정보가 없는 경우 현재 날짜 추가
           parsedInvestments.forEach((inv: any) => {
+            // 웹툰 데이터에서 실제 제목 가져오기
+            const webtoonTitle = getWebtoonTitle(inv.slug, inv.title || "투자 프로젝트")
+
             const investment: Investment = {
               id: inv.id || `inv-${Math.random().toString(36).substr(2, 9)}`,
-              title: inv.title || "투자 프로젝트",
+              title: webtoonTitle,
               amount: inv.amount || 0,
               progress: inv.progress || 0,
               expectedROI: inv.expectedROI || 0,
@@ -112,8 +129,17 @@ export function InvestmentVisualizationScreen() {
               slug: inv.slug || "",
               date: inv.date || getCurrentDate(),
               isCompleted: inv.progress === 100,
-              thumbnail: getWebtoonThumbnail(inv.title, inv.slug),
+              thumbnail: getWebtoonThumbnail(webtoonTitle, inv.slug),
             }
+
+            // 웹툰 데이터 연동
+            const webtoonData = getWebtoonById(inv.slug || inv.id)
+            if (webtoonData) {
+              investment.fundingPercentage = webtoonData.fundingPercentage
+              investment.currentRaised = webtoonData.currentRaised
+              investment.goalAmount = webtoonData.goalAmount
+            }
+
             // 맵에 추가 (중복 방지)
             investmentMap.set(investment.id, investment)
           })
@@ -133,9 +159,12 @@ export function InvestmentVisualizationScreen() {
 
             // 이미 맵에 있는지 확인 (중복 방지)
             if (!investmentMap.has(projectId)) {
+              // 웹툰 데이터에서 실제 제목 가져오기
+              const webtoonTitle = getWebtoonTitle(project.slug, project.title || "완료된 프로젝트")
+
               const completedInvestment: Investment = {
                 id: projectId,
-                title: project.title || "완료된 프로젝트",
+                title: webtoonTitle,
                 amount: project.investedAmount || 0,
                 progress: 100, // 완료된 프로젝트는 100%
                 expectedROI: project.roi || 15,
@@ -143,8 +172,17 @@ export function InvestmentVisualizationScreen() {
                 slug: project.slug || "",
                 date: project.investmentDate || "2023-04-01",
                 isCompleted: true,
-                thumbnail: getWebtoonThumbnail(project.title, project.slug),
+                thumbnail: getWebtoonThumbnail(webtoonTitle, project.slug),
               }
+
+              // 웹툰 데이터 연동
+              const webtoonData = getWebtoonById(project.slug || project.id)
+              if (webtoonData) {
+                completedInvestment.fundingPercentage = webtoonData.fundingPercentage
+                completedInvestment.currentRaised = webtoonData.currentRaised
+                completedInvestment.goalAmount = webtoonData.goalAmount
+              }
+
               // 맵에 추가
               investmentMap.set(projectId, completedInvestment)
             }
@@ -477,13 +515,20 @@ export function InvestmentVisualizationScreen() {
                     <div>
                       <div className="flex justify-between items-center mb-1">
                         <p className="text-xs text-gray">제작 진행도</p>
-                        <p className="text-xs text-darkblue dark:text-light">{investment.progress}%</p>
+                        <p className="text-xs text-darkblue dark:text-light">
+                          {investment.fundingPercentage || investment.progress}%
+                        </p>
                       </div>
                       <Progress
-                        value={investment.progress}
+                        value={investment.fundingPercentage || investment.progress}
                         className="h-2 bg-gray/20"
                         indicatorClassName={investment.isCompleted ? "bg-profit" : "bg-yellow"}
                       />
+                      {investment.currentRaised && investment.goalAmount && (
+                        <p className="text-xs text-gray mt-1">
+                          ₩{investment.currentRaised.toLocaleString()} / ₩{investment.goalAmount.toLocaleString()}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

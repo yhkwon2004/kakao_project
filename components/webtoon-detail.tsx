@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Logo } from "@/components/logo"
 import { getWebtoonById } from "@/data/webtoons"
 import { getUserFromStorage } from "@/lib/auth"
+import { Input } from "@/components/ui/input"
 
 // 투자자 증가 추이 데이터 타입
 interface InvestmentGrowthData {
@@ -40,6 +41,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   const [hasInvested, setHasInvested] = useState(false) // 투자 여부 상태 추가
   const [isInvestModalOpen, setIsInvestModalOpen] = useState(false)
   const [keypadInput, setKeypadInput] = useState("10000")
+  const [inputError, setInputError] = useState("")
 
   // 웹툰 상세 정보 데이터 부분을 수정합니다.
   // 이제 ID를 기반으로 웹툰 정보를 가져오고, 필요한 속성에 기본값을 제공합니다.
@@ -304,6 +306,39 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     setIsValidAmount(limitedValue >= MIN_INVESTMENT)
   }
 
+  // 직접 입력 필드 핸들러
+  const handleDirectInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 숫자와 쉼표만 허용
+    const rawValue = e.target.value.replace(/[^0-9,]/g, "")
+    // 쉼표 제거 후 숫자로 변환
+    const numericValue = rawValue.replace(/,/g, "")
+
+    if (numericValue === "") {
+      setKeypadInput("0")
+      setInputError("")
+      return
+    }
+
+    const numValue = Number.parseInt(numericValue, 10)
+
+    // 유효성 검사
+    if (numValue < MIN_INVESTMENT) {
+      setInputError(`최소 ${MIN_INVESTMENT.toLocaleString()}원 이상 입력해주세요.`)
+    } else if (numValue > MAX_INVESTMENT) {
+      setInputError(`최대 ${MAX_INVESTMENT.toLocaleString()}원까지 입력 가능합니다.`)
+    } else if (numValue > userBalance) {
+      setInputError("잔액이 부족합니다.")
+    } else {
+      setInputError("")
+    }
+
+    setKeypadInput(numericValue)
+
+    // 입력 필드에 천 단위 구분자 적용
+    const formattedValue = numValue.toLocaleString()
+    e.target.value = formattedValue
+  }
+
   // 예상 수익률 계산 부분도 안전하게 수정
   // 예상 수익금 계산
   const expectedROIValue =
@@ -327,23 +362,20 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       // 입력값 초기화
       setKeypadInput("0")
     } else {
-      // 숫자 추가 (최대 8자리로 제한)
-      setKeypadInput((prev) => {
-        // 0만 있는 경우 새 숫자로 대체
-        if (prev === "0" && value !== "0") return value
-        // 이미 0이고 다시 0을 입력하면 변화 없음
-        if (prev === "0" && value === "0") return prev
-        // 최대 8자리(천만원)로 제한
-        if (prev.length >= 8) return prev
-        return prev + value
-      })
+      // 숫자를 직접 금액으로 설정 (1을 누르면 1만원)
+      const amount = Number.parseInt(value) * 10000
+      setKeypadInput(amount.toString())
     }
+
+    // 에러 메시지 초기화
+    setInputError("")
   }
 
   // 투자 모달 열기 함수
   const openInvestModal = () => {
     if (canInvest()) {
       setKeypadInput(investmentAmount.toString())
+      setInputError("")
       setIsInvestModalOpen(true)
     } else if (investmentAmount > userBalance) {
       toast({
@@ -746,6 +778,25 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
               </p>
             </div>
 
+            {/* 직접 금액 입력 필드 */}
+            <div className="mb-4">
+              <label htmlFor="direct-amount" className="block text-sm font-medium text-gray mb-1">
+                직접 금액 입력
+              </label>
+              <div className="relative">
+                <Input
+                  id="direct-amount"
+                  type="text"
+                  placeholder="금액을 입력하세요"
+                  className="pl-8 text-right pr-3 py-2 h-12 text-lg font-medium"
+                  defaultValue={Number.parseInt(keypadInput, 10).toLocaleString()}
+                  onChange={handleDirectInputChange}
+                />
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray">₩</span>
+              </div>
+              {inputError && <p className="text-xs text-red-500 mt-1">{inputError}</p>}
+            </div>
+
             {/* 예상 수익 및 잔액 정보 */}
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="bg-green/10 p-3 rounded-lg">
@@ -769,61 +820,68 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   key={num}
                   variant="outline"
                   className="h-14 text-xl font-bold rounded-lg border-gray/20 text-darkblue dark:text-light hover:bg-gray/10"
-                  onClick={() => handleKeypadInput(num.toString())}
+                  onClick={() => setKeypadInput((num * 10000).toString())}
                 >
-                  {num}
+                  {num}만원
                 </Button>
               ))}
               <Button
                 variant="outline"
                 className="h-14 text-xl font-bold rounded-lg border-gray/20 text-darkblue dark:text-light hover:bg-gray/10"
-                onClick={() => handleKeypadInput("clear")}
+                onClick={() => setKeypadInput("0")}
               >
-                C
+                초기화
               </Button>
               <Button
                 variant="outline"
                 className="h-14 text-xl font-bold rounded-lg border-gray/20 text-darkblue dark:text-light hover:bg-gray/10"
-                onClick={() => handleKeypadInput("0")}
+                onClick={() => setKeypadInput("100000")}
               >
-                0
+                10만원
               </Button>
               <Button
                 variant="outline"
                 className="h-14 rounded-lg border-gray/20 text-darkblue dark:text-light hover:bg-gray/10"
-                onClick={() => handleKeypadInput("delete")}
+                onClick={() => setKeypadInput("1000000")}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="mx-auto"
-                >
-                  <path d="M12 2L2 12l10 10 10-10z" />
-                  <path d="M9 12h6" />
-                </svg>
+                100만원
               </Button>
             </div>
 
             {/* 빠른 선택 버튼 */}
             <div className="flex flex-wrap gap-2 mt-4">
-              {investmentRanges.map((range) => (
-                <Button
-                  key={range.value}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setKeypadInput(range.value.toString())}
-                  className="rounded-full flex-1"
-                >
-                  {range.label}
-                </Button>
-              ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setKeypadInput("500000")}
+                className="rounded-full flex-1"
+              >
+                50만원
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setKeypadInput("2000000")}
+                className="rounded-full flex-1"
+              >
+                200만원
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setKeypadInput("5000000")}
+                className="rounded-full flex-1"
+              >
+                500만원
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setKeypadInput("10000000")}
+                className="rounded-full flex-1"
+              >
+                1000만원
+              </Button>
             </div>
           </div>
 
@@ -840,6 +898,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
               type="button"
               className="flex-1 rounded-xl bg-green hover:bg-green/90 text-light"
               onClick={confirmKeypadInput}
+              disabled={!!inputError}
             >
               확인
             </Button>

@@ -14,6 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
+// 파일 상단에 webtoons 데이터를 import 합니다.
+import { getWebtoonById } from "@/data/webtoons"
 
 // 투자 성장 데이터 타입
 interface InvestmentGrowthData {
@@ -22,7 +24,7 @@ interface InvestmentGrowthData {
   profit: number
 }
 
-// 투자 데이터 타입
+// 투자 데이터 타입에 웹툰 정보 관련 필드를 추가합니다.
 interface Investment {
   id: string
   title: string
@@ -33,6 +35,9 @@ interface Investment {
   slug?: string
   date: string // 투자 날짜 추가
   isCompleted?: boolean // 완료된 프로젝트 여부
+  fundingPercentage?: number // 웹툰 모집 수치
+  currentRaised?: number // 현재 모인 금액
+  goalAmount?: number // 목표 금액
 }
 
 // 완료된 프로젝트 데이터 타입
@@ -405,6 +410,13 @@ export function AssetScreen() {
               slug: inv.slug || "",
               date: inv.date || getCurrentDate(),
               isCompleted: inv.progress === 100,
+            }
+            // 웹툰 데이터 연동
+            const webtoonData = getWebtoonById(inv.id)
+            if (webtoonData) {
+              investment.fundingPercentage = webtoonData.fundingPercentage
+              investment.currentRaised = webtoonData.currentRaised
+              investment.goalAmount = webtoonData.goalAmount
             }
             // 맵에 추가 (중복 방지)
             investmentMap.set(investment.id, investment)
@@ -927,9 +939,16 @@ export function AssetScreen() {
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <p className="text-xs text-gray">제작 진행도</p>
-                    <p className="text-xs text-darkblue dark:text-light">{investment.progress}%</p>
+                    <p className="text-xs text-darkblue dark:text-light">
+                      {investment.fundingPercentage || investment.progress}%
+                    </p>
                   </div>
-                  <Progress value={investment.progress} className="h-2 bg-gray/20" />
+                  <Progress value={investment.fundingPercentage || investment.progress} className="h-2 bg-gray/20" />
+                  {investment.currentRaised && investment.goalAmount && (
+                    <p className="text-xs text-gray mt-1">
+                      ₩{investment.currentRaised.toLocaleString()} / ₩{investment.goalAmount.toLocaleString()}
+                    </p>
+                  )}
                 </div>
 
                 {/* 투자 날짜 표시 */}
