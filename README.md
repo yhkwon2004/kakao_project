@@ -105,7 +105,7 @@
 
 > 각 폴더/파일의 역할을 주석으로 설명한 구조입니다.
 
-```plaintext
+\`\`\`plaintext
 kakao_project/
 ├── components/                            # UI 재사용 컴포넌트 모음
 │   ├── webtoon-detail.tsx                # 웹툰 상세페이지 뷰
@@ -150,7 +150,7 @@ kakao_project/
 ├── package.json                           # 의존성, 스크립트 정의
 ├── tsconfig.json                          # TypeScript 설정
 └── next.config.js                         # Next.js 설정
-```
+\`\`\`
 
 ## 🛠 사용 기술
 

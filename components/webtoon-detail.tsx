@@ -211,6 +211,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       localStorage.setItem("currentUser", JSON.stringify(user))
     }
 
+    // 현재 날짜 가져오기
+    const currentDate = new Date().toISOString().split("T")[0] // YYYY-MM-DD 형식
+
     // 투자 내역 저장
     const investmentsStr = localStorage.getItem("userInvestments")
     const investments = investmentsStr ? JSON.parse(investmentsStr) : []
@@ -220,8 +223,12 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       webtoonId: id,
       webtoonTitle: webtoon.title,
       amount: investmentAmount,
-      date: new Date().toISOString(),
+      date: currentDate, // 현재 날짜 추가
       expectedROI: webtoon.expectedROI,
+      progress: webtoon.progress || 0,
+      status: webtoon.status === "completed" ? "완료" : "제작 중",
+      slug: id,
+      id: id,
     }
 
     investments.push(newInvestment)
@@ -243,6 +250,41 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       localStorage.setItem("favoriteWebtoons", JSON.stringify(updatedFavorites))
     }
 
+    // 마일리지 적립 (투자 금액 1,000원당 10 마일리지)
+    const mileageToAdd = Math.floor(investmentAmount / 1000) * 10
+    if (mileageToAdd > 0) {
+      const mileageDataStr = localStorage.getItem("userMileage")
+      const mileageData = mileageDataStr
+        ? JSON.parse(mileageDataStr)
+        : {
+            totalMileage: 0,
+            history: [],
+            lastAttendanceDate: null,
+          }
+
+      // 마일리지 업데이트
+      const updatedMileageData = {
+        ...mileageData,
+        totalMileage: (mileageData.totalMileage || 0) + mileageToAdd,
+        history: [
+          {
+            date: currentDate,
+            amount: mileageToAdd,
+            type: "적립",
+            reason: `웹툰 투자: ${webtoon.title} (${investmentAmount.toLocaleString()}원)`,
+          },
+          ...(mileageData.history || []),
+        ],
+      }
+
+      // 로컬 스토리지에 저장
+      localStorage.setItem("userMileage", JSON.stringify(updatedMileageData))
+    }
+
+    // 자산 관리 페이지 데이터 업데이트를 위한 이벤트 발생
+    window.dispatchEvent(new Event("storage"))
+    window.dispatchEvent(new Event("userDataChanged"))
+
     const expectedReturn = Math.round(
       investmentAmount *
         (1 +
@@ -254,7 +296,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
     toast({
       title: "투자가 완료되었습니다",
-      description: `₩${investmentAmount.toLocaleString()} 투자 완료! 예상 수익: ₩${expectedReturn.toLocaleString()}`,
+      description: `₩${investmentAmount.toLocaleString()} 투자 완료! 예상 수익: ₩${expectedReturn.toLocaleString()}${
+        mileageToAdd > 0 ? ` (마일리지 ${mileageToAdd}P 적립)` : ""
+      }`,
       duration: 500, // 0.5초 후 메시지 제거
     })
   }
