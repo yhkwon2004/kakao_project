@@ -1,4 +1,4 @@
-import { getUserByEmail, updateUserTheme, resetGuestData } from "@/lib/db"
+import { getUserByEmail, updateUserTheme, resetGuestData, verifyPassword, updateUserPassword } from "@/lib/db"
 
 // User info type definition
 export interface User {
@@ -92,6 +92,30 @@ export const loginAsGuest = async () => {
     return true
   } catch (error) {
     console.error("Error logging in as guest:", error)
+    return false
+  }
+}
+
+// Check if user is a guest account
+export const isGuestAccount = (email: string): boolean => {
+  return email === "guest_social@guest.fake"
+}
+
+// Change user password
+export const changeUserPassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
+  const user = getUserFromStorage()
+  if (!user || !user.email) return false
+
+  try {
+    // Verify current password
+    const isPasswordValid = await verifyPassword(user.email, currentPassword)
+    if (!isPasswordValid) return false
+
+    // Update password
+    const success = await updateUserPassword(user.email, newPassword)
+    return success
+  } catch (error) {
+    console.error("Error changing password:", error)
     return false
   }
 }

@@ -74,6 +74,73 @@ export function LoginScreen() {
     }
   }
 
+  // handleSignup 함수 수정 - 신규 계정의 초기 잔액을 65만원으로 설정
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!name || !email || !password) {
+      toast({
+        title: "입력 오류",
+        description: "모든 필드를 입력해주세요.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Check if email already exists
+      const { data: existingUser } = await supabase.from("users").select("email").eq("email", email).single()
+
+      if (existingUser) {
+        toast({
+          title: "회원가입 실패",
+          description: "이미 사용 중인 이메일입니다.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Create new user with 650,000 initial balance
+      const { data: newUser, error: createError } = await supabase
+        .from("users")
+        .insert([
+          {
+            email,
+            name,
+            role: "user",
+            balance: 650000, // 65만원으로 초기 잔액 설정
+            theme: "light",
+          },
+        ])
+        .select()
+
+      if (createError) throw createError
+
+      // Save user to storage and auto-login
+      saveUserToStorage({
+        email,
+        name,
+        balance: 650000, // 로컬 스토리지에도 65만원으로 저장
+      })
+
+      toast({
+        title: "회원가입 성공",
+        description: "계정이 생성되었습니다.",
+        duration: 300, // 0.3초 후 사라짐
+      })
+
+      router.push("/home")
+    } catch (error) {
+      console.error("Signup error:", error)
+      toast({
+        title: "회원가입 실패",
+        description: "서버 오류가 발생했습니다. 다시 시도해주세요.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // handleLogin 함수 수정 - 일반 계정 로그인 시 종료된 프로젝트 데이터 제거
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -105,6 +172,7 @@ export function LoginScreen() {
         saveUserToStorage({
           email: guestData.email,
           name: guestData.name,
+          balance: guestData.balance,
         })
 
         toast({
@@ -127,10 +195,23 @@ export function LoginScreen() {
         return
       }
 
+      // 일반 계정 로그인 시 종료된 프로젝트 데이터 제거
+      if (email !== "guest_social@guest.fake") {
+        localStorage.removeItem("completedProjects")
+
+        // 투자 데이터에서도 종료된 프로젝트 관련 데이터 제거
+        const existingInvestments = JSON.parse(localStorage.getItem("userInvestments") || "[]")
+        const defaultCompletedProjectIds = ["bad-secretary", "blood-sword-family-hunting-dog"]
+        const filteredInvestments = existingInvestments.filter((inv) => !defaultCompletedProjectIds.includes(inv.id))
+
+        localStorage.setItem("userInvestments", JSON.stringify(filteredInvestments))
+      }
+
       // Save user to storage
       saveUserToStorage({
         email: userData.email,
         name: userData.name,
+        balance: userData.balance,
       })
 
       toast({
@@ -150,70 +231,7 @@ export function LoginScreen() {
     }
   }
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!name || !email || !password) {
-      toast({
-        title: "입력 오류",
-        description: "모든 필드를 입력해주세요.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      // Check if email already exists
-      const { data: existingUser } = await supabase.from("users").select("email").eq("email", email).single()
-
-      if (existingUser) {
-        toast({
-          title: "회원가입 실패",
-          description: "이미 사용 중인 이메일입니다.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      // Create new user
-      const { data: newUser, error: createError } = await supabase
-        .from("users")
-        .insert([
-          {
-            email,
-            name,
-            role: "user",
-            balance: 150000,
-            theme: "light",
-          },
-        ])
-        .select()
-
-      if (createError) throw createError
-
-      // Save user to storage and auto-login
-      saveUserToStorage({
-        email,
-        name,
-      })
-
-      toast({
-        title: "회원가입 성공",
-        description: "계정이 생성되었습니다.",
-        duration: 300, // 0.3초 후 사라짐
-      })
-
-      router.push("/home")
-    } catch (error) {
-      console.error("Signup error:", error)
-      toast({
-        title: "회원가입 실패",
-        description: "서버 오류가 발생했습니다. 다시 시도해주세요.",
-        variant: "destructive",
-      })
-    }
-  }
-
+  // handleSocialLogin 함수 수정 - 소셜 로그인도 게스트 계정으로 처리
   const handleSocialLogin = async (platform: string) => {
     try {
       // Reset guest data
@@ -232,6 +250,7 @@ export function LoginScreen() {
       saveUserToStorage({
         email: guestData.email,
         name: guestData.name,
+        balance: guestData.balance,
       })
 
       toast({

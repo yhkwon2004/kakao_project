@@ -8,10 +8,26 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ChevronLeft, User, Camera, Mail, Lock, LogOut } from "lucide-react"
+import { ChevronLeft, User, Camera, Mail, Lock, LogOut, AlertCircle } from "lucide-react"
 import { Logo } from "@/components/logo"
-import { getUserFromStorage, clearUserFromStorage, updateUserProfile, saveImageToStorage } from "@/lib/auth"
+import {
+  getUserFromStorage,
+  clearUserFromStorage,
+  updateUserProfile,
+  saveImageToStorage,
+  changeUserPassword,
+  isGuestAccount,
+} from "@/lib/auth"
 import { useToast } from "@/components/ui/use-toast"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog"
 
 export function AccountSettingsScreen() {
   const router = useRouter()
@@ -19,8 +35,13 @@ export function AccountSettingsScreen() {
   const [userName, setUserName] = useState("")
   const [email, setEmail] = useState("")
   const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [isGuest, setIsGuest] = useState(false)
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false)
+  const [passwordError, setPasswordError] = useState("")
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
 
   // 사용자 정보 불러오기
   useEffect(() => {
@@ -31,6 +52,7 @@ export function AccountSettingsScreen() {
       if (user.profileImage) {
         setProfileImage(user.profileImage)
       }
+      setIsGuest(isGuestAccount(user.email))
     } else {
       router.push("/")
     }
@@ -42,15 +64,6 @@ export function AccountSettingsScreen() {
   }
 
   const handleSaveChanges = () => {
-    if (newPassword && newPassword !== confirmPassword) {
-      toast({
-        title: "비밀번호 오류",
-        description: "비밀번호가 일치하지 않습니다.",
-        variant: "destructive",
-      })
-      return
-    }
-
     // 프로필 정보 업데이트
     updateUserProfile(userName, profileImage || undefined)
 
@@ -66,6 +79,66 @@ export function AccountSettingsScreen() {
       const imageUrl = URL.createObjectURL(file)
       setProfileImage(imageUrl)
       saveImageToStorage("user-profile", imageUrl)
+    }
+  }
+
+  const handlePasswordChangeClick = () => {
+    if (isGuest) {
+      toast({
+        title: "비밀번호 변경 불가",
+        description: "게스트 계정은 비밀번호를 변경할 수 없습니다.",
+        variant: "destructive",
+      })
+      return
+    }
+    setShowPasswordDialog(true)
+  }
+
+  const handlePasswordChange = async () => {
+    setPasswordError("")
+
+    if (!currentPassword) {
+      setPasswordError("현재 비밀번호를 입력해주세요.")
+      return
+    }
+
+    if (!newPassword) {
+      setPasswordError("새 비밀번호를 입력해주세요.")
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("새 비밀번호가 일치하지 않습니다.")
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError("비밀번호는 최소 6자 이상이어야 합니다.")
+      return
+    }
+
+    setIsChangingPassword(true)
+
+    try {
+      const success = await changeUserPassword(currentPassword, newPassword)
+
+      if (success) {
+        toast({
+          title: "비밀번호 변경 완료",
+          description: "비밀번호가 성공적으로 변경되었습니다.",
+        })
+        setShowPasswordDialog(false)
+        setCurrentPassword("")
+        setNewPassword("")
+        setConfirmPassword("")
+      } else {
+        setPasswordError("현재 비밀번호가 일치하지 않습니다.")
+      }
+    } catch (error) {
+      setPasswordError("비밀번호 변경 중 오류가 발생했습니다.")
+      console.error("Password change error:", error)
+    } finally {
+      setIsChangingPassword(false)
     }
   }
 
@@ -161,21 +234,20 @@ export function AccountSettingsScreen() {
                 <Lock className="h-4 w-4 text-gray" />
                 비밀번호 변경
               </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="새 비밀번호"
-                className="rounded-xl mb-2 border-gray/20 bg-light dark:bg-darkblue/20"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-              <Input
-                type="password"
-                placeholder="비밀번호 확인"
-                className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/20"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
+              {isGuest ? (
+                <div className="flex items-center gap-2 p-2 rounded-xl bg-gray/10 text-gray">
+                  <AlertCircle className="h-4 w-4 text-gray" />
+                  <p className="text-sm">게스트 계정은 비밀번호를 변경할 수 없습니다</p>
+                </div>
+              ) : (
+                <Button
+                  onClick={handlePasswordChangeClick}
+                  className="w-full rounded-xl border-green text-green hover:bg-green/10"
+                  variant="outline"
+                >
+                  비밀번호 변경하기
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -197,6 +269,76 @@ export function AccountSettingsScreen() {
           </Button>
         </div>
       </div>
+
+      {/* 비밀번호 변경 다이얼로그 */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-md rounded-xl bg-light dark:bg-darkblue/90">
+          <DialogHeader>
+            <DialogTitle className="text-darkblue dark:text-light">비밀번호 변경</DialogTitle>
+            <DialogDescription className="text-gray">
+              비밀번호를 변경하려면 현재 비밀번호를 입력한 후 새 비밀번호를 설정하세요.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="current-password" className="text-sm font-medium text-darkblue dark:text-light">
+                현재 비밀번호
+              </label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="new-password" className="text-sm font-medium text-darkblue dark:text-light">
+                새 비밀번호
+              </label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="confirm-password" className="text-sm font-medium text-darkblue dark:text-light">
+                비밀번호 확인
+              </label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/20"
+              />
+            </div>
+            {passwordError && (
+              <div className="text-red-500 text-sm flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                {passwordError}
+              </div>
+            )}
+          </div>
+          <DialogFooter className="sm:justify-between">
+            <DialogClose asChild>
+              <Button variant="outline" className="rounded-xl border-gray/20 text-gray">
+                취소
+              </Button>
+            </DialogClose>
+            <Button
+              onClick={handlePasswordChange}
+              className="rounded-xl bg-yellow hover:bg-yellow/90 text-dark font-medium"
+              disabled={isChangingPassword}
+            >
+              {isChangingPassword ? "변경 중..." : "비밀번호 변경"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

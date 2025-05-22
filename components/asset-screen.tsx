@@ -6,10 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PieChart, TrendingUp, ChevronRight } from "lucide-react"
+import { PieChart, TrendingUp, ChevronRight, Calendar } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { useState, useEffect } from "react"
 import { getUserFromStorage } from "@/lib/auth"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { format } from "date-fns"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 
 // 투자 성장 데이터 타입
 interface InvestmentGrowthData {
@@ -28,6 +32,121 @@ interface Investment {
   status: string
   slug?: string
   date: string // 투자 날짜 추가
+  isCompleted?: boolean // 완료된 프로젝트 여부
+}
+
+// 완료된 프로젝트 데이터 타입
+interface CompletedProject {
+  id: string
+  title: string
+  genre: string
+  investedAmount: number
+  returnAmount: number
+  roi: number
+  completionDate: string
+  investors: number
+  hasFeedback: boolean
+  thumbnail: string
+  slug: string
+  feedback: string
+  adaptationInterest: string
+  investmentDate: string
+}
+
+// 기본 종료된 프로젝트 데이터
+const defaultCompletedProjects: CompletedProject[] = [
+  {
+    id: "bad-secretary",
+    title: "나쁜 비서 [19세 완전판]",
+    genre: "로맨스, 드라마",
+    investedAmount: 3400000,
+    returnAmount: 3910000,
+    roi: 15,
+    completionDate: "2023-04-15",
+    investors: 342,
+    hasFeedback: false,
+    thumbnail: "/webtoons/나쁜-비서.png",
+    slug: "bad-secretary",
+    feedback: "",
+    adaptationInterest: "",
+    investmentDate: "2023-04-01",
+  },
+  {
+    id: "blood-sword-family-hunting-dog",
+    title: "철혈검가 사냥개의 회귀",
+    genre: "액션, 판타지",
+    investedAmount: 2800000,
+    returnAmount: 3360000,
+    roi: 20,
+    completionDate: "2023-06-22",
+    investors: 256,
+    hasFeedback: true,
+    thumbnail: "/webtoons/검술명가-막내아들.png",
+    slug: "blood-sword-family-hunting-dog",
+    feedback:
+      "캐릭터의 성장 과정과 액션 장면이 인상적이었습니다. 특히 주인공의 복수 스토리가 드라마틱하게 전개되어 몰입감이 뛰어났습니다. 드라마화된다면 액션 장면에 중점을 두면 좋을 것 같습니다.",
+    adaptationInterest: "high",
+    investmentDate: "2023-05-20",
+  },
+]
+
+// 종료된 프로젝트 데이터 초기화 함수를 수정하여 게스트 계정만 종료된 프로젝트를 가지도록 변경
+const initializeCompletedProjects = () => {
+  // 현재 로그인한 사용자 정보 가져오기
+  const user = getUserFromStorage()
+
+  // 게스트 계정인지 확인
+  const isGuest = user?.email === "guest_social@guest.fake"
+
+  // 로컬 스토리지에 종료된 프로젝트 데이터가 없으면 기본 데이터 저장 (게스트 계정만)
+  const storedProjects = localStorage.getItem("completedProjects")
+  if (!storedProjects && isGuest) {
+    localStorage.setItem("completedProjects", JSON.stringify(defaultCompletedProjects))
+    console.log("게스트 계정용 종료된 프로젝트 데이터 초기화 완료")
+
+    // 자산 관리와 연결을 위해 완료된 투자 데이터도 저장
+    const completedInvestments = defaultCompletedProjects.map((project) => ({
+      id: project.id,
+      title: project.title,
+      amount: project.investedAmount,
+      progress: 100, // 완료됨
+      expectedROI: project.roi,
+      status: "완료됨",
+      slug: project.slug,
+      date: project.investmentDate,
+    }))
+
+    // 기존 투자 데이터와 병합
+    const existingInvestments = JSON.parse(localStorage.getItem("userInvestments") || "[]")
+    const updatedInvestments = [...existingInvestments]
+
+    // 중복 방지를 위해 ID 체크 후 추가
+    completedInvestments.forEach((newInv) => {
+      if (!updatedInvestments.some((inv) => inv.id === newInv.id)) {
+        updatedInvestments.push(newInv)
+      }
+    })
+
+    localStorage.setItem("userInvestments", JSON.stringify(updatedInvestments))
+
+    // 데이터 변경 이벤트 발생
+    window.dispatchEvent(new Event("userDataChanged"))
+  } else if (!isGuest && storedProjects) {
+    // 일반 계정인데 종료된 프로젝트 데이터가 있는 경우 (이전에 게스트 계정으로 로그인했던 경우)
+    // 종료된 프로젝트 데이터 초기화
+    localStorage.removeItem("completedProjects")
+
+    // 투자 데이터에서 종료된 프로젝트 관련 데이터 제거
+    const existingInvestments = JSON.parse(localStorage.getItem("userInvestments") || "[]")
+    const filteredInvestments = existingInvestments.filter(
+      (inv) => !defaultCompletedProjects.some((project) => project.id === inv.id),
+    )
+
+    localStorage.setItem("userInvestments", JSON.stringify(filteredInvestments))
+
+    // 데이터 변경 이벤트 발생
+    window.dispatchEvent(new Event("userDataChanged"))
+  }
 }
 
 export function AssetScreen() {
@@ -39,6 +158,11 @@ export function AssetScreen() {
   const [investmentGrowthData, setInvestmentGrowthData] = useState<InvestmentGrowthData[]>([])
   const [userName, setUserName] = useState("사용자")
   const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [dateRange, setDateRange] = useState<"week" | "month" | "3months" | "6months" | "year" | "all" | "custom">(
+    "all",
+  )
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
 
   // 자산 요약 데이터
   const [assetSummary, setAssetSummary] = useState({
@@ -54,23 +178,187 @@ export function AssetScreen() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
   }
 
-  // 날짜 형식 변환 (YYYY-MM-DD -> MM월 DD일)
+  // 날짜 형식 변환 (YYYY-MM-DD -> YYYY년 MM월 DD일)
   const formatDateToKorean = (dateStr: string) => {
     const date = new Date(dateStr)
-    return `${date.getMonth() + 1}월 ${date.getDate()}일`
+    return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`
   }
 
-  // 최근 5개의 날짜 배열 생성 (오늘 포함)
-  const getRecentDates = (days = 5) => {
+  // 그래프용 날짜 형식 변환
+  const formatDateForGraph = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(date.getDate()).padStart(2, "0")}`
+  }
+
+  // 날짜 범위에 따른 시작일 계산
+  const getStartDateByRange = (range: string): Date => {
+    const today = new Date()
+    const startDate = new Date(today)
+
+    switch (range) {
+      case "week":
+        startDate.setDate(today.getDate() - 7)
+        break
+      case "month":
+        startDate.setMonth(today.getMonth() - 1)
+        break
+      case "3months":
+        startDate.setMonth(today.getMonth() - 3)
+        break
+      case "6months":
+        startDate.setMonth(today.getMonth() - 6)
+        break
+      case "year":
+        startDate.setFullYear(today.getFullYear() - 1)
+        break
+      case "all":
+      default:
+        startDate.setFullYear(2022, 0, 1) // 2022년 1월 1일부터
+        break
+    }
+
+    return startDate
+  }
+
+  // 날짜 범위에 따른 데이터 포인트 수 계산
+  const getDataPointsByRange = (range: string): number => {
+    switch (range) {
+      case "week":
+        return 7 // 일별 데이터
+      case "month":
+        return 30 // 일별 데이터
+      case "3months":
+        return 12 // 주별 데이터
+      case "6months":
+        return 12 // 2주별 데이터
+      case "year":
+        return 12 // 월별 데이터
+      case "all":
+      default:
+        return 12 // 월별 또는 분기별 데이터
+    }
+  }
+
+  // 날짜 범위 변경 처리
+  const handleDateRangeChange = (value: string) => {
+    setDateRange(value as any)
+
+    if (value === "custom") {
+      // 커스텀 범위는 별도 처리
+      return
+    }
+
+    // 선택된 범위에 따라 데이터 다시 생성
+    const filteredInvestments = investments.filter((inv) => {
+      if (value === "all") return true
+
+      const invDate = new Date(inv.date)
+      const startDate = getStartDateByRange(value)
+      return invDate >= startDate
+    })
+
+    generateGrowthData(filteredInvestments, value)
+  }
+
+  // 커스텀 날짜 범위 적용
+  const applyCustomDateRange = () => {
+    if (!startDate || !endDate) return
+
+    const filteredInvestments = investments.filter((inv) => {
+      const invDate = new Date(inv.date)
+      return invDate >= startDate && invDate <= endDate
+    })
+
+    generateGrowthData(filteredInvestments, "custom")
+  }
+
+  // 최근 날짜 배열 생성
+  const getDatePoints = (range: string, count: number): { full: string; display: string }[] => {
     const dates = []
     const today = new Date()
+    const startDate = getStartDateByRange(range)
 
-    for (let i = days - 1; i >= 0; i--) {
+    // 커스텀 범위인 경우
+    if (range === "custom" && startDate && endDate) {
+      const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      const interval = Math.max(1, Math.floor(diffDays / (count - 1)))
+
+      for (let i = 0; i < count; i++) {
+        const date = new Date(startDate)
+        date.setDate(startDate.getDate() + i * interval)
+        if (date > endDate) break
+
+        const fullDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+        dates.push({
+          full: fullDate,
+          display: `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(date.getDate()).padStart(2, "0")}`,
+        })
+      }
+
+      return dates
+    }
+
+    // 일반 범위
+    let interval = 1 // 기본 간격 (일)
+
+    switch (range) {
+      case "week":
+        interval = 1 // 일별
+        break
+      case "month":
+        interval = 3 // 3일 간격
+        break
+      case "3months":
+        interval = 7 // 주별
+        break
+      case "6months":
+        interval = 15 // 2주별
+        break
+      case "year":
+        interval = 30 // 월별
+        break
+      case "all":
+        // 전체 기간은 월별로 표시
+        const months = []
+        const startYear = 2022
+        const endYear = today.getFullYear()
+
+        for (let year = startYear; year <= endYear; year++) {
+          const monthStart = year === startYear ? 0 : 0
+          const monthEnd = year === endYear ? today.getMonth() : 11
+
+          for (let month = monthStart; month <= monthEnd; month++) {
+            const date = new Date(year, month, 1)
+            months.push({
+              full: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`,
+              display: `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}`,
+            })
+          }
+        }
+
+        // 최대 12개 포인트만 표시
+        const step = Math.max(1, Math.floor(months.length / 12))
+        const filteredMonths = []
+        for (let i = 0; i < months.length; i += step) {
+          filteredMonths.push(months[i])
+        }
+
+        return filteredMonths.slice(0, 12)
+    }
+
+    // 지정된 간격으로 날짜 생성
+    for (let i = count - 1; i >= 0; i--) {
       const date = new Date(today)
-      date.setDate(today.getDate() - i)
+      date.setDate(today.getDate() - i * interval)
+
+      // 시작일보다 이전 날짜는 제외
+      if (date < startDate) continue
+
+      const fullDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
       dates.push({
-        full: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`,
-        display: `${date.getMonth() + 1}/${date.getDate()}`,
+        full: fullDate,
+        display: `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}.${String(date.getDate()).padStart(2, "0")}`,
       })
     }
 
@@ -79,6 +367,9 @@ export function AssetScreen() {
 
   // 로컬 스토리지에서 투자 데이터 로드 및 실시간 업데이트
   useEffect(() => {
+    // 종료된 프로젝트 데이터 초기화 (없는 경우에만)
+    initializeCompletedProjects()
+
     // 사용자 정보 로드
     const user = getUserFromStorage()
     if (user) {
@@ -93,38 +384,79 @@ export function AssetScreen() {
 
     // 투자 내역 가져오기
     const loadInvestments = () => {
+      // 모든 투자 데이터를 저장할 맵 (ID를 키로 사용하여 중복 방지)
+      const investmentMap = new Map<string, Investment>()
+
+      // 1. 일반 투자 내역 가져오기
       const storedInvestments = localStorage.getItem("userInvestments")
       if (storedInvestments) {
         try {
           const parsedInvestments = JSON.parse(storedInvestments)
-
           // 날짜 정보가 없는 경우 현재 날짜 추가
-          const formattedInvestments = parsedInvestments.map((inv: any) => ({
-            ...inv,
-            date: inv.date || getCurrentDate(),
-          }))
-
-          setInvestments(formattedInvestments)
-
-          // 투자 요약 계산
-          calculateAssetSummary(formattedInvestments)
-
-          // 투자 성장 데이터 생성
-          generateGrowthData(formattedInvestments)
+          parsedInvestments.forEach((inv: any) => {
+            const investment: Investment = {
+              id: inv.id || `inv-${Math.random().toString(36).substr(2, 9)}`,
+              title: inv.title || "투자 프로젝트",
+              amount: inv.amount || 0,
+              progress: inv.progress || 0,
+              expectedROI: inv.expectedROI || 0,
+              status: inv.status || "진행중",
+              slug: inv.slug || "",
+              date: inv.date || getCurrentDate(),
+              isCompleted: inv.progress === 100,
+            }
+            // 맵에 추가 (중복 방지)
+            investmentMap.set(investment.id, investment)
+          })
         } catch (error) {
           console.error("투자 데이터 파싱 오류:", error)
-          setInvestments([])
         }
-      } else {
-        setInvestments([])
-        setAssetSummary({
-          totalInvested: 0,
-          totalProjects: 0,
-          expectedReturns: 0,
-          averageROI: 0,
-        })
-        generateGrowthData([])
       }
+
+      // 2. 종료된 프로젝트 데이터 가져오기
+      const completedProjects = localStorage.getItem("completedProjects")
+      if (completedProjects) {
+        try {
+          const parsedCompletedProjects = JSON.parse(completedProjects)
+
+          parsedCompletedProjects.forEach((project: any) => {
+            const projectId = project.id || `completed-${Math.random().toString(36).substr(2, 9)}`
+
+            // 이미 맵에 있는지 확인 (중복 방지)
+            if (!investmentMap.has(projectId)) {
+              const completedInvestment: Investment = {
+                id: projectId,
+                title: project.title || "완료된 프로젝트",
+                amount: project.investedAmount || 0,
+                progress: 100, // 완료된 프로젝트는 100%
+                expectedROI: project.roi || 15,
+                status: "완료됨",
+                slug: project.slug || "",
+                date: project.investmentDate || "2023-04-01",
+                isCompleted: true,
+              }
+              // 맵에 추가
+              investmentMap.set(projectId, completedInvestment)
+            }
+          })
+        } catch (error) {
+          console.error("종료된 프로젝트 데이터 파싱 오류:", error)
+        }
+      }
+
+      // 맵의 값들을 배열로 변환
+      const mergedInvestments = Array.from(investmentMap.values())
+
+      // 투자 날짜 기준으로 정렬 (최신순)
+      mergedInvestments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+      setInvestments(mergedInvestments)
+
+      // 투자 요약 계산
+      calculateAssetSummary(mergedInvestments)
+
+      // 투자 성장 데이터 생성
+      generateGrowthData(mergedInvestments, dateRange)
     }
 
     // 초기 로드
@@ -132,7 +464,7 @@ export function AssetScreen() {
 
     // 로컬 스토리지 변경 감지를 위한 이벤트 리스너
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "userInvestments" || e.key === "currentUser") {
+      if (e.key === "userInvestments" || e.key === "currentUser" || e.key === "completedProjects") {
         loadInvestments()
       }
     }
@@ -154,12 +486,12 @@ export function AssetScreen() {
       window.removeEventListener("userDataChanged", handleCustomEvent)
       clearInterval(intervalId)
     }
-  }, [])
+  }, [dateRange])
 
   // 투자 요약 계산
   const calculateAssetSummary = (investmentData: Investment[]) => {
-    const totalInvested = investmentData.reduce((sum, inv) => sum + inv.amount, 0)
-    const totalROI = investmentData.reduce((sum, inv) => sum + inv.expectedROI, 0)
+    const totalInvested = investmentData.reduce((sum, inv) => sum + (inv.amount || 0), 0)
+    const totalROI = investmentData.reduce((sum, inv) => sum + (inv.expectedROI || 0), 0)
     const avgROI = investmentData.length > 0 ? totalROI / investmentData.length : 0
     const expectedReturns = totalInvested * (1 + avgROI / 100)
 
@@ -173,21 +505,24 @@ export function AssetScreen() {
   }
 
   // 투자 성장 데이터 생성 (날짜 기반)
-  const generateGrowthData = (investmentData: Investment[]) => {
-    // 최근 5일 날짜 가져오기
-    const recentDates = getRecentDates(5)
+  const generateGrowthData = (investmentData: Investment[], range: string) => {
+    // 데이터 포인트 수 결정
+    const pointCount = getDataPointsByRange(range)
+
+    // 날짜 포인트 생성
+    const datePoints = getDatePoints(range, pointCount)
     const growthData: InvestmentGrowthData[] = []
 
     // 각 날짜별 투자 금액 계산
-    recentDates.forEach((dateObj) => {
+    datePoints.forEach((dateObj) => {
       // 해당 날짜 이전 또는 당일 투자 필터링
       const relevantInvestments = investmentData.filter((inv) => inv.date <= dateObj.full)
 
       // 해당 날짜까지의 총 투자 금액
-      const totalAmount = relevantInvestments.reduce((sum, inv) => sum + inv.amount, 0)
+      const totalAmount = relevantInvestments.reduce((sum, inv) => sum + (inv.amount || 0), 0)
 
       // 수익 계산 (날짜가 지날수록 수익률 증가 시뮬레이션)
-      const daysFromStart = recentDates.findIndex((d) => d.full === dateObj.full)
+      const daysFromStart = datePoints.findIndex((d) => d.full === dateObj.full)
       const profitRate = daysFromStart * 0.01 // 날짜가 지날수록 1%씩 수익률 증가
       const profit = Math.round(totalAmount * profitRate)
 
@@ -244,7 +579,7 @@ export function AssetScreen() {
                 .join(" ")}
               fill="none"
               stroke="#45858C"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -255,6 +590,8 @@ export function AssetScreen() {
                 cy={`${100 - (d.amount / graphScale) * 100}%`}
                 r="4"
                 fill="#45858C"
+                stroke="#FFFFFF"
+                strokeWidth="1"
               />
             ))}
           </svg>
@@ -270,7 +607,7 @@ export function AssetScreen() {
                 .join(" ")}
               fill="none"
               stroke="#F9DF52"
-              strokeWidth="2"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -283,15 +620,21 @@ export function AssetScreen() {
                   cy={`${100 - (totalHeight / graphScale) * 100}%`}
                   r="4"
                   fill="#F9DF52"
+                  stroke="#FFFFFF"
+                  strokeWidth="1"
                 />
               )
             })}
           </svg>
 
           {/* X축 레이블 */}
-          <div className="absolute bottom-0 left-0 right-0 flex justify-between">
+          <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-gray">
             {investmentGrowthData.map((data, index) => (
-              <span key={index} className="text-xs text-gray">
+              <span
+                key={index}
+                className="transform -rotate-45 origin-top-left translate-y-2"
+                style={{ marginLeft: index === 0 ? "0" : "-8px" }}
+              >
                 {data.date}
               </span>
             ))}
@@ -312,7 +655,7 @@ export function AssetScreen() {
 
         {/* 현재 날짜 표시 */}
         <div className="absolute top-2 left-14 bg-green/10 text-green px-2 py-1 rounded-full text-xs">
-          {new Date().toLocaleDateString("ko-KR", { month: "long", day: "numeric" })} 기준
+          {new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })} 기준
         </div>
       </div>
     )
@@ -322,7 +665,7 @@ export function AssetScreen() {
   const getFilteredInvestments = () => {
     if (activeTab === "all") return investments
     if (activeTab === "active") return investments.filter((inv) => inv.progress < 100)
-    if (activeTab === "completed") return investments.filter((inv) => inv.progress === 100)
+    if (activeTab === "completed") return investments.filter((inv) => inv.progress === 100 || inv.isCompleted)
     return investments
   }
 
@@ -356,7 +699,7 @@ export function AssetScreen() {
               <div>
                 <p className="text-sm text-gray">총 투자액</p>
                 <p className="text-xl font-bold text-darkblue dark:text-light">
-                  ₩{assetSummary.totalInvested.toLocaleString()}
+                  ₩{(assetSummary.totalInvested || 0).toLocaleString()}
                 </p>
               </div>
               <div>
@@ -366,7 +709,7 @@ export function AssetScreen() {
               <div>
                 <p className="text-sm text-gray">예상 수익</p>
                 <p className="text-xl font-bold text-profit">
-                  ₩{Math.round(assetSummary.expectedReturns).toLocaleString()}
+                  ₩{Math.round(assetSummary.expectedReturns || 0).toLocaleString()}
                 </p>
               </div>
               <div>
@@ -380,9 +723,82 @@ export function AssetScreen() {
         {/* 투자 성장 그래프 */}
         <Card className="rounded-xl mb-6 border-gray/20 bg-light dark:bg-darkblue/30">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="h-5 w-5 text-profit" />
-              <h3 className="font-bold text-darkblue dark:text-light">투자 성장 추이</h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-profit" />
+                <h3 className="font-bold text-darkblue dark:text-light">투자 성장 추이</h3>
+              </div>
+
+              {/* 기간 필터 */}
+              <div className="flex items-center gap-2">
+                <Select value={dateRange} onValueChange={handleDateRangeChange}>
+                  <SelectTrigger className="w-[140px] h-8 text-xs border-gray/20 bg-light dark:bg-darkblue/50">
+                    <SelectValue placeholder="기간 선택" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-light dark:bg-darkblue">
+                    <SelectItem value="week">최근 1주일</SelectItem>
+                    <SelectItem value="month">최근 1개월</SelectItem>
+                    <SelectItem value="3months">최근 3개월</SelectItem>
+                    <SelectItem value="6months">최근 6개월</SelectItem>
+                    <SelectItem value="year">최근 1년</SelectItem>
+                    <SelectItem value="all">전체 기간</SelectItem>
+                    <SelectItem value="custom">기간 직접 설정</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {dateRange === "custom" && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs border-gray/20 bg-light dark:bg-darkblue/50"
+                      >
+                        <Calendar className="h-3.5 w-3.5 mr-1" />
+                        {startDate && endDate
+                          ? `${format(startDate, "yy.MM.dd")} - ${format(endDate, "yy.MM.dd")}`
+                          : "기간 설정"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-light dark:bg-darkblue" align="end">
+                      <div className="p-3 border-b border-gray/10">
+                        <div className="space-y-1">
+                          <h4 className="text-sm font-medium text-darkblue dark:text-light">기간 설정</h4>
+                          <p className="text-xs text-gray">시작일과 종료일을 선택하세요</p>
+                        </div>
+                      </div>
+                      <div className="p-3 flex flex-col gap-2">
+                        <div>
+                          <p className="text-xs text-gray mb-1">시작일</p>
+                          <CalendarComponent
+                            mode="single"
+                            selected={startDate}
+                            onSelect={setStartDate}
+                            className="border rounded-md p-2"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray mb-1">종료일</p>
+                          <CalendarComponent
+                            mode="single"
+                            selected={endDate}
+                            onSelect={setEndDate}
+                            disabled={(date) => date < (startDate || new Date(2022, 0, 1))}
+                            className="border rounded-md p-2"
+                          />
+                        </div>
+                        <Button
+                          onClick={applyCustomDateRange}
+                          className="mt-2 bg-yellow hover:bg-yellow/90 text-dark"
+                          disabled={!startDate || !endDate}
+                        >
+                          적용하기
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
             </div>
             {renderInvestmentGrowthGraph()}
           </CardContent>
@@ -434,42 +850,42 @@ export function AssetScreen() {
             getFilteredInvestments().map((investment) => (
               <Card
                 key={investment.id}
-                className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow border-gray/20 bg-light dark:bg-darkblue/30"
+                className="rounded-xl overflow-hidden cursor-pointer hover:shadow-md transition-shadow border-gray/20 bg-light dark:bg-darkblue/30 p-4"
                 onClick={() => router.push(`/webtoon/${investment.slug || investment.id}`)}
               >
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-bold text-darkblue dark:text-light">{investment.title}</h3>
-                      <p className="text-xs text-gray">{investment.status}</p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-gray" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-2">
-                    <div>
-                      <p className="text-xs text-gray">투자 금액</p>
-                      <p className="font-medium text-darkblue dark:text-light">₩{investment.amount.toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray">예상 수익률</p>
-                      <p className="font-medium text-profit">{investment.expectedROI}%</p>
-                    </div>
-                  </div>
-
+                <div className="flex justify-between items-start mb-2">
                   <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <p className="text-xs text-gray">제작 진행도</p>
-                      <p className="text-xs text-darkblue dark:text-light">{investment.progress}%</p>
-                    </div>
-                    <Progress value={investment.progress} className="h-2 bg-gray/20" />
+                    <h3 className="font-bold text-darkblue dark:text-light">{investment.title}</h3>
+                    <p className="text-xs text-gray">{investment.status}</p>
                   </div>
+                  <ChevronRight className="h-5 w-5 text-gray" />
+                </div>
 
-                  {/* 투자 날짜 표시 */}
-                  <div className="mt-2">
-                    <p className="text-xs text-gray">투자일: {formatDateToKorean(investment.date)}</p>
+                <div className="grid grid-cols-2 gap-4 mb-2">
+                  <div>
+                    <p className="text-xs text-gray">투자 금액</p>
+                    <p className="font-medium text-darkblue dark:text-light">
+                      ₩{(investment.amount || 0).toLocaleString()}
+                    </p>
                   </div>
-                </CardContent>
+                  <div>
+                    <p className="text-xs text-gray">예상 수익률</p>
+                    <p className="font-medium text-profit">{investment.expectedROI}%</p>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-xs text-gray">제작 진행도</p>
+                    <p className="text-xs text-darkblue dark:text-light">{investment.progress}%</p>
+                  </div>
+                  <Progress value={investment.progress} className="h-2 bg-gray/20" />
+                </div>
+
+                {/* 투자 날짜 표시 */}
+                <div className="mt-2">
+                  <p className="text-xs text-gray">투자일: {formatDateToKorean(investment.date)}</p>
+                </div>
               </Card>
             ))
           ) : (
