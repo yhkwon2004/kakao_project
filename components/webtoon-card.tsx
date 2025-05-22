@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 // 웹툰 카드 컴포넌트
 // 이 컴포넌트는 메인 페이지에서 웹툰 목록을 표시하는 데 사용됩니다.
 // 클릭 시 해당 웹툰의 상세 페이지로 이동합니다.
@@ -7,6 +9,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
 import type { Webtoon } from "@/data/webtoons"
+import { useState, useEffect } from "react"
 
 interface WebtoonCardProps {
   webtoon: Webtoon
@@ -21,15 +24,64 @@ export function WebtoonCard({ webtoon, onClick }: WebtoonCardProps) {
   // fundingPercentage가 100%이거나 status가 'completed'인 경우 완료된 웹툰으로 간주
   const isCompleted = status === "completed" || fundingPercentage === 100
 
+  // 클릭 애니메이션을 위한 상태
+  const [isClicked, setIsClicked] = useState(false)
+  const [rippleStyle, setRippleStyle] = useState<React.CSSProperties>({})
+  const [showRipple, setShowRipple] = useState(false)
+
+  // 클릭 효과가 끝난 후 상태 초기화
+  useEffect(() => {
+    if (isClicked) {
+      const timer = setTimeout(() => {
+        setIsClicked(false)
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [isClicked])
+
+  // 리플 효과가 끝난 후 상태 초기화
+  useEffect(() => {
+    if (showRipple) {
+      const timer = setTimeout(() => {
+        setShowRipple(false)
+      }, 600)
+      return () => clearTimeout(timer)
+    }
+  }, [showRipple])
+
+  // 클릭 핸들러
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // 클릭 위치 계산
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+
+    // 리플 스타일 설정
+    setRippleStyle({
+      left: `${x}px`,
+      top: `${y}px`,
+    })
+
+    // 애니메이션 상태 활성화
+    setIsClicked(true)
+    setShowRipple(true)
+
+    // 원래 onClick 핸들러 호출
+    if (onClick) onClick()
+  }
+
   return (
-    <div className="cursor-pointer" onClick={onClick}>
+    <div
+      className={`cursor-pointer group relative ${isClicked ? "scale-95" : "scale-100"} transition-transform duration-300`}
+      onClick={handleClick}
+    >
       <Card
         className={`overflow-hidden transition-all hover:shadow-md 
           ${
             isCompleted
               ? "border-green/50 dark:border-green/30 shadow-sm" // 완료된 웹툰에 특별한 테두리 색상 적용
               : "border-gray/20 bg-light dark:bg-darkblue/30"
-          }`}
+          } ${isClicked ? "shadow-inner" : ""}`}
       >
         {/* 
           웹툰 썸네일 이미지 컨테이너
@@ -50,11 +102,16 @@ export function WebtoonCard({ webtoon, onClick }: WebtoonCardProps) {
             src={thumbnail || `/gray-placeholder.png`}
             alt={title}
             fill
-            className="object-cover object-center rounded-t-xl transition-transform duration-300 hover:scale-105"
+            className={`object-cover object-center rounded-t-xl transition-all duration-300 hover:scale-105 ${isClicked ? "brightness-90" : "brightness-100"}`}
           />
 
           {/* 완료된 웹툰인 경우 어두운 오버레이 적용 */}
           {isCompleted && <div className="absolute inset-0 bg-dark/10 dark:bg-dark/20"></div>}
+
+          {/* 호버 효과 오버레이 - 모든 웹툰에 적용 */}
+          <div className="absolute inset-0 bg-gradient-to-t from-dark/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-2">
+            <span className="text-light text-sm font-medium truncate w-full text-center pb-1">{title}</span>
+          </div>
 
           {/* 상태 표시 (완료 또는 남은 일수) */}
           {isCompleted ? (
@@ -86,10 +143,43 @@ export function WebtoonCard({ webtoon, onClick }: WebtoonCardProps) {
             </div>
           )}
         </div>
-        <CardContent className={`p-3 ${isCompleted ? "bg-light/80 dark:bg-darkblue/40" : ""}`}>
+        <CardContent
+          className={`p-3 ${isCompleted ? "bg-light/80 dark:bg-darkblue/40" : ""} ${isClicked ? "bg-gray-100 dark:bg-darkblue/60" : ""}`}
+        >
           <h3 className="font-medium text-sm text-darkblue dark:text-light line-clamp-2">{title}</h3>
         </CardContent>
       </Card>
+
+      {/* 리플 효과 */}
+      {showRipple && (
+        <div
+          className="absolute rounded-full bg-white/30 dark:bg-white/20 animate-ripple pointer-events-none"
+          style={{
+            ...rippleStyle,
+            width: "200px",
+            height: "200px",
+            marginLeft: "-100px",
+            marginTop: "-100px",
+          }}
+        />
+      )}
     </div>
   )
 }
+
+// 리플 애니메이션을 위한 스타일 추가
+// tailwind.config.ts에 이 애니메이션을 추가해야 합니다
+// 이 코드는 이미 있다고 가정하고 주석으로 남겨둡니다
+/*
+extend: {
+  keyframes: {
+    ripple: {
+      '0%': { transform: 'scale(0)', opacity: '0.6' },
+      '100%': { transform: 'scale(1)', opacity: '0' },
+    },
+  },
+  animation: {
+    ripple: 'ripple 0.6s linear',
+  },
+},
+*/
