@@ -304,8 +304,8 @@ export const investmentWebtoons: Webtoon[] = [
   },
   {
     id: "bad-secretary",
-    title: "나쁜 비서 [19세 완전판]",
-    titleEnglish: "Bad Secretary [19+ Complete Edition]",
+    title: "나쁜 비서",
+    titleEnglish: "Bad Secretary",
     daysLeft: 0,
     fundingPercentage: 100,
     category: "로맨스",
@@ -313,8 +313,7 @@ export const investmentWebtoons: Webtoon[] = [
     expectedROI: "10-15%",
     fundingGoal: "₩300,000,000",
     description: "웹드라마 제작",
-    thumbnail:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%EB%82%98%EC%81%9C%20%EB%B9%84%EC%84%9C.jpg-LWxBu7pLhPobxgIRqZsVoBbZSD8DEq.jpeg",
+    thumbnail: "/images/나쁜-비서-cover.png",
     currentRaised: 300000000,
     goalAmount: 300000000,
     totalInvestors: 750,
@@ -429,7 +428,7 @@ export const investmentWebtoons: Webtoon[] = [
     distributor: "애니플러스",
     isDramatized: false,
     summary:
-      "마법의 세계에서 인간 소녀와 마법사의 만남을 그린 판타지 로맨스입니다. 아름다운 세계관과 감성적인 스토리로 많은 사랑을 받고 있습니다. 어��� 시절부터 특별한 능력으로 인해 소외받던 소녀 치세는 자신을 노예 경매장에 내놓게 됩니다. 그곳에서 그녀를 구매한 것은 동물의 두개골을 가진 신비한 마법사 엘리아스. 그는 치세를 제자이자 신부로 삼겠다고 선언합니다. 마법과 요정이 존재하는 신비로운 세계에서 치세는 자신의 능력을 받아들이고 성장해가며, 엘리아스와 특별한 유대를 형성해갑니다. 아름다운 판타지 세계관과 섬세한 감정 묘사가 돋보이는 작품입니다.",
+      "마법의 세계에서 인간 소녀와 마법사의 만남을 그린 판타지 로맨스입니다. 아름다운 세계관과 감성적인 스토리로 많은 사랑을 받고 있습니다. 어 시절부터 특별한 능력으로 인해 소외받던 소녀 치세는 자신을 노예 경매장에 내놓게 됩니다. 그곳에서 그녀를 구매한 것은 동물의 두개골을 가진 신비한 마법사 엘리아스. 그는 치세를 제자이자 신부로 삼겠다고 선언합니다. 마법과 요정이 존재하는 신비로운 세계에서 치세는 자신의 능력을 받아들이고 성장해가며, 엘리아스와 특별한 유대를 형성해갑니다. 아름다운 판타지 세계관과 섬세한 감정 묘사가 돋보이는 작품입니다.",
     updateLog: "애니메이션 제작 기획 단계. 스토리보드 작업 중입니다.",
   },
 ]

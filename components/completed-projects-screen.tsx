@@ -53,7 +53,7 @@ export function CompletedProjectsScreen() {
   const defaultCompletedProjects: CompletedProject[] = [
     {
       id: "bad-secretary",
-      title: "나쁜 비서 [19세 완전판]",
+      title: "나쁜 비서",
       genre: "로맨스, 드라마",
       investedAmount: 3400000,
       returnAmount: 3910000,
@@ -61,7 +61,7 @@ export function CompletedProjectsScreen() {
       completionDate: "2023-04-15",
       investors: 342,
       hasFeedback: false,
-      thumbnail: "/webtoons/나쁜-비서.png",
+      thumbnail: "/images/나쁜-비서-cover.png",
       slug: "bad-secretary",
       feedback: "",
       adaptationInterest: "",

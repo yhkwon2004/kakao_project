@@ -343,16 +343,51 @@ export const addInvestment = async (userId: string, webtoonId: string, amount: n
     return false
   }
 
-  // Add investment
-  const { error: investError } = await supabase
+  // Check if investment already exists for this webtoon
+  const { data: existingInvestment, error: checkError } = await supabase
     .from("investments")
-    .insert([{ user_id: userId, webtoon_id: webtoonId, amount }])
+    .select("*")
+    .eq("user_id", userId)
+    .eq("webtoon_id", webtoonId)
+    .single()
 
-  if (investError) {
-    console.error("Error adding investment:", investError)
+  if (checkError && checkError.code !== "PGRST116") {
+    // PGRST116 is "not found" error
+    console.error("Error checking existing investment:", checkError)
     // Rollback balance change
     await supabase.from("users").update({ balance: user.balance }).eq("id", userId)
     return false
+  }
+
+  if (existingInvestment) {
+    // Update existing investment by adding to the amount
+    const { error: updateInvestError } = await supabase
+      .from("investments")
+      .update({
+        amount: existingInvestment.amount + amount,
+        created_at: new Date().toISOString(), // Update timestamp to latest investment
+      })
+      .eq("user_id", userId)
+      .eq("webtoon_id", webtoonId)
+
+    if (updateInvestError) {
+      console.error("Error updating investment:", updateInvestError)
+      // Rollback balance change
+      await supabase.from("users").update({ balance: user.balance }).eq("id", userId)
+      return false
+    }
+  } else {
+    // Add new investment
+    const { error: investError } = await supabase
+      .from("investments")
+      .insert([{ user_id: userId, webtoon_id: webtoonId, amount }])
+
+    if (investError) {
+      console.error("Error adding investment:", investError)
+      // Rollback balance change
+      await supabase.from("users").update({ balance: user.balance }).eq("id", userId)
+      return false
+    }
   }
 
   return true
