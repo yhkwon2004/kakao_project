@@ -299,14 +299,14 @@ export function LoginScreen() {
       const initialInvestments = [
         {
           id: "bad-secretary",
-          title: "나쁜 비서 [19세 완전판]",
+          title: "나쁜 비서",
           amount: 500000,
           date: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 75일 전
           status: "완료됨",
           expectedROI: 10,
           progress: 100,
           slug: "bad-secretary",
-          thumbnail: "/images/나쁜-비서.png",
+          thumbnail: "/images/나쁜-비서-cover.png",
         },
         {
           id: "blood-sword-family-hunting-dog",
@@ -351,7 +351,7 @@ export function LoginScreen() {
         const completedProjects = [
           {
             id: "bad-secretary",
-            title: "나쁜 비서 [19세 완전판]",
+            title: "나쁜 비서",
             genre: "로맨스, 드라마",
             investedAmount: 500000,
             returnAmount: 550000, // 10% 수익
@@ -359,7 +359,7 @@ export function LoginScreen() {
             completionDate: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
             investors: 342,
             hasFeedback: false,
-            thumbnail: "/images/나쁜-비서.png",
+            thumbnail: "/images/나쁜-비서.jpg",
             slug: "bad-secretary",
             feedback: "",
             adaptationInterest: "",

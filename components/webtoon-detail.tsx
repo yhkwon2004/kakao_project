@@ -1597,7 +1597,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
               다시 돌아와서 투자를 진행하시겠습니까?
             </p>
             <div className="bg-blue/10 p-3 rounded-lg">
-              <p className="text-sm text-darkblue dark:text-light">충전 완료 후 이 페이지로 자동으로 돌아옵니다</p>
+              <p className="text-sm text-darkblue dark:text-light">충전 완료 후 이 페이지로 자동��로 돌아옵니다</p>
             </div>
           </div>
           <DialogFooter className="flex gap-3 sm:justify-center">

@@ -139,7 +139,7 @@ export const resetGuestData = async () => {
       },
       {
         user_id: userId,
-        webtoon_id: "7", // 나쁜 비서 [19세 완전판]
+        webtoon_id: "7", // 나쁜 비서
         amount: 3400000,
         created_at: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString(), // 75 days ago
         status: "completed",

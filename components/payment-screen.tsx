@@ -165,7 +165,7 @@ export function PaymentScreen() {
           },
           {
             id: "bad-secretary",
-            webtoonTitle: "나쁜 비서 [19세 완전판]",
+            webtoonTitle: "나쁜 비서",
             amount: 3400000,
             date: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toLocaleDateString("ko-KR"),
             status: "completed",
@@ -194,7 +194,7 @@ export function PaymentScreen() {
             }
           })
 
-          // 중복 방지하여 추가
+          // 중복 방지하여 추��
           mappedInvestments.forEach((newInv: InvestmentRecord) => {
             if (!allInvestments.some((inv) => inv.id === newInv.id)) {
               allInvestments.push(newInv)

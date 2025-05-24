@@ -74,7 +74,7 @@ interface CompletedProject {
 const defaultCompletedProjects: CompletedProject[] = [
   {
     id: "bad-secretary",
-    title: "나쁜 비서 [19세 완전판]",
+    title: "나쁜 비서",
     genre: "로맨스, 드라마",
     investedAmount: 3400000,
     returnAmount: 4148000, // 22% 수익률로 계산
@@ -82,7 +82,7 @@ const defaultCompletedProjects: CompletedProject[] = [
     completionDate: "2023-04-15",
     investors: 342,
     hasFeedback: false,
-    thumbnail: "/webtoons/나쁜-비서.png",
+    thumbnail: "/images/나쁜-비서.jpg",
     slug: "bad-secretary",
     feedback: "",
     adaptationInterest: "",
@@ -117,7 +117,7 @@ const getWebtoonTitle = (id: string): string => {
 const getWebtoonThumbnail = (id: string): string => {
   // 특정 웹툰 ID에 대한 하드코딩된 썸네일 경로
   if (id === "bad-secretary") {
-    return "/images/나쁜-비서.jpg"
+    return "/images/나쁜-비서-cover.png"
   }
 
   // 철혈검가 사냥개의 회귀 썸네일 추가
@@ -434,7 +434,7 @@ export function AssetScreen() {
 
             let thumbnailUrl = ""
             if (inv.id === "bad-secretary") {
-              thumbnailUrl = "/images/나쁜-비서.png"
+              thumbnailUrl = "/images/나쁜-비서-cover.png"
             } else if (inv.id === "blood-sword-family-hunting-dog") {
               thumbnailUrl = "/images/철혈검가-사냥개의-회귀.webp"
             } else if (webtoonData && webtoonData.thumbnail) {
@@ -501,7 +501,7 @@ export function AssetScreen() {
               // 썸네일 설정 (ID 기반 하드코딩된 썸네일 우선)
               let thumbnailUrl = ""
               if (projectId === "bad-secretary") {
-                thumbnailUrl = "/images/나쁜-비서.png"
+                thumbnailUrl = "/images/나쁜-비서-cover.png"
               } else if (projectId === "blood-sword-family-hunting-dog") {
                 thumbnailUrl = "/images/철혈검가-사냥개의-회귀.webp"
               } else if (project.thumbnail) {
@@ -1028,7 +1028,7 @@ export function AssetScreen() {
                   {/* 썸네일 이미지 */}
                   <div className="w-24 h-24 rounded-md overflow-hidden flex-shrink-0 bg-gray/10 border border-gray/20">
                     {investment.id === "bad-secretary" ? (
-                      <img src="/images/나쁜-비서.jpg" alt={investment.title} className="w-full h-full object-cover" />
+                      <img src="/images/나쁜-비서-cover.png" alt={investment.title} className="w-full h-full object-cover" />
                     ) : investment.id === "blood-sword-family-hunting-dog" ? (
                       <img
                         src="/images/철혈검가-사냥개의-회귀.png"

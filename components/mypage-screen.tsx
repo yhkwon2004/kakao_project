@@ -71,8 +71,15 @@ export function MyPageScreen() {
     if (user) {
       setUserName(user.name)
       setUserEmail(user.email)
-      if (user.profileImage) {
+      if (user.profileImage && !user.profileImage.startsWith("blob:")) {
         setProfileImage(user.profileImage)
+      } else {
+        setProfileImage(null)
+        // Clear invalid blob URL from storage
+        if (user.profileImage && user.profileImage.startsWith("blob:")) {
+          user.profileImage = undefined
+          saveUserToStorage(user)
+        }
       }
       if (user.balance !== undefined) {
         setPoints(user.balance)
@@ -305,14 +312,14 @@ export function MyPageScreen() {
           <CardHeader className="p-6 bg-gradient-to-r from-green/10 to-yellow/10 transition-colors duration-300">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 border-2 border-light relative">
-                {profileImage ? (
+                <AvatarFallback>
+                  <User className="h-8 w-8" />
+                </AvatarFallback>
+                {profileImage && !profileImage.startsWith("blob:") && (
                   <AvatarImage
                     src={profileImage || "/placeholder.svg"}
                     alt={userName}
-                    onError={(e) => {
-                      // Handle image loading error by falling back to default
-                      const target = e.target as HTMLImageElement
-                      target.style.display = "none"
+                    onError={() => {
                       // Clear invalid profile image from storage
                       const user = getUserFromStorage()
                       if (user) {
@@ -322,10 +329,7 @@ export function MyPageScreen() {
                       }
                     }}
                   />
-                ) : null}
-                <AvatarFallback>
-                  <User className="h-8 w-8" />
-                </AvatarFallback>
+                )}
               </Avatar>
               <Button
                 variant="ghost"

@@ -16,14 +16,12 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
   MessageCircle,
   ThumbsUp,
   PenSquare,
-  Send,
   Trash2,
   MoreVertical,
   AlertTriangle,
@@ -68,24 +66,14 @@ export function CommunityScreen() {
 
   // State management
   const [activeTab, setActiveTab] = useState("all")
-  const [isWriteDialogOpen, setIsWriteDialogOpen] = useState(false)
-  const [isReadDialogOpen, setIsReadDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
-  const [newPostTitle, setNewPostTitle] = useState("")
-  const [newPostContent, setNewPostContent] = useState("")
-  const [newPostTag, setNewPostTag] = useState("제작 업데이트")
-  const [newComment, setNewComment] = useState("")
   const [posts, setPosts] = useState<Post[]>([])
   const [currentUser, setCurrentUser] = useState("권용현")
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [editPostTitle, setEditPostTitle] = useState("")
-  const [editPostContent, setEditPostContent] = useState("")
-  const [editPostTag, setEditPostTag] = useState("")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [sortBy, setSortBy] = useState("latest") // latest, popular, oldest
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
 
   // 로컬 스토리지에서 데이터 로드
   useEffect(() => {
@@ -220,57 +208,9 @@ export function CommunityScreen() {
     }
   }, [posts])
 
-  // Post submission handler
-  const handleSubmitPost = () => {
-    if (!newPostTitle.trim() || !newPostContent.trim()) {
-      toast({
-        title: "입력 오류",
-        description: "제목과 내용을 모두 입력해주세요.",
-        duration: 3000,
-      })
-      return
-    }
-
-    // Create new post
-    const newPost: Post = {
-      id: Date.now().toString(),
-      author: currentUser,
-      authorInitial: currentUser.charAt(0),
-      title: newPostTitle,
-      content: newPostContent,
-      likes: 0,
-      comments: [],
-      time: "방금 전",
-      tag: newPostTag,
-      liked: false,
-      views: 0,
-    }
-
-    // Update posts list
-    setPosts([newPost, ...posts])
-
-    // Reset input fields and close dialog
-    setNewPostTitle("")
-    setNewPostContent("")
-    setIsWriteDialogOpen(false)
-
-    toast({
-      title: "게시물 작성 완료",
-      description: "게시물이 성공적으로 등록되었습니다.",
-      duration: 3000,
-    })
-  }
-
   // Post reading handler
   const handleReadPost = (post: Post) => {
-    // 조회수 증가
-    setPosts((prevPosts) => prevPosts.map((p) => (p.id === post.id ? { ...p, views: (p.views || 0) + 1 } : p)))
-
-    setSelectedPost({
-      ...post,
-      views: (post.views || 0) + 1,
-    })
-    setIsReadDialogOpen(true)
+    router.push(`/community/${post.id}`)
   }
 
   // Like handler
@@ -292,54 +232,12 @@ export function CommunityScreen() {
     )
   }
 
-  // Comment submission handler
-  const handleSubmitComment = () => {
-    if (!newComment.trim() || !selectedPost) return
-
-    const newCommentObj: Comment = {
-      id: `c${selectedPost.id}-${Date.now()}`,
-      author: currentUser,
-      authorInitial: currentUser.charAt(0),
-      content: newComment,
-      time: "방금 전",
-    }
-
-    // Update posts with new comment
-    setPosts(
-      posts.map((post) => {
-        if (post.id === selectedPost.id) {
-          return {
-            ...post,
-            comments: [...post.comments, newCommentObj],
-          }
-        }
-        return post
-      }),
-    )
-
-    // Update selected post to show new comment immediately
-    setSelectedPost({
-      ...selectedPost,
-      comments: [...selectedPost.comments, newCommentObj],
-    })
-
-    // Clear comment input
-    setNewComment("")
-
-    toast({
-      title: "댓글 작성 완료",
-      description: "댓글이 성공적으로 등록되었습니다.",
-      duration: 2000,
-    })
-  }
-
   // 게시물 삭제 핸들러
   const handleDeletePost = () => {
     if (!selectedPost) return
 
     setPosts(posts.filter((post) => post.id !== selectedPost.id))
     setIsDeleteDialogOpen(false)
-    setIsReadDialogOpen(false)
 
     toast({
       title: "게시물 삭제 완료",
@@ -551,7 +449,7 @@ export function CommunityScreen() {
               variant="outline"
               size="sm"
               className="rounded-full border-green text-green hover:bg-green/10 font-medium"
-              onClick={() => setIsWriteDialogOpen(true)}
+              onClick={() => router.push("/community/write")}
             >
               <PenSquare className="h-4 w-4 mr-2" />
               글쓰기
@@ -677,7 +575,7 @@ export function CommunityScreen() {
                 <Button
                   variant="outline"
                   className="rounded-full border-green text-green hover:bg-green/10"
-                  onClick={() => setIsWriteDialogOpen(true)}
+                  onClick={() => router.push("/community/write")}
                 >
                   <PenSquare className="h-4 w-4 mr-2" />첫 게시물 작성하기
                 </Button>
@@ -699,210 +597,9 @@ export function CommunityScreen() {
         </Tabs>
       </div>
 
-      {/* Write post dialog */}
-      <Dialog open={isWriteDialogOpen} onOpenChange={setIsWriteDialogOpen}>
-        <DialogContent className="sm:max-w-[600px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
-          <DialogHeader className="pb-6">
-            <DialogTitle className="text-2xl font-bold text-darkblue dark:text-light">새 게시물 작성</DialogTitle>
-            <DialogDescription className="text-gray">투자 인사이트와 정보를 커뮤니티와 공유해보세요</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            <div>
-              <label htmlFor="post-title" className="text-sm font-semibold text-darkblue dark:text-light block mb-3">
-                제목
-              </label>
-              <Input
-                id="post-title"
-                value={newPostTitle}
-                onChange={(e) => setNewPostTitle(e.target.value)}
-                placeholder="게시물 제목을 입력하세요"
-                className="rounded-xl border-gray/20 bg-gray/5 focus:bg-white h-12 text-base"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="post-tag" className="text-sm font-semibold text-darkblue dark:text-light block mb-3">
-                카테고리
-              </label>
-              <select
-                id="post-tag"
-                value={newPostTag}
-                onChange={(e) => setNewPostTag(e.target.value)}
-                className="w-full rounded-xl border border-gray/20 bg-gray/5 focus:bg-white p-3 text-darkblue dark:text-light h-12"
-              >
-                <option value="제작 업데이트">📺 제작 업데이트</option>
-                <option value="투자 분석">📊 투자 분석</option>
-                <option value="캐스팅 소식">🎭 캐스팅 소식</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="post-content" className="text-sm font-semibold text-darkblue dark:text-light block mb-3">
-                내용
-              </label>
-              <Textarea
-                id="post-content"
-                value={newPostContent}
-                onChange={(e) => setNewPostContent(e.target.value)}
-                placeholder="게시물 내용을 입력하세요..."
-                className="rounded-xl min-h-[200px] border-gray/20 bg-gray/5 focus:bg-white resize-none text-base leading-relaxed"
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="flex gap-3 pt-6">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1 rounded-xl border-gray/20 text-gray h-12"
-              onClick={() => setIsWriteDialogOpen(false)}
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              className="flex-1 rounded-xl bg-gradient-to-r from-green to-green/90 hover:from-green/90 hover:to-green/80 text-white h-12 font-semibold"
-              onClick={handleSubmitPost}
-            >
-              게시하기
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Read post dialog */}
-      {selectedPost && (
-        <Dialog open={isReadDialogOpen} onOpenChange={setIsReadDialogOpen}>
-          <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
-            <DialogHeader className="pb-6">
-              <DialogTitle className="sr-only">게시물 상세</DialogTitle>
-              <DialogDescription className="sr-only">게시물 내용과 댓글을 확인하세요.</DialogDescription>
-            </DialogHeader>
-
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-12 w-12 ring-2 ring-yellow/20">
-                    <AvatarFallback className="bg-gradient-to-br from-yellow/20 to-green/20 text-darkblue dark:text-light font-semibold">
-                      {selectedPost.authorInitial}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold text-darkblue dark:text-light">{selectedPost.author}</p>
-                    <div className="flex items-center gap-3 text-xs text-gray">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{selectedPost.time}</span>
-                      </div>
-                      <span>•</span>
-                      <div className="flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
-                        <span>{selectedPost.views || 0}회</span>
-                      </div>
-                      <Badge className={`text-xs font-medium border ${getTagColor(selectedPost.tag)}`}>
-                        {selectedPost.tag}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedPost.author === currentUser && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl"
-                    onClick={() => setIsDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    삭제
-                  </Button>
-                )}
-              </div>
-
-              <h2 className="text-2xl font-bold mb-6 text-darkblue dark:text-light leading-tight">
-                {selectedPost.title}
-              </h2>
-
-              <div className="prose prose-sm max-w-none mb-8">
-                <p className="text-darkblue/80 dark:text-light/80 whitespace-pre-line leading-relaxed text-base">
-                  {selectedPost.content}
-                </p>
-              </div>
-
-              <div className="flex justify-between items-center py-4 border-t border-b border-gray/10">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`rounded-full transition-all duration-300 ${
-                    selectedPost.liked
-                      ? "bg-red-50 text-red-500 hover:bg-red-100 border border-red-200"
-                      : "text-gray hover:text-red-500 hover:bg-red-50"
-                  }`}
-                  onClick={(e) => handleLike(selectedPost.id, e)}
-                >
-                  <ThumbsUp className={`h-4 w-4 mr-2 transition-all ${selectedPost.liked ? "fill-red-500" : ""}`} />
-                  <span className="font-medium">좋아요 {selectedPost.likes}</span>
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-gray hover:text-darkblue dark:hover:text-light rounded-full"
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  <span className="font-medium">댓글 {selectedPost.comments.length}</span>
-                </Button>
-              </div>
-
-              {/* Comments section */}
-              <div className="mt-6">
-                <h3 className="font-semibold text-lg text-darkblue dark:text-light mb-4">
-                  댓글 {selectedPost.comments.length}개
-                </h3>
-                {renderComments(selectedPost.comments)}
-              </div>
-
-              {/* Comment input area */}
-              <div className="mt-6 p-4 bg-gray/5 dark:bg-darkblue/10 rounded-xl border border-gray/10">
-                <div className="flex gap-3">
-                  <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={profileImage || "/placeholder.svg"} alt={currentUser} />
-                    <AvatarFallback className="bg-gradient-to-br from-yellow/20 to-green/20 text-darkblue dark:text-light text-xs font-semibold">
-                      {currentUser.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 flex gap-2">
-                    <Input
-                      placeholder="댓글을 입력하세요..."
-                      className="rounded-xl border-gray/20 bg-white dark:bg-darkblue/20 flex-1"
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSubmitComment()
-                        }
-                      }}
-                    />
-                    <Button
-                      className="rounded-xl bg-green hover:bg-green/90 text-white px-4"
-                      onClick={handleSubmitComment}
-                      disabled={!newComment.trim()}
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
       {/* Delete confirmation dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
+        <DialogContent className="w-[90vw] max-w-[350px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-darkblue dark:text-light">게시물 삭제</DialogTitle>
             <DialogDescription>이 게시물을 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</DialogDescription>
@@ -940,7 +637,7 @@ export function CommunityScreen() {
 
       {/* Filter Dialog */}
       <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-        <DialogContent className="sm:max-w-[300px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
+        <DialogContent className="w-[90vw] max-w-[280px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-darkblue dark:text-light">정렬 옵션</DialogTitle>
             <DialogDescription>게시물을 어떻게 정렬하시겠습니까?</DialogDescription>

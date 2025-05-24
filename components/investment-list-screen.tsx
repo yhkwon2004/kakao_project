@@ -74,7 +74,7 @@ export function InvestmentListScreen() {
     {
       id: "5",
       slug: "bad-secretary",
-      title: "나쁜 비서 [19세 완전판]",
+      title: "나쁜 비서",
       description: "웹드라마 제작",
       fundingGoal: "₩300,000,000",
       fundingPercentage: 95,
@@ -133,7 +133,7 @@ export function InvestmentListScreen() {
     },
   ]
 
-  // 필터링된 투자 프로젝트 가져오기
+  // 필��링된 투자 프로젝트 가져오기
   const getFilteredInvestments = () => {
     return allInvestments.filter((investment) => {
       // 완료된 항목 필터링 - showCompleted가 false일 경우 완료된 항목 제외
