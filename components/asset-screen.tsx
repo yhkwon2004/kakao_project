@@ -40,27 +40,6 @@ export function AssetScreen() {
 
       if (investmentsStr) {
         userInvestments = JSON.parse(investmentsStr)
-      } else {
-        // 기본 투자 데이터 설정
-        userInvestments = [
-          {
-            id: "bad-secretary",
-            title: "나쁜 비서",
-            amount: 300000,
-            expectedROI: 15,
-            status: "진행중",
-            date: "2024-01-15",
-          },
-          {
-            id: "blood-sword-family-hunting-dog",
-            title: "철혈검가 사냥개의 회귀",
-            amount: 500000,
-            expectedROI: 20,
-            status: "완료",
-            date: "2024-01-10",
-          },
-        ]
-        localStorage.setItem("userInvestments", JSON.stringify(userInvestments))
       }
 
       setInvestments(userInvestments)
@@ -78,29 +57,45 @@ export function AssetScreen() {
     loadInvestments()
 
     // localStorage 변경 감지를 위한 이벤트 리스너
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "userInvestments") {
-        loadInvestments()
-      }
+    const handleStorageChange = () => {
+      loadInvestments()
     }
 
-    // 페이지 포커스 시 데이터 새로고침
-    const handleFocus = () => {
+    // 웹툰 진행 상황 업데이트 감지
+    const handleProgressUpdate = () => {
       loadInvestments()
     }
 
     window.addEventListener("storage", handleStorageChange)
-    window.addEventListener("focus", handleFocus)
+    window.addEventListener("focus", handleStorageChange)
+    window.addEventListener("webtoonProgressUpdate", handleProgressUpdate)
+    window.addEventListener("userDataChanged", handleStorageChange)
 
     return () => {
       window.removeEventListener("storage", handleStorageChange)
-      window.removeEventListener("focus", handleFocus)
+      window.removeEventListener("focus", handleStorageChange)
+      window.removeEventListener("webtoonProgressUpdate", handleProgressUpdate)
+      window.removeEventListener("userDataChanged", handleStorageChange)
     }
   }, [])
 
   const totalAssets = userBalance + totalReturn
   const profitLoss = totalReturn - totalInvestment
   const profitRate = totalInvestment > 0 ? (profitLoss / totalInvestment) * 100 : 0
+
+  const getWebtoonImage = (id: string) => {
+    const imageMap: { [key: string]: string } = {
+      "bad-secretary": "/webtoons/나쁜-비서.png",
+      "blood-sword-family-hunting-dog": "/images/철혈검가-사냥개의-회귀.png",
+      "princess-imprinting-traitor": "/placeholder.svg?height=60&width=60&query=princess fantasy webtoon cover",
+      "becoming-family-head-this-life": "/webtoons/이번생은-가주가-되겠습니다.png",
+      "sword-family-youngest-son": "/webtoons/검술명가-막내아들.png",
+      "ancient-magus-bride": "/webtoons/마법사의-신부.png",
+      "contract-husband-looks-like-male-protagonist": "/webtoons/계약-남편이-남자-주인공과-닮았다.png",
+      "black-whale-baby": "/webtoons/흑막-범고래-아기님.png",
+    }
+    return imageMap[id] || "/placeholder.svg?height=60&width=60&query=webtoon cover art"
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
@@ -230,19 +225,6 @@ export function AssetScreen() {
             {investments.length > 0 ? (
               <div className="space-y-4">
                 {investments.slice(0, 2).map((investment, index) => {
-                  const getWebtoonImage = (id: string) => {
-                    const imageMap: { [key: string]: string } = {
-                      "bad-secretary": "/webtoons/나쁜-비서.png",
-                      "blood-sword-family-hunting-dog": "/images/철혈검가-사냥개의-회귀.png",
-                      "princess-imprinting-traitor":
-                        "/placeholder.svg?height=60&width=60&query=princess fantasy webtoon",
-                      "becoming-family-head-this-life": "/webtoons/이번생은-가주가-되겠습니다.png",
-                      "sword-family-youngest-son": "/webtoons/검술명가-막내아들.png",
-                      "ancient-magus-bride": "/webtoons/마법사의-신부.png",
-                    }
-                    return imageMap[id] || "/placeholder.svg?height=60&width=60&query=webtoon cover"
-                  }
-
                   return (
                     <div
                       key={investment.id || index}
@@ -251,13 +233,21 @@ export function AssetScreen() {
                     >
                       <div className="relative flex-shrink-0">
                         <img
-                          src={getWebtoonImage(investment.id) || "/placeholder.svg"}
-                          alt={investment.title}
+                          src={
+                            investment.thumbnail ||
+                            investment.webtoonThumbnail ||
+                            getWebtoonImage(investment.id) ||
+                            "/placeholder.svg"
+                          }
+                          alt={investment.title || investment.webtoonTitle}
                           className="w-16 h-16 rounded-xl object-cover shadow-sm"
+                          onError={(e) => {
+                            e.currentTarget.src = "/placeholder.svg?height=60&width=60&query=webtoon cover"
+                          }}
                         />
                         <div
                           className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${
-                            investment.status === "진행중"
+                            investment.status === "진행중" || investment.status === "제작 중"
                               ? "bg-gradient-to-r from-green-400 to-green-500"
                               : "bg-gradient-to-r from-blue-400 to-blue-500"
                           }`}
@@ -266,7 +256,7 @@ export function AssetScreen() {
 
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-darkblue dark:text-light text-sm truncate mb-1">
-                          {investment.title}
+                          {investment.title || investment.webtoonTitle}
                         </h4>
                         <div className="flex items-center space-x-2 mb-2">
                           <span className="text-xs text-gray">투자금액</span>
@@ -277,7 +267,7 @@ export function AssetScreen() {
                         <div className="flex items-center space-x-2">
                           <span
                             className={`text-xs px-2 py-1 rounded-full font-medium ${
-                              investment.status === "진행중"
+                              investment.status === "진행중" || investment.status === "제작 중"
                                 ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                                 : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
                             }`}

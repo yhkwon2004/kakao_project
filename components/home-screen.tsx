@@ -1,6 +1,4 @@
 "use client"
-
-import { Progress } from "@/components/ui/progress"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -20,6 +18,43 @@ export function HomeScreen() {
   const [userBalance, setUserBalance] = useState(150000)
   const [totalInvested, setTotalInvested] = useState(0)
   const [totalProjects, setTotalProjects] = useState(0)
+  const [dynamicWebtoons, setDynamicWebtoons] = useState(investmentWebtoons)
+
+  // 웹툰 진행 상황 업데이트 감지
+  useEffect(() => {
+    const updateWebtoonProgress = () => {
+      const updatedWebtoons = investmentWebtoons.map((webtoon) => {
+        const progressData = localStorage.getItem(`webtoon_progress_${webtoon.id}`)
+        if (progressData) {
+          const data = JSON.parse(progressData)
+          const progress = (data.currentRaised / webtoon.goalAmount) * 100
+          return {
+            ...webtoon,
+            currentRaised: data.currentRaised,
+            totalInvestors: data.totalInvestors,
+            fundingPercentage: Math.round(progress),
+          }
+        }
+        return webtoon
+      })
+      setDynamicWebtoons(updatedWebtoons)
+    }
+
+    updateWebtoonProgress()
+
+    // 웹툰 진행 상황 업데이트 이벤트 리스너
+    const handleProgressUpdate = () => {
+      updateWebtoonProgress()
+    }
+
+    window.addEventListener("webtoonProgressUpdate", handleProgressUpdate)
+    window.addEventListener("storage", handleProgressUpdate)
+
+    return () => {
+      window.removeEventListener("webtoonProgressUpdate", handleProgressUpdate)
+      window.removeEventListener("storage", handleProgressUpdate)
+    }
+  }, [])
 
   // 사용자 정보 로드
   useEffect(() => {
@@ -54,7 +89,7 @@ export function HomeScreen() {
   }
 
   // 진행 중인 투자 프로젝트 (상위 4개)
-  const ongoingProjects = investmentWebtoons.filter((webtoon) => webtoon.status === "ongoing").slice(0, 4)
+  const ongoingProjects = dynamicWebtoons.filter((webtoon) => webtoon.status === "ongoing").slice(0, 4)
 
   return (
     <div className="flex flex-col h-screen pb-20 bg-light dark:bg-dark overflow-hidden">
@@ -192,11 +227,14 @@ export function HomeScreen() {
                           <span>{webtoon.fundingPercentage || 0}%</span>
                           <span>{webtoon.expectedROI}</span>
                         </div>
-                        <Progress
-                          value={webtoon.fundingPercentage || 0}
-                          className="h-1 bg-white/30"
-                          indicatorClassName="bg-green"
-                        />
+                        <div className="relative">
+                          <div className="h-1 bg-white/30 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-green transition-all duration-500"
+                              style={{ width: `${Math.min(webtoon.fundingPercentage || 0, 100)}%` }}
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

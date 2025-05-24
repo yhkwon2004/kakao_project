@@ -24,8 +24,14 @@ import { Logo } from "@/components/logo"
 import { getWebtoonById } from "@/data/webtoons"
 import { getUserFromStorage } from "@/lib/auth"
 import { Card, CardContent } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 type WebtoonDetailProps = {
@@ -75,20 +81,65 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     updateLog: webtoonData?.updateLog || "정보 없음",
     isDramatized: webtoonData?.isDramatized || false,
     status: webtoonData?.status || "ongoing",
+    thumbnail: webtoonData?.thumbnail || "/placeholder.svg",
   }
 
-  // 진행률 계산
-  const progress = webtoon.goalAmount > 0 ? (webtoon.currentRaised / webtoon.goalAmount) * 100 : 0
-  const [dynamicProgress, setDynamicProgress] = useState(progress)
-  const [dynamicCurrentRaised, setDynamicCurrentRaised] = useState(webtoon.currentRaised)
-  const [dynamicTotalInvestors, setDynamicTotalInvestors] = useState(webtoon.totalInvestors)
+  // 동적 상태 관리 - localStorage에서 실시간 데이터 로드
+  const [dynamicProgress, setDynamicProgress] = useState(0)
+  const [dynamicCurrentRaised, setDynamicCurrentRaised] = useState(0)
+  const [dynamicTotalInvestors, setDynamicTotalInvestors] = useState(0)
 
-  // 초기 동적 상태 설정
+  // 웹툰 진행 상황을 localStorage에서 로드
+  const loadWebtoonProgress = () => {
+    const progressData = localStorage.getItem(`webtoon_progress_${id}`)
+    if (progressData) {
+      const data = JSON.parse(progressData)
+      setDynamicCurrentRaised(data.currentRaised)
+      setDynamicTotalInvestors(data.totalInvestors)
+      setDynamicProgress((data.currentRaised / webtoon.goalAmount) * 100)
+    } else {
+      // 기본값 설정
+      setDynamicCurrentRaised(webtoon.currentRaised)
+      setDynamicTotalInvestors(webtoon.totalInvestors)
+      setDynamicProgress((webtoon.currentRaised / webtoon.goalAmount) * 100)
+    }
+  }
+
+  // 웹툰 진행 상황을 localStorage에 저장
+  const saveWebtoonProgress = (currentRaised: number, totalInvestors: number) => {
+    const progressData = {
+      currentRaised,
+      totalInvestors,
+      lastUpdated: new Date().toISOString(),
+    }
+    localStorage.setItem(`webtoon_progress_${id}`, JSON.stringify(progressData))
+
+    // 전역 이벤트 발생으로 다른 컴포넌트들에 알림
+    window.dispatchEvent(
+      new CustomEvent("webtoonProgressUpdate", {
+        detail: { webtoonId: id, ...progressData },
+      }),
+    )
+  }
+
   useEffect(() => {
-    setDynamicProgress(progress)
-    setDynamicCurrentRaised(webtoon.currentRaised)
-    setDynamicTotalInvestors(webtoon.totalInvestors)
-  }, [progress, webtoon.currentRaised, webtoon.totalInvestors])
+    loadWebtoonProgress()
+
+    // 다른 컴포넌트에서 발생한 진행 상황 업데이트 감지
+    const handleProgressUpdate = (event: CustomEvent) => {
+      if (event.detail.webtoonId === id) {
+        setDynamicCurrentRaised(event.detail.currentRaised)
+        setDynamicTotalInvestors(event.detail.totalInvestors)
+        setDynamicProgress((event.detail.currentRaised / webtoon.goalAmount) * 100)
+      }
+    }
+
+    window.addEventListener("webtoonProgressUpdate", handleProgressUpdate as EventListener)
+
+    return () => {
+      window.removeEventListener("webtoonProgressUpdate", handleProgressUpdate as EventListener)
+    }
+  }, [id, webtoon.goalAmount])
 
   // 상태 메시지를 얻기 위한 함수
   const getStatusMessage = () => {
@@ -167,13 +218,13 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
   // 투자 가능 여부 확인
   const canInvest = () => {
-    const remainingAmount = webtoon.goalAmount - webtoon.currentRaised
+    const remainingAmount = webtoon.goalAmount - dynamicCurrentRaised
     const maxInvestAmount = Math.min(investmentAmount, remainingAmount)
     return maxInvestAmount > 0 && maxInvestAmount <= userBalance
   }
 
   const handleInvest = () => {
-    const remainingAmount = webtoon.goalAmount - webtoon.currentRaised
+    const remainingAmount = webtoon.goalAmount - dynamicCurrentRaised
 
     if (investmentAmount > userBalance) {
       setIsInsufficientBalanceDialogOpen(true)
@@ -193,7 +244,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   const confirmInvestment = () => {
     setIsConfirmDialogOpen(false)
 
-    const remainingAmount = webtoon.goalAmount - webtoon.currentRaised
+    const remainingAmount = webtoon.goalAmount - dynamicCurrentRaised
     const actualInvestAmount = Math.min(investmentAmount, remainingAmount)
 
     // 투자 후 잔액 계산
@@ -201,14 +252,18 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     setUserBalance(newBalance)
 
     // 웹툰 데이터 업데이트
-    const updatedCurrentRaised = webtoon.currentRaised + actualInvestAmount
+    const updatedCurrentRaised = dynamicCurrentRaised + actualInvestAmount
+    const updatedTotalInvestors = dynamicTotalInvestors + 1
     const updatedProgress = (updatedCurrentRaised / webtoon.goalAmount) * 100
     const isCompleted = updatedProgress >= 100
 
     // 즉시 UI 상태 업데이트
     setDynamicCurrentRaised(updatedCurrentRaised)
     setDynamicProgress(updatedProgress)
-    setDynamicTotalInvestors((webtoon.totalInvestors || 0) + 1)
+    setDynamicTotalInvestors(updatedTotalInvestors)
+
+    // 웹툰 진행 상황 저장 (다른 페이지에서도 반영되도록)
+    saveWebtoonProgress(updatedCurrentRaised, updatedTotalInvestors)
 
     // 사용자 정보 업데이트
     const user = getUserFromStorage()
@@ -220,7 +275,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     // 현재 날짜 가져오기
     const currentDate = new Date().toISOString().split("T")[0]
 
-    // 투자 내역 저장
+    // 투자 내역 저장 (웹툰 정보 포함)
     const investmentsStr = localStorage.getItem("userInvestments")
     const investments = investmentsStr ? JSON.parse(investmentsStr) : []
 
@@ -235,6 +290,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       const newInvestment = {
         webtoonId: id,
         webtoonTitle: webtoon.title,
+        webtoonThumbnail: webtoon.thumbnail,
         amount: actualInvestAmount,
         date: currentDate,
         expectedROI: webtoon.expectedROI,
@@ -242,6 +298,8 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
         status: isCompleted ? "완료됨" : "제작 중",
         slug: id,
         id: id,
+        title: webtoon.title,
+        thumbnail: webtoon.thumbnail,
       }
       investments.push(newInvestment)
     }
@@ -320,7 +378,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   // 투자 모달에서 확인 버튼 클릭 시 처리
   const confirmKeypadInput = () => {
     const amount = Number.parseInt(keypadInput, 10)
-    const remainingAmount = webtoon.goalAmount - webtoon.currentRaised
+    const remainingAmount = webtoon.goalAmount - dynamicCurrentRaised
 
     if (amount < MIN_INVESTMENT) {
       toast({
@@ -402,12 +460,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
       {/* 웹툰 이미지 */}
       <div className="relative h-80 w-full bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
-        <Image
-          src={webtoonData?.thumbnail || "/gray-placeholder.png"}
-          alt={webtoon.title}
-          fill
-          className="object-cover"
-        />
+        <Image src={webtoon.thumbnail || "/gray-placeholder.png"} alt={webtoon.title} fill className="object-cover" />
 
         {/* 그라데이션 오버레이 */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -472,6 +525,27 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
       {/* 웹툰 상세 정보 */}
       <div className="p-4 pt-0">
+        {/* 모집 완료 안내 카드 - 100% 달성 시 표시 */}
+        {dynamicProgress >= 100 && (
+          <Card className="rounded-2xl mb-6 border-green/30 bg-gradient-to-r from-green/10 to-emerald/10 shadow-lg overflow-hidden">
+            <CardContent className="p-6">
+              <div className="text-center">
+                <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                  <CheckCircle className="h-10 w-10 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-green-600 mb-2">🎉 모집 완료!</h3>
+                <p className="text-sm text-green-700 mb-4">
+                  목표 금액 {webtoon.goalAmount.toLocaleString()}원이 모두 모집되었습니다.
+                </p>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <p className="text-xs text-green-600 font-medium">
+                    총 {dynamicTotalInvestors}명의 투자자가 참여했습니다
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         {/* 주요 정보 카드 */}
         <Card className="rounded-2xl mb-6 border-gray/20 bg-white dark:bg-darkblue/30 shadow-lg overflow-hidden">
           <CardContent className="p-0">
@@ -492,13 +566,16 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 </div>
               </div>
 
-              <Progress
-                value={dynamicProgress}
-                className="h-4 mb-4 bg-gray/20 transition-all duration-1000 ease-out"
-                indicatorClassName="bg-gradient-to-r from-yellow to-green transition-all duration-1000"
-              />
+              <div className="relative">
+                <div className="h-4 bg-gray/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-yellow to-green transition-all duration-1000 ease-out"
+                    style={{ width: `${Math.min(dynamicProgress, 100)}%` }}
+                  />
+                </div>
+              </div>
 
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mt-4">
                 <p className="text-sm text-darkblue dark:text-light font-medium">{dynamicProgress.toFixed(1)}% 완료</p>
                 <div className="flex items-center bg-green/10 px-3 py-1 rounded-full">
                   <Award className="h-3 w-3 text-green mr-1" />
@@ -793,15 +870,23 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
         <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-dark/95 backdrop-blur-sm border-t border-gray/10 shadow-2xl z-50">
           <div className="flex gap-3 p-4">
             <Button
-              className={`flex-1 rounded-xl h-14 text-white font-semibold shadow-lg transition-all duration-200 ${
-                hasInvested
-                  ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transform hover:scale-105"
-                  : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transform hover:scale-105"
+              className={`flex-1 rounded-xl h-14 font-semibold shadow-lg transition-all duration-200 ${
+                dynamicProgress >= 100
+                  ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                  : hasInvested
+                    ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 text-white"
+                    : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transform hover:scale-105 text-white"
               }`}
-              onClick={handleInvest}
+              onClick={dynamicProgress >= 100 ? undefined : handleInvest}
+              disabled={dynamicProgress >= 100}
             >
               <div className="flex items-center justify-center">
-                {hasInvested ? (
+                {dynamicProgress >= 100 ? (
+                  <>
+                    <CheckCircle className="h-5 w-5 mr-2" />
+                    모집 완료
+                  </>
+                ) : hasInvested ? (
                   <>
                     <Plus className="h-5 w-5 mr-2" />
                     추가 투자
@@ -828,10 +913,16 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </div>
 
           {/* 상태 메시지 */}
-          {getStatusMessage() && (
+          {(getStatusMessage() || dynamicProgress >= 100) && (
             <div className="px-4 pb-2">
-              <p className="text-xs text-center text-gray-500 bg-gray-100 dark:bg-gray-800 py-2 px-3 rounded-lg">
-                {getStatusMessage()}
+              <p
+                className={`text-xs text-center py-2 px-3 rounded-lg ${
+                  dynamicProgress >= 100
+                    ? "text-green-600 bg-green-100 dark:bg-green-900/20 font-medium"
+                    : "text-gray-500 bg-gray-100 dark:bg-gray-800"
+                }`}
+              >
+                {dynamicProgress >= 100 ? "🎉 목표 금액이 모두 모집되었습니다!" : getStatusMessage()}
               </p>
             </div>
           )}
@@ -841,19 +932,19 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       {/* 투자 성공 모달 */}
       <Dialog open={isSuccessModalOpen} onOpenChange={setIsSuccessModalOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-darkblue border-0 shadow-2xl z-[100]">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl font-bold text-darkblue dark:text-light mb-2">
+              🎉 {investmentResult?.isAdditionalInvestment ? "추가 투자" : "투자"} 완료!
+            </DialogTitle>
+            <DialogDescription className="text-center text-gray-600 dark:text-gray-300 mb-6">
+              성공적으로 {investmentResult?.isAdditionalInvestment ? "추가 투자가" : "투자가"} 완료되었습니다
+            </DialogDescription>
+          </DialogHeader>
           <div className="text-center py-6">
             {/* 성공 아이콘 */}
             <div className="mx-auto w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
               <CheckCircle className="h-12 w-12 text-white" />
             </div>
-
-            {/* 제목 */}
-            <h2 className="text-2xl font-bold text-darkblue dark:text-light mb-2">
-              🎉 {investmentResult?.isAdditionalInvestment ? "추가 투자" : "투자"} 완료!
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              성공적으로 {investmentResult?.isAdditionalInvestment ? "추가 투자가" : "투자가"} 완료되었습니다
-            </p>
 
             {/* 투자 결과 정보 */}
             {investmentResult && (
@@ -922,6 +1013,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">
               투자 금액 입력
             </DialogTitle>
+            <DialogDescription className="text-center text-sm text-gray">
+              투자하실 금액을 입력해주세요
+            </DialogDescription>
           </DialogHeader>
 
           {/* 투자 금액 표시 */}
@@ -1091,13 +1185,11 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
         <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-bold text-red-500">⚠️ 잔액 부족</DialogTitle>
+            <DialogDescription className="text-center text-sm text-gray">
+              현재 잔액이 부족합니다. 어떻게 하시겠습니까?
+            </DialogDescription>
           </DialogHeader>
           <div className="text-center py-4">
-            <p className="text-sm text-gray mb-4">
-              현재 잔액이 부족합니다.
-              <br />
-              어떻게 하시겠습니까?
-            </p>
             <div className="bg-blue/10 p-3 rounded-lg mb-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-darkblue dark:text-light">현재 잔액:</span>
@@ -1133,16 +1225,14 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">
               💳 충전 페이지 이동
             </DialogTitle>
+            <DialogDescription className="text-center text-sm text-gray">
+              충전 페이지로 이동하여 잔액을 충전한 후 다시 돌아와서 투자를 진행하시겠습니까?
+            </DialogDescription>
           </DialogHeader>
           <div className="text-center py-4">
             <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green/20 to-blue/20 rounded-full flex items-center justify-center mb-4">
               <CreditCard className="h-8 w-8 text-green" />
             </div>
-            <p className="text-sm text-gray mb-4">
-              충전 페이지로 이동하여 잔액을 충전한 후
-              <br />
-              다시 돌아와서 투자를 진행하시겠습니까?
-            </p>
             <div className="bg-blue/10 p-3 rounded-lg">
               <p className="text-sm text-darkblue dark:text-light">충전 완료 후 이 페이지로 자동으로 돌아옵니다</p>
             </div>
@@ -1172,11 +1262,11 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
         <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">투자 확인</DialogTitle>
+            <DialogDescription className="text-center text-sm text-gray">위 작품에 투자하시겠습니까?</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="text-center mb-6">
               <p className="text-lg font-bold text-darkblue dark:text-light mb-2">{webtoon.title}</p>
-              <p className="text-sm text-gray">위 작품에 투자하시겠습니까?</p>
             </div>
 
             {/* 투자 정보 카드들 */}

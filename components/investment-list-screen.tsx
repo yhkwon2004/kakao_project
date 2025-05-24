@@ -12,6 +12,7 @@ import { Logo } from "@/components/logo"
 interface Investment {
   id: string
   title: string
+  thumbnail: string
   amount: number
   expectedROI: number
   status: string
@@ -38,6 +39,7 @@ export function InvestmentListScreen() {
           {
             id: "bad-secretary",
             title: "나쁜 비서",
+            thumbnail: "/webtoons/나쁜-비서.png",
             amount: 300000,
             expectedROI: 15,
             status: "완료",
@@ -47,6 +49,7 @@ export function InvestmentListScreen() {
           {
             id: "blood-sword-family-hunting-dog",
             title: "철혈검가 사냥개의 회귀",
+            thumbnail: "/images/철혈검가-사냥개의-회귀.png",
             amount: 500000,
             expectedROI: 20,
             status: "완료",
@@ -56,6 +59,7 @@ export function InvestmentListScreen() {
           {
             id: "princess-imprinting-traitor",
             title: "황녀, 반역자를 각인시키다",
+            thumbnail: "/placeholder.svg?height=80&width=80&query=princess fantasy webtoon",
             amount: 250000,
             expectedROI: 18,
             status: "진행중",
@@ -65,6 +69,7 @@ export function InvestmentListScreen() {
           {
             id: "becoming-family-head-this-life",
             title: "이번 생은 가주가 되겠습니다",
+            thumbnail: "/webtoons/이번생은-가주가-되겠습니다.png",
             amount: 400000,
             expectedROI: 22,
             status: "진행중",
@@ -102,18 +107,6 @@ export function InvestmentListScreen() {
   }, [])
 
   const renderInvestmentCard = (investment: Investment) => {
-    const getWebtoonImage = (id: string) => {
-      const imageMap: { [key: string]: string } = {
-        "bad-secretary": "/webtoons/나쁜-비서.png",
-        "blood-sword-family-hunting-dog": "/images/철혈검가-사냥개의-회귀.png",
-        "princess-imprinting-traitor": "/placeholder.svg?height=80&width=80&query=princess fantasy webtoon",
-        "becoming-family-head-this-life": "/webtoons/이번생은-가주가-되겠습니다.png",
-        "sword-family-youngest-son": "/webtoons/검술명가-막내아들.png",
-        "ancient-magus-bride": "/webtoons/마법사의-신부.png",
-      }
-      return imageMap[id] || "/placeholder.svg?height=80&width=80&query=webtoon cover"
-    }
-
     const currentValue = Math.round(investment.amount * (1 + investment.expectedROI / 100))
     const profit = currentValue - investment.amount
     const isProfit = profit > 0
@@ -128,9 +121,12 @@ export function InvestmentListScreen() {
           <div className="flex">
             <div className="relative w-20 h-24 flex-shrink-0">
               <img
-                src={getWebtoonImage(investment.id) || "/placeholder.svg"}
+                src={investment.thumbnail || "/placeholder.svg?height=80&width=80&query=webtoon cover"}
                 alt={investment.title}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholder.svg?height=80&width=80&query=webtoon cover"
+                }}
               />
               <div
                 className={`absolute top-2 right-2 w-3 h-3 rounded-full border-2 border-white shadow-sm ${
@@ -198,11 +194,13 @@ export function InvestmentListScreen() {
                     <p className="text-xs text-gray">제작 진행도</p>
                     <p className="text-xs text-darkblue dark:text-light">{investment.progress}%</p>
                   </div>
-                  <Progress
-                    value={investment.progress}
-                    className="h-2 bg-gray/20"
-                    indicatorClassName="bg-gradient-to-r from-yellow-400 to-yellow-500"
-                  />
+                  <div className="relative">
+                    <Progress value={investment.progress} className="h-2 bg-gray/20" />
+                    <div
+                      className="absolute top-0 left-0 h-2 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full transition-all duration-300"
+                      style={{ width: `${investment.progress}%` }}
+                    />
+                  </div>
                 </div>
               )}
             </div>
