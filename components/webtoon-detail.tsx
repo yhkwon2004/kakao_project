@@ -565,10 +565,10 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
         {/* 탭 컨텐츠 */}
         <Tabs defaultValue="summary" onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-2 mb-6 bg-white dark:bg-darkblue/20 p-1 rounded-xl shadow-sm border border-gray/10">
+          <TabsList className="grid grid-cols-3 mb-6 bg-white dark:bg-darkblue/20 p-1 rounded-xl shadow-sm border border-gray/10">
             <TabsTrigger
               value="summary"
-              className={`rounded-lg transition-all font-medium ${
+              className={`rounded-lg transition-all font-medium text-xs ${
                 activeTab === "summary"
                   ? "bg-yellow text-dark shadow-sm"
                   : "text-gray hover:text-darkblue dark:hover:text-light"
@@ -578,13 +578,23 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             </TabsTrigger>
             <TabsTrigger
               value="details"
-              className={`rounded-lg transition-all font-medium ${
+              className={`rounded-lg transition-all font-medium text-xs ${
                 activeTab === "details"
                   ? "bg-yellow text-dark shadow-sm"
                   : "text-gray hover:text-darkblue dark:hover:text-light"
               }`}
             >
               제작 정보
+            </TabsTrigger>
+            <TabsTrigger
+              value="investors"
+              className={`rounded-lg transition-all font-medium text-xs ${
+                activeTab === "investors"
+                  ? "bg-yellow text-dark shadow-sm"
+                  : "text-gray hover:text-darkblue dark:hover:text-light"
+              }`}
+            >
+              투자자 그래프
             </TabsTrigger>
           </TabsList>
 
@@ -624,6 +634,147 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   <h3 className="font-bold text-darkblue dark:text-light text-lg">최신 제작 업데이트</h3>
                 </div>
                 <p className="text-sm text-darkblue/80 dark:text-light/80 leading-relaxed">{webtoon.updateLog}</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="investors">
+            <Card className="rounded-2xl mb-6 border-gray/20 bg-white dark:bg-darkblue/30 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  <h3 className="font-bold text-darkblue dark:text-light text-lg">투자자 수 증가 추이</h3>
+                </div>
+
+                {/* 투자자 증가 그래프 */}
+                <div className="w-full">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-sm text-gray">최근 6개월</span>
+                    <span className="text-sm text-gray">단위: 명</span>
+                  </div>
+
+                  {/* 선형 그래프 */}
+                  <div className="relative h-48 bg-gradient-to-t from-blue/5 to-transparent rounded-lg p-4 border border-blue/10">
+                    <svg className="w-full h-full" viewBox="0 0 300 160" preserveAspectRatio="none">
+                      {/* 그리드 라인 */}
+                      <defs>
+                        <pattern id="grid" width="50" height="32" patternUnits="userSpaceOnUse">
+                          <path d="M 50 0 L 0 0 0 32" fill="none" stroke="#e5e7eb" strokeWidth="0.5" opacity="0.3" />
+                        </pattern>
+                      </defs>
+                      <rect width="100%" height="100%" fill="url(#grid)" />
+
+                      {/* 투자자 수 증가 라인 */}
+                      <polyline
+                        fill="none"
+                        stroke="#3B82F6"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        points="0,140 50,120 100,100 150,85 200,70 250,50 300,30"
+                      />
+
+                      {/* 데이터 포인트 */}
+                      {[
+                        { x: 0, y: 140, value: 45 },
+                        { x: 50, y: 120, value: 67 },
+                        { x: 100, y: 100, value: 89 },
+                        { x: 150, y: 85, value: 112 },
+                        { x: 200, y: 70, value: 134 },
+                        { x: 250, y: 50, value: 156 },
+                        { x: 300, y: 30, value: dynamicTotalInvestors },
+                      ].map((point, index) => (
+                        <g key={index}>
+                          <circle cx={point.x} cy={point.y} r="4" fill="#3B82F6" stroke="white" strokeWidth="2" />
+                          <text
+                            x={point.x}
+                            y={point.y - 10}
+                            textAnchor="middle"
+                            className="text-xs fill-blue-600 font-medium"
+                          >
+                            {point.value}
+                          </text>
+                        </g>
+                      ))}
+
+                      {/* 영역 채우기 */}
+                      <polygon
+                        fill="url(#gradient)"
+                        points="0,140 50,120 100,100 150,85 200,70 250,50 300,30 300,160 0,160"
+                        opacity="0.2"
+                      />
+
+                      <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.4" />
+                          <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.1" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+
+                    {/* X축 라벨 */}
+                    <div className="flex justify-between mt-2 text-xs text-gray">
+                      <span>6개월전</span>
+                      <span>5개월전</span>
+                      <span>4개월전</span>
+                      <span>3개월전</span>
+                      <span>2개월전</span>
+                      <span>1개월전</span>
+                      <span>현재</span>
+                    </div>
+                  </div>
+
+                  {/* 투자자 통계 */}
+                  <div className="grid grid-cols-2 gap-4 mt-6">
+                    <div className="bg-gradient-to-br from-blue/10 to-blue/5 p-4 rounded-xl border border-blue/20">
+                      <div className="flex items-center mb-2">
+                        <div className="bg-blue/20 p-1.5 rounded-lg mr-2">
+                          <Users className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <span className="text-xs font-medium text-gray">총 투자자</span>
+                      </div>
+                      <p className="text-2xl font-bold text-blue-600">{dynamicTotalInvestors}명</p>
+                      <p className="text-xs text-green-600 mt-1">
+                        +{Math.floor(dynamicTotalInvestors * 0.15)}명 (이번 달)
+                      </p>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-green/10 to-green/5 p-4 rounded-xl border border-green/20">
+                      <div className="flex items-center mb-2">
+                        <div className="bg-green/20 p-1.5 rounded-lg mr-2">
+                          <BarChart3 className="h-4 w-4 text-green-600" />
+                        </div>
+                        <span className="text-xs font-medium text-gray">증가율</span>
+                      </div>
+                      <p className="text-2xl font-bold text-green-600">+247%</p>
+                      <p className="text-xs text-green-600 mt-1">지난 6개월 대비</p>
+                    </div>
+                  </div>
+
+                  {/* 투자자 분포 */}
+                  <div className="mt-6 p-4 bg-gradient-to-r from-purple/10 to-indigo/10 rounded-xl border border-purple/20">
+                    <h4 className="font-bold text-darkblue dark:text-light mb-3">투자자 분포</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray">신규 투자자</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 h-2 bg-gray/20 rounded-full overflow-hidden">
+                            <div className="w-3/5 h-full bg-blue-500 rounded-full"></div>
+                          </div>
+                          <span className="text-sm font-medium text-blue-600">60%</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray">기존 투자자</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 h-2 bg-gray/20 rounded-full overflow-hidden">
+                            <div className="w-2/5 h-full bg-green-500 rounded-full"></div>
+                          </div>
+                          <span className="text-sm font-medium text-green-600">40%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -764,134 +915,188 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="py-2 space-y-4">
+          {/* 투자 금액 표시 */}
+          <div className="py-4 space-y-6">
             {/* 투자 금액 표시 */}
             <div
-              className={`p-4 rounded-2xl text-center border transition-all duration-300 ${
+              className={`p-6 rounded-2xl text-center border-2 transition-all duration-300 ${
                 Number.parseInt(keypadInput, 10) > userBalance
-                  ? "bg-gradient-to-br from-red/20 to-red/10 border-red/40 animate-pulse"
-                  : "bg-gradient-to-br from-green/10 to-yellow/10 border-green/20"
-              }`}
+                  ? "bg-gradient-to-br from-red/20 to-red/10 border-red/40 animate-pulse shadow-red-200/50"
+                  : "bg-gradient-to-br from-blue/10 to-purple/10 border-blue/30 shadow-blue-200/50"
+              } shadow-lg`}
             >
-              <div className="flex justify-between items-center mb-2">
-                <p className="text-sm text-gray font-medium">투자 금액</p>
-                <p className="text-xs text-gray font-medium">잔액: {userBalance.toLocaleString()}원</p>
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <p className="text-sm text-gray font-semibold">투자 금액</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Wallet className="h-3 w-3 text-gray" />
+                  <p className="text-xs text-gray font-medium">잔액: {userBalance.toLocaleString()}원</p>
+                </div>
               </div>
               <p
-                className={`text-3xl md:text-4xl font-bold tracking-tight ${
+                className={`text-4xl md:text-5xl font-bold tracking-tight mb-2 ${
                   Number.parseInt(keypadInput, 10) > userBalance ? "text-red-500" : "text-darkblue dark:text-light"
                 }`}
               >
                 {keypadInput === "0" ? "0원" : `${Number.parseInt(keypadInput, 10).toLocaleString()}원`}
               </p>
               {Number.parseInt(keypadInput, 10) > userBalance && (
-                <p className="text-sm text-red-500 font-medium mt-2 animate-bounce">⚠️ 잔액이 부족합니다</p>
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  <p className="text-sm text-red-500 font-semibold">잔액이 부족합니다</p>
+                </div>
               )}
             </div>
 
-            {/* 빠른 선택 버튼 */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setKeypadInput("10000")
-                  setInputError("")
-                }}
-                className="rounded-full h-10 px-4 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200 whitespace-nowrap flex-shrink-0"
-              >
-                만원
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setKeypadInput("100000")
-                  setInputError("")
-                }}
-                className="rounded-full h-10 px-4 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200 whitespace-nowrap flex-shrink-0"
-              >
-                10만원
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setKeypadInput("1000000")
-                  setInputError("")
-                }}
-                className="rounded-full h-10 px-4 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200 whitespace-nowrap flex-shrink-0"
-              >
-                100만원
-              </Button>
+            {/* 빠른 선택 버튼 - 전문적인 디자인 */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-darkblue dark:text-light">빠른 선택</h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setKeypadInput(userBalance.toString())
+                    setInputError("")
+                  }}
+                  className="h-8 px-3 text-xs font-semibold bg-gradient-to-r from-green/10 to-emerald/10 border-green/30 text-green-700 hover:bg-green/20 hover:border-green/40 transition-all duration-200"
+                >
+                  <Wallet className="h-3 w-3 mr-1" />
+                  전액 투자
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { label: "1만원", value: 10000 },
+                  { label: "10만원", value: 100000 },
+                  { label: "100만원", value: 1000000 },
+                  { label: "1000만원", value: 10000000 },
+                ].map((option) => (
+                  <Button
+                    key={option.value}
+                    variant="outline"
+                    onClick={() => {
+                      setKeypadInput(option.value.toString())
+                      setInputError("")
+                    }}
+                    className="h-12 text-xs font-semibold border-2 border-gray/20 hover:bg-blue/10 hover:border-blue/30 transition-all duration-200 rounded-xl shadow-sm"
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
             </div>
 
-            {/* 숫자 키패드 */}
-            <div className="grid grid-cols-3 gap-3">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+            {/* 전문적인 숫자 키패드 */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-darkblue dark:text-light">직접 입력</h4>
+              <div className="grid grid-cols-3 gap-3">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                  <Button
+                    key={num}
+                    variant="outline"
+                    className="h-16 text-xl font-bold rounded-2xl border-2 border-gray/20 text-darkblue dark:text-light hover:bg-blue/10 hover:border-blue/30 hover:scale-105 transition-all duration-200 shadow-sm"
+                    onClick={() => {
+                      if (keypadInput === "0") {
+                        setKeypadInput(num.toString())
+                      } else {
+                        setKeypadInput((prev) => prev + num.toString())
+                      }
+                      setInputError("")
+                    }}
+                  >
+                    {num}
+                  </Button>
+                ))}
+
                 <Button
-                  key={num}
                   variant="outline"
-                  className="h-14 text-xl font-bold rounded-full border-2 border-gray/20 text-darkblue dark:text-light hover:bg-green/10 hover:border-green/30 transition-all duration-200 shadow-sm"
+                  className="h-16 text-sm font-bold rounded-2xl border-2 border-gray/20 text-red-600 hover:bg-red/10 hover:border-red/30 hover:scale-105 transition-all duration-200 shadow-sm"
+                  onClick={() => setKeypadInput("0")}
+                >
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs">전체</span>
+                    <span className="text-xs">삭제</span>
+                  </div>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-16 text-2xl font-bold rounded-2xl border-2 border-gray/20 text-darkblue dark:text-light hover:bg-blue/10 hover:border-blue/30 hover:scale-105 transition-all duration-200 shadow-sm"
                   onClick={() => {
                     if (keypadInput === "0") {
-                      setKeypadInput(num.toString())
+                      setKeypadInput("0")
                     } else {
-                      setKeypadInput((prev) => prev + num.toString())
+                      setKeypadInput((prev) => prev + "0")
                     }
                     setInputError("")
                   }}
                 >
-                  {num}
+                  0
                 </Button>
-              ))}
-              <Button
-                variant="outline"
-                className="h-14 text-sm font-bold rounded-full border-2 border-gray/20 text-darkblue dark:text-light hover:bg-red/10 hover:border-red/30 transition-all duration-200 shadow-sm"
-                onClick={() => setKeypadInput("0")}
-              >
-                초기화
-              </Button>
-              <Button
-                variant="outline"
-                className="h-14 text-xl font-bold rounded-full border-2 border-gray/20 text-darkblue dark:text-light hover:bg-blue/10 hover:border-blue/30 transition-all duration-200 shadow-sm"
-                onClick={() => {
-                  if (keypadInput === "0") {
-                    setKeypadInput("0")
-                  } else {
-                    setKeypadInput((prev) => prev + "0")
-                  }
-                  setInputError("")
-                }}
-              >
-                0
-              </Button>
-              <Button
-                variant="outline"
-                className="h-14 text-sm font-bold rounded-full border-2 border-gray/20 text-darkblue dark:text-light hover:bg-orange/10 hover:border-orange/30 transition-all duration-200 shadow-sm"
-                onClick={() => {
-                  if (keypadInput.length > 1) {
-                    setKeypadInput((prev) => prev.slice(0, -1))
-                  } else {
-                    setKeypadInput("0")
-                  }
-                  setInputError("")
-                }}
-              >
-                ⌫
-              </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-16 text-lg font-bold rounded-2xl border-2 border-gray/20 text-orange-600 hover:bg-orange/10 hover:border-orange/30 hover:scale-105 transition-all duration-200 shadow-sm"
+                  onClick={() => {
+                    if (keypadInput.length > 1) {
+                      setKeypadInput((prev) => prev.slice(0, -1))
+                    } else {
+                      setKeypadInput("0")
+                    }
+                    setInputError("")
+                  }}
+                >
+                  ⌫
+                </Button>
+              </div>
             </div>
 
-            {/* 예상 수익 정보 */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gradient-to-br from-green/10 to-green/5 p-3 rounded-xl border border-green/20">
-                <p className="text-xs text-gray font-medium mb-1">예상 수익금</p>
-                <p className="text-base font-bold text-green">
-                  {Math.round(Number.parseInt(keypadInput, 10) * (1 + expectedROIValue / 100)).toLocaleString()}원
-                </p>
+            {/* 투자 정보 요약 - 전문적인 카드 디자인 */}
+            <div className="grid grid-cols-1 gap-3">
+              <div className="bg-gradient-to-r from-green/10 to-emerald/10 p-4 rounded-2xl border border-green/20 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-green/20 rounded-lg flex items-center justify-center">
+                      <BarChart3 className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray font-medium">예상 수익금</p>
+                      <p className="text-lg font-bold text-green-600">
+                        {Math.round(Number.parseInt(keypadInput, 10) * (1 + expectedROIValue / 100)).toLocaleString()}원
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-green-600 font-semibold">+{expectedROIValue}%</p>
+                    <p className="text-xs text-gray">수익률</p>
+                  </div>
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-yellow/10 to-yellow/5 p-3 rounded-xl border border-yellow/20">
-                <p className="text-xs text-gray font-medium mb-1">투자 후 잔액</p>
-                <p className="text-base font-bold text-darkblue dark:text-light">
-                  {Math.max(0, userBalance - Number.parseInt(keypadInput, 10)).toLocaleString()}원
-                </p>
+
+              <div className="bg-gradient-to-r from-yellow/10 to-orange/10 p-4 rounded-2xl border border-yellow/20 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-yellow/20 rounded-lg flex items-center justify-center">
+                      <Wallet className="h-4 w-4 text-yellow-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray font-medium">투자 후 잔액</p>
+                      <p className="text-lg font-bold text-darkblue dark:text-light">
+                        {Math.max(0, userBalance - Number.parseInt(keypadInput, 10)).toLocaleString()}원
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-yellow-600 font-semibold">
+                      {((Math.max(0, userBalance - Number.parseInt(keypadInput, 10)) / userBalance) * 100).toFixed(0)}%
+                    </p>
+                    <p className="text-xs text-gray">잔여율</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
