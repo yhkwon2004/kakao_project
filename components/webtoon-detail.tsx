@@ -1004,19 +1004,49 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
               <p className="text-sm font-medium text-green">예상 수익률: {webtoon.expectedROI}%</p>
             </div>
 
-            {/* 남은 투자금액 표시 */}
-            <div className="bg-gradient-to-r from-blue/10 to-purple/10 rounded-lg p-3 border border-blue/20">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-darkblue dark:text-light">남은 투자금액</span>
-                <span className="text-lg font-bold text-blue-600">
-                  ₩{Math.max(0, webtoon.goalAmount - dynamicCurrentRaised).toLocaleString()}
-                </span>
-              </div>
-              <div className="mt-1">
-                <div className="flex justify-between text-xs text-gray">
-                  <span>목표까지</span>
-                  <span>{Math.max(0, 100 - dynamicProgress).toFixed(1)}% 남음</span>
+            {/* 투자 현황 정보 카드 */}
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              {/* 남은 기간 */}
+              <div className="bg-gradient-to-br from-orange/10 to-red/10 rounded-lg p-3 border border-orange/20 text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full mr-1"></div>
+                  <span className="text-xs font-medium text-gray">남은 기간</span>
                 </div>
+                <p className="text-lg font-bold text-orange-600">
+                  {webtoon.status === "completed" ? "마감" : `${webtoon.daysLeft}일`}
+                </p>
+              </div>
+
+              {/* 투자자 수 */}
+              <div className="bg-gradient-to-br from-green/10 to-emerald/10 rounded-lg p-3 border border-green/20 text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                  <span className="text-xs font-medium text-gray">투자자 수</span>
+                </div>
+                <p className="text-lg font-bold text-green-600">{dynamicTotalInvestors.toLocaleString()}명</p>
+              </div>
+
+              {/* 남은 투자금액 */}
+              <div className="bg-gradient-to-br from-blue/10 to-purple/10 rounded-lg p-3 border border-blue/20 text-center">
+                <div className="flex items-center justify-center mb-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-1"></div>
+                  <span className="text-xs font-medium text-gray">남은 금액</span>
+                </div>
+                <p className="text-lg font-bold text-blue-600">
+                  {Math.max(0, webtoon.goalAmount - dynamicCurrentRaised) >= 1000000
+                    ? `${Math.floor(Math.max(0, webtoon.goalAmount - dynamicCurrentRaised) / 1000000)}만원`
+                    : `${Math.max(0, webtoon.goalAmount - dynamicCurrentRaised).toLocaleString()}원`}
+                </p>
+              </div>
+            </div>
+
+            {/* 진행률 요약 */}
+            <div className="bg-gradient-to-r from-purple/10 to-indigo/10 rounded-lg p-3 border border-purple/20">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-darkblue dark:text-light">목표까지</span>
+                <span className="text-lg font-bold text-purple-600">
+                  {Math.max(0, 100 - dynamicProgress).toFixed(1)}% 남음
+                </span>
               </div>
             </div>
           </CardContent>

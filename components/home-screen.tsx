@@ -30,11 +30,13 @@ export function HomeScreen() {
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    const user = getUserFromStorage()
-    if (user) {
-      setUserName(user.name)
-      if (user.profileImage) {
-        setProfileImage(user.profileImage)
+    if (typeof window !== "undefined") {
+      const user = getUserFromStorage()
+      if (user) {
+        setUserName(user.name)
+        if (user.profileImage) {
+          setProfileImage(user.profileImage)
+        }
       }
     }
   }, [])
@@ -47,35 +49,39 @@ export function HomeScreen() {
 
   // 웹툰 데이터 업데이트 반영
   useEffect(() => {
-    // 웹툰 데이터 변경 감지
+    // 웹툰 데이터 업데이트 반영
     const handleWebtoonDataChange = () => {
-      // 로컬 스토리지에서 업데이트된 웹툰 데이터 로드
-      const storedWebtoons = localStorage.getItem("webtoonsData")
-      if (storedWebtoons) {
-        const webtoonsData = JSON.parse(storedWebtoons)
+      if (typeof window !== "undefined") {
+        // 로컬 스토리지에서 업데이트된 웹툰 데이터 로드
+        const storedWebtoons = localStorage.getItem("webtoonsData")
+        if (storedWebtoons) {
+          const webtoonsData = JSON.parse(storedWebtoons)
 
-        // investmentWebtoons 데이터 업데이트
-        investmentWebtoons.forEach((webtoon) => {
-          if (webtoonsData[webtoon.id]) {
-            const updatedData = webtoonsData[webtoon.id]
-            webtoon.currentRaised = updatedData.currentRaised || webtoon.currentRaised
-            webtoon.fundingPercentage = updatedData.progress || webtoon.fundingPercentage
-            webtoon.totalInvestors = updatedData.totalInvestors || webtoon.totalInvestors
-            webtoon.status = updatedData.status || webtoon.status
-          }
-        })
+          // investmentWebtoons 데이터 업데이트
+          investmentWebtoons.forEach((webtoon) => {
+            if (webtoonsData[webtoon.id]) {
+              const updatedData = webtoonsData[webtoon.id]
+              webtoon.currentRaised = updatedData.currentRaised || webtoon.currentRaised
+              webtoon.fundingPercentage = updatedData.progress || webtoon.fundingPercentage
+              webtoon.totalInvestors = updatedData.totalInvestors || webtoon.totalInvestors
+              webtoon.status = updatedData.status || webtoon.status
+            }
+          })
 
-        // 컴포넌트 리렌더링 강제
-        setUserName((prev) => prev + "")
+          // 컴포넌트 리렌더링 강제
+          setUserName((prev) => prev + "")
+        }
       }
     }
 
-    window.addEventListener("webtoonDataChanged", handleWebtoonDataChange)
-    window.addEventListener("storage", handleWebtoonDataChange)
+    if (typeof window !== "undefined") {
+      window.addEventListener("webtoonDataChanged", handleWebtoonDataChange)
+      window.addEventListener("storage", handleWebtoonDataChange)
 
-    return () => {
-      window.removeEventListener("webtoonDataChanged", handleWebtoonDataChange)
-      window.removeEventListener("storage", handleWebtoonDataChange)
+      return () => {
+        window.removeEventListener("webtoonDataChanged", handleWebtoonDataChange)
+        window.removeEventListener("storage", handleWebtoonDataChange)
+      }
     }
   }, [])
 
@@ -145,6 +151,10 @@ export function HomeScreen() {
 
   // 인기 투자 프로젝트 렌더링 시 실시간 데이터 사용
   const getUpdatedInvestmentData = () => {
+    if (typeof window === "undefined") {
+      return top3Investments
+    }
+
     const storedWebtoons = localStorage.getItem("webtoonsData")
     const webtoonsData = storedWebtoons ? JSON.parse(storedWebtoons) : {}
 
