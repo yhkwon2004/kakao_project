@@ -129,6 +129,22 @@ export const resetGuestData = async () => {
         status: "in_progress",
         roi: null,
       },
+      {
+        user_id: userId,
+        webtoon_id: "6", // 철혈검가 사냥개의 회귀
+        amount: 2800000,
+        created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days ago
+        status: "completed",
+        roi: 18,
+      },
+      {
+        user_id: userId,
+        webtoon_id: "7", // 나쁜 비서 [19세 완전판]
+        amount: 3400000,
+        created_at: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString(), // 75 days ago
+        status: "completed",
+        roi: 22,
+      },
     ]
 
     // Insert dummy investments

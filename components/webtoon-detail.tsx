@@ -17,6 +17,8 @@ import { Logo } from "@/components/logo"
 import { getWebtoonById } from "@/data/webtoons"
 import { getUserFromStorage } from "@/lib/auth"
 import { Input } from "@/components/ui/input"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 
 // 투자자 증가 추이 데이터 타입
 interface InvestmentGrowthData {
@@ -42,6 +44,8 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   const [isInvestModalOpen, setIsInvestModalOpen] = useState(false)
   const [keypadInput, setKeypadInput] = useState("10000")
   const [inputError, setInputError] = useState("")
+  const [investmentGrowthData, setInvestmentGrowthData] = useState<InvestmentGrowthData[]>([])
+  const [isInsufficientBalanceDialogOpen, setIsInsufficientBalanceDialogOpen] = useState(false)
 
   // 웹툰 상세 정보 데이터 부분을 수정합니다.
   // 이제 ID를 기반으로 웹툰 정보를 가져오고, 필요한 속성에 기본값을 제공합니다.
@@ -81,15 +85,6 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   // 진행률 계산 부분도 안전하게 수정
   const progress = webtoon.goalAmount > 0 ? (webtoon.currentRaised / webtoon.goalAmount) * 100 : 0
 
-  // 투자자 증가 추이 데이터
-  const investmentGrowthData: InvestmentGrowthData[] = [
-    { date: "2023-01", investors: 150, amount: 45000000 },
-    { date: "2023-02", investors: 320, amount: 96000000 },
-    { date: "2023-03", investors: 580, amount: 174000000 },
-    { date: "2023-04", investors: 850, amount: 255000000 },
-    { date: "2023-05", investors: 1250, amount: 320000000 },
-  ]
-
   // 최소, 최대 투자 금액 설정
   const MIN_INVESTMENT = 10000
   const MAX_INVESTMENT = 10000000
@@ -108,10 +103,55 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   useEffect(() => {
     // 사용자 정보 로드
     const user = getUserFromStorage()
-    if (user && user.balance) {
+    if (user) {
+      // balance가 undefined인 경우에만 기본값 설정
+      if (user.balance === undefined) {
+        user.balance = 150000
+        localStorage.setItem("currentUser", JSON.stringify(user))
+      }
       setUserBalance(user.balance)
     }
+  }, [])
 
+  // 투자자 증가 추이와 투자금액 추이 데이터 동적 생성
+  useEffect(() => {
+    if (webtoonData) {
+      // 현재 투자자 수와 모금액을 기준으로 과거 데이터 생성
+      const totalInvestors = webtoonData.totalInvestors || 0
+      const currentRaised = webtoonData.currentRaised || 0
+
+      // 최근 6개월 데이터 생성
+      const months = 6
+      const newGrowthData = []
+
+      for (let i = 0; i < months; i++) {
+        // 날짜 계산 (현재로부터 i개월 전)
+        const date = new Date()
+        date.setMonth(date.getMonth() - (months - 1 - i))
+        const monthStr = date.toISOString().slice(0, 7) // YYYY-MM 형식
+
+        // 투자자 수와 금액은 시간에 따라 증가하는 패턴으로 생성
+        // 초기값은 전체의 10~20% 정도에서 시작하여 점진적으로 증가
+        const growthFactor = 0.1 + 0.9 * (i / (months - 1)) // 0.1에서 1.0까지 증가
+
+        // 약간의 랜덤성 추가 (±10%)
+        const randomFactor = 0.9 + Math.random() * 0.2
+
+        const investors = Math.round(totalInvestors * growthFactor * randomFactor)
+        const amount = Math.round(currentRaised * growthFactor * randomFactor)
+
+        newGrowthData.push({
+          date: monthStr,
+          investors,
+          amount,
+        })
+      }
+
+      setInvestmentGrowthData(newGrowthData)
+    }
+  }, [webtoonData])
+
+  useEffect(() => {
     // 로컬 스토리지에서 투자 내역 확인
     const investmentsStr = localStorage.getItem("userInvestments")
     if (investmentsStr) {
@@ -411,12 +451,8 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     }
 
     if (amount > userBalance) {
-      toast({
-        title: "잔액 부족",
-        description: "투자 금액이 현재 잔액보다 많습니다.",
-        variant: "destructive",
-        duration: 500,
-      })
+      setIsInvestModalOpen(false)
+      setIsInsufficientBalanceDialogOpen(true)
       return
     }
 
@@ -425,94 +461,324 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     setIsConfirmDialogOpen(true)
   }
 
-  // 투자자 증가 그래프 렌더링
+  // 잔액 부족 시 충전 페이지로 이동
+  const handleGoToPayment = () => {
+    setIsInsufficientBalanceDialogOpen(false)
+    router.push("/mypage/payment")
+  }
+
+  // 투자자 증가 그래프 렌더링 함수를 다음과 같이 수정:
+
   const renderInvestorGrowthGraph = () => {
-    const maxInvestors = Math.max(...investmentGrowthData.map((d) => d.investors))
+    // 6개월간의 월별 데이터 생성
+    const months = []
+    const currentDate = new Date()
+
+    // 로컬 스토리지에서 현재 웹툰의 투자 내역 확인
+    const investmentsStr = localStorage.getItem("userInvestments")
+    const investments = investmentsStr ? JSON.parse(investmentsStr) : []
+    const currentWebtoonInvestments = investments.filter((inv: any) => inv.webtoonId === id)
+
+    let cumulativeExisting = 0 // 누적 기존 투자자
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+      const monthStr = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}`
+
+      // 해당 월의 신규 투자자 수 (랜덤 + 실제 투자 반영)
+      let newInvestors = Math.floor(Math.random() * 15) + 5 // 기본 5-20명
+
+      // 현재 월이고 사용자가 투자했다면 +1
+      if (i === 0 && hasInvested) {
+        newInvestors += 1
+      }
+
+      // 다음 달에는 이번 달 신규 투자자가 기존 투자자로 전환
+      if (i < 5) {
+        cumulativeExisting += months[months.length - 1]?.new || 0
+      }
+
+      months.push({
+        month: monthStr,
+        existing: cumulativeExisting,
+        new: newInvestors,
+        total: cumulativeExisting + newInvestors,
+      })
+    }
+
+    // Y축 최대값 계산
+    const maxValue = Math.max(...months.map((d) => d.total))
+    const yAxisMax = Math.max(Math.ceil(maxValue * 1.2), 10) // 최소 10명
+
+    const chartConfig = {
+      existing: {
+        label: "기존 투자자",
+        color: "hsl(142, 76%, 36%)", // 초록색
+      },
+      new: {
+        label: "신규 투자자",
+        color: "hsl(0, 84%, 60%)", // 빨간색
+      },
+    }
 
     return (
-      <div className="mt-4">
+      <div className="mt-4 w-full">
         <div className="flex justify-between items-center mb-2">
           <h3 className="font-bold text-darkblue dark:text-light">투자자 증가 추이</h3>
           <span className="text-xs text-gray">단위: 명</span>
         </div>
-        <div className="relative h-60 border border-gray/20 rounded-xl p-4 bg-light dark:bg-darkblue/20">
-          {/* Y축 레이블 */}
-          <div className="absolute left-0 top-0 bottom-0 w-10 flex flex-col justify-between text-xs text-gray py-6">
-            <span>1500</span>
-            <span>1000</span>
-            <span>500</span>
-            <span>0</span>
-          </div>
-
-          {/* 그래프 영역 */}
-          <div className="ml-10 h-full flex items-end">
-            {investmentGrowthData.map((data, index) => (
-              <div key={data.date} className="flex-1 flex flex-col items-center">
-                {/* 막대 그래프 */}
-                <div
-                  className="w-6 bg-yellow rounded-t-md transition-all duration-500 ease-in-out"
-                  style={{
-                    height: `${(data.investors / 1500) * 100}%`,
-                    opacity: activeTab === "investors" ? 1 : 0.7,
-                  }}
-                ></div>
-
-                {/* X축 레이블 */}
-                <span className="text-xs text-gray mt-2">{data.date.split("-")[1]}월</span>
-              </div>
-            ))}
-          </div>
-
-          {/* 현재 투자자 수 표시 */}
-          <div className="absolute top-4 right-4 bg-yellow/20 text-darkblue dark:text-light px-3 py-1 rounded-full text-sm font-medium">
-            현재 투자자: {webtoon.totalInvestors}명
-          </div>
+        <div className="w-full flex justify-center">
+          <ChartContainer config={chartConfig} className="h-60 w-full max-w-full">
+            <AreaChart
+              accessibilityLayer
+              data={months}
+              width="100%"
+              height={240}
+              margin={{
+                top: 20,
+                right: 30,
+                left: 30,
+                bottom: 20,
+              }}
+            >
+              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
+              <XAxis
+                dataKey="month"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(value) => value.slice(5) + "월"}
+                interval={0}
+              />
+              <YAxis
+                domain={[0, yAxisMax]}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(value) => `${value}명`}
+              />
+              <ChartTooltip
+                cursor={{ fill: "rgba(0, 0, 0, 0.1)" }}
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload
+                    return (
+                      <div className="bg-white dark:bg-darkblue border border-gray/20 rounded-lg p-3 shadow-lg">
+                        <p className="text-sm font-medium text-darkblue dark:text-light mb-2">
+                          {label.slice(0, 4)}년 {label.slice(5)}월
+                        </p>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 bg-green-600 rounded-sm"></div>
+                              <span className="text-xs text-gray">기존 투자자</span>
+                            </div>
+                            <span className="text-sm font-medium text-green-600">{data.existing}명</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
+                              <span className="text-xs text-gray">신규 투자자</span>
+                            </div>
+                            <span className="text-sm font-medium text-red-500">{data.new}명</span>
+                          </div>
+                          <div className="border-t border-gray/20 pt-1 mt-2">
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-xs font-medium text-gray">총 투자자</span>
+                              <span className="text-sm font-bold text-darkblue dark:text-light">{data.total}명</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+                  return null
+                }}
+              />
+              <Area
+                dataKey="existing"
+                type="natural"
+                fill="hsl(142, 76%, 36%)"
+                fillOpacity={0.4}
+                stroke="hsl(142, 76%, 36%)"
+                strokeWidth={2}
+                stackId="a"
+              />
+              <Area
+                dataKey="new"
+                type="natural"
+                fill="hsl(0, 84%, 60%)"
+                fillOpacity={0.4}
+                stroke="hsl(0, 84%, 60%)"
+                strokeWidth={2}
+                stackId="a"
+              />
+            </AreaChart>
+          </ChartContainer>
         </div>
       </div>
     )
   }
 
-  // 투자금액 증가 그래프 렌더링
+  // 투자금액 증가 그래프 렌더링 함수를 다음과 같이 수정:
+
   const renderAmountGrowthGraph = () => {
+    // 6개월간의 월별 데이터 생성
+    const months = []
+    const currentDate = new Date()
+
+    // 로컬 스토리지에서 현재 웹툰의 투자 내역 확인
+    const investmentsStr = localStorage.getItem("userInvestments")
+    const investments = investmentsStr ? JSON.parse(investmentsStr) : []
+    const currentWebtoonInvestments = investments.filter((inv: any) => inv.webtoonId === id)
+
+    let cumulativeAmount = 0 // 누적 투자금 (단위: 만원)
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+      const monthStr = `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, "0")}`
+
+      // 해당 월의 신규 투자금 (단위: 만원)
+      let newAmount = Math.floor(Math.random() * 3000) + 1000 // 기본 1000-4000만원
+
+      // 현재 월이고 사용자가 투자했다면 투자금액 추가
+      if (i === 0 && hasInvested) {
+        newAmount += Math.floor(investmentAmount / 10000) // 만원 단위로 변환
+      }
+
+      // 누적 투자금에 신규 투자금 추가
+      cumulativeAmount += newAmount
+
+      months.push({
+        month: monthStr,
+        cumulative: cumulativeAmount - newAmount, // 이전까지의 누적
+        new: newAmount, // 이번 달 신규
+        total: cumulativeAmount,
+      })
+    }
+
+    // Y축 최대값 계산
+    const maxValue = Math.max(...months.map((d) => d.total))
+    const yAxisMax = Math.max(Math.ceil(maxValue * 1.2), 1000) // 최소 1000만원
+
+    const chartConfig = {
+      cumulative: {
+        label: "누적 투자금",
+        color: "hsl(217, 91%, 60%)", // 파란색
+      },
+      new: {
+        label: "신규 투자금",
+        color: "hsl(142, 76%, 36%)", // 초록색
+      },
+    }
+
     return (
-      <div className="mt-4">
+      <div className="mt-4 w-full">
         <div className="flex justify-between items-center mb-2">
           <h3 className="font-bold text-darkblue dark:text-light">투자금액 증가 추이</h3>
-          <span className="text-xs text-gray">단위: 백만원</span>
+          <span className="text-xs text-gray">단위: 만원</span>
         </div>
-        <div className="relative h-60 border border-gray/20 rounded-xl p-4 bg-light dark:bg-darkblue/20">
-          {/* Y축 레이블 */}
-          <div className="absolute left-0 top-0 bottom-0 w-10 flex flex-col justify-between text-xs text-gray py-6">
-            <span>500</span>
-            <span>375</span>
-            <span>250</span>
-            <span>125</span>
-            <span>0</span>
-          </div>
-
-          {/* 그래프 영역 */}
-          <div className="ml-10 h-full flex items-end">
-            {investmentGrowthData.map((data, index) => (
-              <div key={data.date} className="flex-1 flex flex-col items-center">
-                {/* 막대 그래프 */}
-                <div
-                  className="w-6 bg-green rounded-t-md transition-all duration-500 ease-in-out"
-                  style={{
-                    height: `${(data.amount / 500000000) * 100}%`,
-                    opacity: activeTab === "amount" ? 1 : 0.7,
-                  }}
-                ></div>
-
-                {/* X축 레이블 */}
-                <span className="text-xs text-gray mt-2">{data.date.split("-")[1]}월</span>
-              </div>
-            ))}
-          </div>
-
-          {/* 현재 투자금액 표시 */}
-          <div className="absolute top-4 right-4 bg-green/20 text-darkblue dark:text-light px-3 py-1 rounded-full text-sm font-medium">
-            현재 투자금액: {(webtoon.currentRaised / 1000000).toFixed(0)}백만원
-          </div>
+        <div className="w-full flex justify-center">
+          <ChartContainer config={chartConfig} className="h-60 w-full max-w-full">
+            <AreaChart
+              accessibilityLayer
+              data={months}
+              width="100%"
+              height={240}
+              margin={{
+                top: 20,
+                right: 30,
+                left: 30,
+                bottom: 20,
+              }}
+            >
+              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
+              <XAxis
+                dataKey="month"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(value) => value.slice(5) + "월"}
+                interval={0}
+              />
+              <YAxis
+                domain={[0, yAxisMax]}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(value) => {
+                  if (value >= 10000) {
+                    return `${(value / 10000).toFixed(0)}억`
+                  } else if (value >= 1000) {
+                    return `${(value / 1000).toFixed(0)}천만`
+                  }
+                  return `${value}만`
+                }}
+              />
+              <ChartTooltip
+                cursor={{ fill: "rgba(0, 0, 0, 0.1)" }}
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload
+                    return (
+                      <div className="bg-white dark:bg-darkblue border border-gray/20 rounded-lg p-3 shadow-lg">
+                        <p className="text-sm font-medium text-darkblue dark:text-light mb-2">
+                          {label.slice(0, 4)}년 {label.slice(5)}월
+                        </p>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 bg-blue-500 rounded-sm"></div>
+                              <span className="text-xs text-gray">누적 투자금</span>
+                            </div>
+                            <span className="text-sm font-medium text-blue-500">
+                              ₩{(data.cumulative * 10000).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 bg-green-600 rounded-sm"></div>
+                              <span className="text-xs text-gray">신규 투자금</span>
+                            </div>
+                            <span className="text-sm font-medium text-green-600">
+                              ₩{(data.new * 10000).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="border-t border-gray/20 pt-1 mt-2">
+                            <div className="flex items-center justify-between gap-4">
+                              <span className="text-xs font-medium text-gray">총 투자금</span>
+                              <span className="text-sm font-bold text-darkblue dark:text-light">
+                                ₩{(data.total * 10000).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+                  return null
+                }}
+              />
+              <Area
+                dataKey="cumulative"
+                type="natural"
+                fill="hsl(217, 91%, 60%)"
+                fillOpacity={0.4}
+                stroke="hsl(217, 91%, 60%)"
+                strokeWidth={2}
+                stackId="a"
+              />
+              <Area
+                dataKey="new"
+                type="natural"
+                fill="hsl(142, 76%, 36%)"
+                fillOpacity={0.4}
+                stroke="hsl(142, 76%, 36%)"
+                strokeWidth={2}
+                stackId="a"
+              />
+            </AreaChart>
+          </ChartContainer>
         </div>
       </div>
     )
@@ -771,16 +1037,32 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
           <div className="py-4">
             {/* 투자 금액 표시 */}
-            <div className="bg-light dark:bg-darkblue/50 p-4 rounded-lg mb-4 text-center">
-              <p className="text-sm text-gray mb-1">투자 금액</p>
-              <p className="text-3xl font-bold text-darkblue dark:text-light">
-                ₩{Number.parseInt(keypadInput, 10).toLocaleString()}
+            <div
+              className={`p-6 rounded-2xl mb-6 text-center border transition-all duration-300 ${
+                Number.parseInt(keypadInput, 10) > userBalance
+                  ? "bg-gradient-to-br from-red/20 to-red/10 border-red/40 animate-pulse"
+                  : "bg-gradient-to-br from-green/10 to-yellow/10 border-green/20"
+              }`}
+            >
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-sm text-gray font-medium">투자 금액</p>
+                <p className="text-xs text-gray font-medium">잔액: {userBalance.toLocaleString()}원</p>
+              </div>
+              <p
+                className={`text-4xl font-bold tracking-tight ${
+                  Number.parseInt(keypadInput, 10) > userBalance ? "text-red-500" : "text-darkblue dark:text-light"
+                }`}
+              >
+                {Number.parseInt(keypadInput, 10).toLocaleString()}원
               </p>
+              {Number.parseInt(keypadInput, 10) > userBalance && (
+                <p className="text-sm text-red-500 font-medium mt-2 animate-bounce">⚠️ 잔액이 부족합니다</p>
+              )}
             </div>
 
             {/* 직접 금액 입력 필드 */}
-            <div className="mb-4">
-              <label htmlFor="direct-amount" className="block text-sm font-medium text-gray mb-1">
+            <div className="mb-6">
+              <label htmlFor="direct-amount" className="block text-sm font-semibold text-darkblue dark:text-light mb-2">
                 직접 금액 입력
               </label>
               <div className="relative">
@@ -788,38 +1070,38 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   id="direct-amount"
                   type="text"
                   placeholder="금액을 입력하세요"
-                  className="pl-8 text-right pr-3 py-2 h-12 text-lg font-medium"
+                  className="pl-10 text-right pr-4 py-3 h-14 text-lg font-semibold rounded-xl border-2 border-gray/20 focus:border-green/50 transition-colors"
                   defaultValue={Number.parseInt(keypadInput, 10).toLocaleString()}
                   onChange={handleDirectInputChange}
                 />
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray">₩</span>
+                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray font-medium">₩</span>
               </div>
-              {inputError && <p className="text-xs text-red-500 mt-1">{inputError}</p>}
+              {inputError && <p className="text-xs text-red-500 mt-2 font-medium">{inputError}</p>}
             </div>
 
             {/* 예상 수익 및 잔액 정보 */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-green/10 p-3 rounded-lg">
-                <p className="text-xs text-gray">예상 수익금</p>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-gradient-to-br from-green/10 to-green/5 p-4 rounded-xl border border-green/20">
+                <p className="text-xs text-gray font-medium mb-1">예상 수익금</p>
                 <p className="text-lg font-bold text-green">
-                  ₩{Math.round(Number.parseInt(keypadInput, 10) * (1 + expectedROIValue / 100)).toLocaleString()}
+                  {Math.round(Number.parseInt(keypadInput, 10) * (1 + expectedROIValue / 100)).toLocaleString()}원
                 </p>
               </div>
-              <div className="bg-yellow/10 p-3 rounded-lg">
-                <p className="text-xs text-gray">투자 후 잔액</p>
+              <div className="bg-gradient-to-br from-yellow/10 to-yellow/5 p-4 rounded-xl border border-yellow/20">
+                <p className="text-xs text-gray font-medium mb-1">투자 후 잔액</p>
                 <p className="text-lg font-bold text-darkblue dark:text-light">
-                  ₩{Math.max(0, userBalance - Number.parseInt(keypadInput, 10)).toLocaleString()}
+                  {Math.max(0, userBalance - Number.parseInt(keypadInput, 10)).toLocaleString()}원
                 </p>
               </div>
             </div>
 
             {/* 숫자 키패드 */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-3 mb-6">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                 <Button
                   key={num}
                   variant="outline"
-                  className="h-14 text-xl font-bold rounded-lg border-gray/20 text-darkblue dark:text-light hover:bg-gray/10"
+                  className="h-16 text-xl font-bold rounded-xl border-2 border-gray/20 text-darkblue dark:text-light hover:bg-green/10 hover:border-green/30 transition-all duration-200 shadow-sm"
                   onClick={() => setKeypadInput((num * 10000).toString())}
                 >
                   {num}만원
@@ -827,80 +1109,123 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
               ))}
               <Button
                 variant="outline"
-                className="h-14 text-xl font-bold rounded-lg border-gray/20 text-darkblue dark:text-light hover:bg-gray/10"
+                className="h-16 text-lg font-bold rounded-xl border-2 border-gray/20 text-darkblue dark:text-light hover:bg-red/10 hover:border-red/30 transition-all duration-200 shadow-sm"
                 onClick={() => setKeypadInput("0")}
               >
                 초기화
               </Button>
               <Button
                 variant="outline"
-                className="h-14 text-xl font-bold rounded-lg border-gray/20 text-darkblue dark:text-light hover:bg-gray/10"
+                className="h-16 text-lg font-bold rounded-xl border-2 border-gray/20 text-darkblue dark:text-light hover:bg-blue/10 hover:border-blue/30 transition-all duration-200 shadow-sm"
                 onClick={() => setKeypadInput("100000")}
               >
                 10만원
               </Button>
               <Button
                 variant="outline"
-                className="h-14 rounded-lg border-gray/20 text-darkblue dark:text-light hover:bg-gray/10"
-                onClick={() => setKeypadInput("1000000")}
+                className="h-16 text-lg font-bold rounded-xl border-2 border-yellow/30 bg-gradient-to-br from-yellow/10 to-yellow/5 text-darkblue dark:text-light hover:bg-yellow/20 hover:border-yellow/50 transition-all duration-200 shadow-sm"
+                onClick={() => setKeypadInput(userBalance.toString())}
               >
-                100만원
+                전액
               </Button>
             </div>
 
             {/* 빠른 선택 버튼 */}
-            <div className="flex flex-wrap gap-2 mt-4">
+            <div className="flex flex-wrap gap-3">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setKeypadInput("500000")}
-                className="rounded-full flex-1"
+                className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
               >
                 50만원
               </Button>
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => setKeypadInput("1000000")}
+                className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
+              >
+                100만원
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setKeypadInput("2000000")}
-                className="rounded-full flex-1"
+                className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
               >
                 200만원
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setKeypadInput("5000000")}
-                className="rounded-full flex-1"
-              >
-                500만원
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
                 onClick={() => setKeypadInput("10000000")}
-                className="rounded-full flex-1"
+                className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
               >
                 1000만원
               </Button>
             </div>
           </div>
 
-          <DialogFooter className="flex gap-3 sm:justify-center">
+          <DialogFooter className="flex gap-4 sm:justify-center pt-6">
             <Button
               type="button"
               variant="outline"
-              className="flex-1 rounded-xl border-gray/20 text-gray"
+              className="flex-1 rounded-xl h-12 border-2 border-gray/20 text-gray font-semibold hover:bg-gray/10 transition-all duration-200"
               onClick={() => setIsInvestModalOpen(false)}
             >
               취소
             </Button>
             <Button
               type="button"
-              className="flex-1 rounded-xl bg-green hover:bg-green/90 text-light"
+              className="flex-1 rounded-xl h-12 bg-gradient-to-r from-green to-green/90 hover:from-green/90 hover:to-green/80 text-white font-semibold shadow-lg transition-all duration-200"
               onClick={confirmKeypadInput}
               disabled={!!inputError}
             >
-              확인
+              투자 확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 잔액 부족 다이얼로그 */}
+      <Dialog open={isInsufficientBalanceDialogOpen} onOpenChange={setIsInsufficientBalanceDialogOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
+          <DialogHeader>
+            <DialogTitle className="text-center text-lg font-bold text-red-500">⚠️ 잔액 부족</DialogTitle>
+          </DialogHeader>
+          <div className="text-center py-4">
+            <p className="text-sm text-gray mb-4">
+              현재 잔액이 부족합니다.
+              <br />
+              충전 페이지로 이동하겠습니까?
+            </p>
+            <div className="bg-red/10 p-3 rounded-lg">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-darkblue dark:text-light">투자 금액:</span>
+                <span className="font-bold text-red-500">{Number.parseInt(keypadInput, 10).toLocaleString()}원</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-darkblue dark:text-light">현재 잔액:</span>
+                <span className="font-bold text-darkblue dark:text-light">{userBalance.toLocaleString()}원</span>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex gap-3 sm:justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 rounded-xl border-gray/20 text-gray"
+              onClick={() => setIsInsufficientBalanceDialogOpen(false)}
+            >
+              취소하기
+            </Button>
+            <Button
+              type="button"
+              className="flex-1 rounded-xl bg-green hover:bg-green/90 text-light"
+              onClick={handleGoToPayment}
+            >
+              이동하기
             </Button>
           </DialogFooter>
         </DialogContent>

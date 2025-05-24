@@ -18,7 +18,21 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
-import { MessageCircle, ThumbsUp, PenSquare, Send, Trash2, MoreVertical, AlertTriangle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import {
+  MessageCircle,
+  ThumbsUp,
+  PenSquare,
+  Send,
+  Trash2,
+  MoreVertical,
+  AlertTriangle,
+  Users,
+  Clock,
+  Eye,
+  Filter,
+  Search,
+} from "lucide-react"
 import { Logo } from "@/components/logo"
 import { useToast } from "@/components/ui/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -45,6 +59,7 @@ interface Post {
   time: string
   tag: string
   liked?: boolean
+  views?: number
 }
 
 export function CommunityScreen() {
@@ -64,6 +79,13 @@ export function CommunityScreen() {
   const [posts, setPosts] = useState<Post[]>([])
   const [currentUser, setCurrentUser] = useState("권용현")
   const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [editPostTitle, setEditPostTitle] = useState("")
+  const [editPostContent, setEditPostContent] = useState("")
+  const [editPostTag, setEditPostTag] = useState("")
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [sortBy, setSortBy] = useState("latest") // latest, popular, oldest
 
   // 로컬 스토리지에서 데이터 로드
   useEffect(() => {
@@ -109,6 +131,7 @@ export function CommunityScreen() {
           time: "2시간 전",
           tag: "제작 업데이트",
           liked: false,
+          views: 156,
         },
         {
           id: "2",
@@ -130,6 +153,7 @@ export function CommunityScreen() {
           time: "5시간 전",
           tag: "투자 분석",
           liked: false,
+          views: 89,
         },
         {
           id: "3",
@@ -165,6 +189,7 @@ export function CommunityScreen() {
           time: "1일 전",
           tag: "캐스팅 소식",
           liked: false,
+          views: 234,
         },
       ]
 
@@ -209,7 +234,7 @@ export function CommunityScreen() {
     // Create new post
     const newPost: Post = {
       id: Date.now().toString(),
-      author: currentUser, // Current logged in user name
+      author: currentUser,
       authorInitial: currentUser.charAt(0),
       title: newPostTitle,
       content: newPostContent,
@@ -218,6 +243,7 @@ export function CommunityScreen() {
       time: "방금 전",
       tag: newPostTag,
       liked: false,
+      views: 0,
     }
 
     // Update posts list
@@ -237,13 +263,19 @@ export function CommunityScreen() {
 
   // Post reading handler
   const handleReadPost = (post: Post) => {
-    setSelectedPost(post)
+    // 조회수 증가
+    setPosts((prevPosts) => prevPosts.map((p) => (p.id === post.id ? { ...p, views: (p.views || 0) + 1 } : p)))
+
+    setSelectedPost({
+      ...post,
+      views: (post.views || 0) + 1,
+    })
     setIsReadDialogOpen(true)
   }
 
   // Like handler
   const handleLike = (postId: string, event: React.MouseEvent) => {
-    event.stopPropagation() // Prevent post click event propagation
+    event.stopPropagation()
 
     setPosts(
       posts.map((post) => {
@@ -266,7 +298,7 @@ export function CommunityScreen() {
 
     const newCommentObj: Comment = {
       id: `c${selectedPost.id}-${Date.now()}`,
-      author: currentUser, // Current logged in user name
+      author: currentUser,
       authorInitial: currentUser.charAt(0),
       content: newComment,
       time: "방금 전",
@@ -305,10 +337,7 @@ export function CommunityScreen() {
   const handleDeletePost = () => {
     if (!selectedPost) return
 
-    // 게시물 삭제
     setPosts(posts.filter((post) => post.id !== selectedPost.id))
-
-    // 다이얼로그 닫기
     setIsDeleteDialogOpen(false)
     setIsReadDialogOpen(false)
 
@@ -319,65 +348,103 @@ export function CommunityScreen() {
     })
   }
 
-  // 삭제 다이얼로그 열기
-  const openDeleteDialog = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setIsDeleteDialogOpen(true)
-  }
-
   // Get filtered posts
   const getFilteredPosts = () => {
-    if (activeTab === "all") return posts
-    if (activeTab === "my") return posts.filter((post) => post.author === currentUser)
-    if (activeTab === "updates") return posts.filter((post) => post.tag === "제작 업데이트")
-    if (activeTab === "analysis") return posts.filter((post) => post.tag === "투자 분석")
-    if (activeTab === "news") return posts.filter((post) => post.tag === "캐스팅 소식")
-    return posts
+    let filtered = posts
+
+    if (activeTab === "my") filtered = posts.filter((post) => post.author === currentUser)
+    else if (activeTab === "updates") filtered = posts.filter((post) => post.tag === "제작 업데이트")
+    else if (activeTab === "analysis") filtered = posts.filter((post) => post.tag === "투자 분석")
+    else if (activeTab === "news") filtered = posts.filter((post) => post.tag === "캐스팅 소식")
+
+    // 검색 필터 적용
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(
+        (post) =>
+          post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          post.author.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    }
+
+    // 정렬 적용
+    switch (sortBy) {
+      case "views":
+        filtered.sort((a, b) => (b.views || 0) - (a.views || 0))
+        break
+      case "likes":
+        filtered.sort((a, b) => b.likes - a.likes)
+        break
+      case "latest":
+      default:
+        // 기본 최신순 (이미 정렬되어 있음)
+        break
+    }
+
+    return filtered
+  }
+
+  // 태그별 색상 설정
+  const getTagColor = (tag: string) => {
+    switch (tag) {
+      case "제작 업데이트":
+        return "bg-blue-100 text-blue-700 border-blue-200"
+      case "투자 분석":
+        return "bg-green-100 text-green-700 border-green-200"
+      case "캐스팅 소식":
+        return "bg-purple-100 text-purple-700 border-purple-200"
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200"
+    }
   }
 
   // Post card rendering function
   const renderPostCard = (post: Post) => (
     <Card
       key={post.id}
-      className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/30 hover:shadow-md transition-shadow cursor-pointer"
+      className="rounded-xl border border-gray/10 bg-white dark:bg-darkblue/20 hover:shadow-lg hover:border-yellow/30 transition-all duration-300 cursor-pointer group"
       onClick={() => handleReadPost(post)}
     >
-      <CardHeader className="p-4 pb-2">
-        <div className="flex justify-between">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-8 w-8 bg-yellow/20 text-darkblue dark:text-light">
+      <CardHeader className="p-6 pb-4">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10 ring-2 ring-yellow/20">
               <AvatarImage
                 src={post.author === currentUser && profileImage ? profileImage : "/placeholder.svg"}
                 alt={post.author}
               />
-              <AvatarFallback>{post.authorInitial}</AvatarFallback>
+              <AvatarFallback className="bg-gradient-to-br from-yellow/20 to-green/20 text-darkblue dark:text-light font-semibold">
+                {post.authorInitial}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium text-sm text-darkblue dark:text-light">{post.author}</p>
-              <p className="text-xs text-gray">{post.time}</p>
+              <p className="font-semibold text-darkblue dark:text-light">{post.author}</p>
+              <div className="flex items-center gap-2 text-xs text-gray">
+                <Clock className="h-3 w-3" />
+                <span>{post.time}</span>
+                <span>•</span>
+                <Eye className="h-3 w-3" />
+                <span>{post.views || 0}회</span>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs bg-light dark:bg-darkblue/50 text-darkblue dark:text-light px-2 py-1 rounded-full border border-gray/10">
-              {post.tag}
-            </span>
-
-            {/* 내가 쓴 글인 경우 더보기 메뉴 표시 */}
+            <Badge className={`text-xs font-medium border ${getTagColor(post.tag)}`}>{post.tag}</Badge>
             {post.author === currentUser && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-full hover:bg-gray/10"
+                    className="h-8 w-8 rounded-full hover:bg-gray/10 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <MoreVertical className="h-4 w-4 text-gray" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="rounded-xl">
                   <DropdownMenuItem
-                    className="text-red-500 cursor-pointer"
+                    className="text-red-500 cursor-pointer rounded-lg"
                     onClick={(e) => {
                       e.stopPropagation()
                       setSelectedPost(post)
@@ -393,28 +460,39 @@ export function CommunityScreen() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-2">
-        <h3 className="font-bold mb-2 text-darkblue dark:text-light">{post.title}</h3>
-        <p className="text-sm text-darkblue/80 dark:text-light/80 line-clamp-3">{post.content}</p>
+
+      <CardContent className="px-6 pb-4">
+        <h3 className="font-bold text-lg mb-3 text-darkblue dark:text-light group-hover:text-yellow transition-colors line-clamp-2">
+          {post.title}
+        </h3>
+        <p className="text-sm text-darkblue/70 dark:text-light/70 line-clamp-3 leading-relaxed">{post.content}</p>
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex justify-between">
-        <Button
-          variant={post.liked ? "subtle" : "ghost"}
-          size="sm"
-          className={`${
-            post.liked ? "bg-red-100 text-red-500 font-medium border border-red-200" : "text-gray"
-          } hover:text-red-500 hover:bg-red-50 transition-all duration-300 transform ${post.liked ? "scale-105" : ""}`}
-          onClick={(e) => handleLike(post.id, e)}
-        >
-          <ThumbsUp
-            className={`h-5 w-5 mr-1.5 transition-all duration-300 ${post.liked ? "fill-red-500 scale-110" : ""}`}
-          />
-          <span className={post.liked ? "font-semibold" : ""}>{post.likes}</span>
-        </Button>
-        <Button variant="ghost" size="sm" className="text-gray hover:text-darkblue dark:hover:text-light">
-          <MessageCircle className="h-4 w-4 mr-1" />
-          {post.comments.length}
-        </Button>
+
+      <CardFooter className="px-6 py-4 bg-gray/5 dark:bg-darkblue/10 border-t border-gray/5">
+        <div className="flex justify-between items-center w-full">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`rounded-full transition-all duration-300 ${
+              post.liked
+                ? "bg-red-50 text-red-500 hover:bg-red-100 border border-red-200"
+                : "text-gray hover:text-red-500 hover:bg-red-50"
+            }`}
+            onClick={(e) => handleLike(post.id, e)}
+          >
+            <ThumbsUp className={`h-4 w-4 mr-2 transition-all ${post.liked ? "fill-red-500" : ""}`} />
+            <span className="font-medium">{post.likes}</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray hover:text-darkblue dark:hover:text-light rounded-full"
+          >
+            <MessageCircle className="h-4 w-4 mr-2" />
+            <span className="font-medium">{post.comments.length}</span>
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   )
@@ -423,29 +501,36 @@ export function CommunityScreen() {
   const renderComments = (comments: Comment[]) => {
     if (comments.length === 0) {
       return (
-        <div className="text-center py-4 text-gray">
-          <p>아직 댓글이 없습니다. 첫 댓글을 작성해보세요!</p>
+        <div className="text-center py-8 text-gray">
+          <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">아직 댓글이 없습니다.</p>
+          <p className="text-xs mt-1">첫 댓글을 작성해보세요!</p>
         </div>
       )
     }
 
     return (
-      <div className="space-y-4 mt-4">
+      <div className="space-y-4 mt-6">
         {comments.map((comment) => (
-          <div key={comment.id} className="flex gap-3 p-3 bg-light/50 dark:bg-darkblue/20 rounded-lg">
-            <Avatar className="h-8 w-8 bg-yellow/20 text-darkblue dark:text-light flex-shrink-0">
+          <div
+            key={comment.id}
+            className="flex gap-3 p-4 bg-gray/5 dark:bg-darkblue/10 rounded-xl border border-gray/10"
+          >
+            <Avatar className="h-8 w-8 flex-shrink-0">
               <AvatarImage
                 src={comment.author === currentUser && profileImage ? profileImage : "/placeholder.svg"}
                 alt={comment.author}
               />
-              <AvatarFallback>{comment.authorInitial}</AvatarFallback>
+              <AvatarFallback className="bg-gradient-to-br from-yellow/20 to-green/20 text-darkblue dark:text-light text-xs font-semibold">
+                {comment.authorInitial}
+              </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <div className="flex justify-between items-center mb-1">
-                <p className="font-medium text-sm text-darkblue dark:text-light">{comment.author}</p>
+              <div className="flex justify-between items-center mb-2">
+                <p className="font-semibold text-sm text-darkblue dark:text-light">{comment.author}</p>
                 <p className="text-xs text-gray">{comment.time}</p>
               </div>
-              <p className="text-sm text-darkblue/90 dark:text-light/90">{comment.content}</p>
+              <p className="text-sm text-darkblue/80 dark:text-light/80 leading-relaxed">{comment.content}</p>
             </div>
           </div>
         ))}
@@ -454,100 +539,144 @@ export function CommunityScreen() {
   }
 
   return (
-    <div className="flex flex-col pb-20 bg-light dark:bg-dark">
-      {/* Header - 로고 일관성을 위해 수정 */}
-      <div className="flex justify-between items-center p-4 border-b border-gray/10">
-        <Logo size="md" showSubtitle={false} />
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full border-green text-green hover:bg-green/10"
-            onClick={() => setIsWriteDialogOpen(true)}
-          >
-            <PenSquare className="h-4 w-4 mr-1" />
-            글쓰기
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.push("/mypage")}>
-            <Avatar className="h-8 w-8 bg-light border border-gray/20">
-              <AvatarImage src={profileImage || "/placeholder.svg"} alt={currentUser} />
-              <AvatarFallback className="text-darkblue dark:text-light bg-yellow/20">
-                {currentUser.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-          </Button>
+    <div className="flex flex-col pb-20 bg-gray/5 dark:bg-dark min-h-screen">
+      {/* Header */}
+      <div className="bg-white dark:bg-darkblue border-b border-gray/10 sticky top-0 z-40">
+        <div className="flex justify-between items-center p-4">
+          <div className="flex items-center gap-3">
+            <Logo size="md" showSubtitle={false} />
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full border-green text-green hover:bg-green/10 font-medium"
+              onClick={() => setIsWriteDialogOpen(true)}
+            >
+              <PenSquare className="h-4 w-4 mr-2" />
+              글쓰기
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.push("/mypage")}>
+              <Avatar className="h-9 w-9 ring-2 ring-yellow/20">
+                <AvatarImage src={profileImage || "/placeholder.svg"} alt={currentUser} />
+                <AvatarFallback className="bg-gradient-to-br from-yellow/20 to-green/20 text-darkblue dark:text-light font-semibold">
+                  {currentUser.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </div>
+        </div>
+
+        {/* Search and Filter Bar */}
+        <div className="px-4 pb-4">
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray" />
+              <Input
+                placeholder="게시물 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 rounded-full border-gray/20 bg-gray/5 focus:bg-white transition-colors"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full border-gray/20"
+              onClick={() => setIsFilterOpen(true)}
+            >
+              <Filter className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="p-4">
-        <Tabs defaultValue="all" onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-5 mb-4 bg-light dark:bg-darkblue/20 p-1 rounded-full">
-            <TabsTrigger
-              value="all"
-              className={`rounded-full transition-all ${
-                activeTab === "all"
-                  ? "bg-yellow text-dark font-medium"
-                  : "text-gray hover:text-darkblue dark:hover:text-light"
-              }`}
-            >
-              전체
-            </TabsTrigger>
-            <TabsTrigger
-              value="my"
-              className={`rounded-full transition-all ${
-                activeTab === "my"
-                  ? "bg-yellow text-dark font-medium"
-                  : "text-gray hover:text-darkblue dark:hover:text-light"
-              }`}
-            >
-              내 글
-            </TabsTrigger>
-            <TabsTrigger
-              value="updates"
-              className={`rounded-full transition-all ${
-                activeTab === "updates"
-                  ? "bg-yellow text-dark font-medium"
-                  : "text-gray hover:text-darkblue dark:hover:text-light"
-              }`}
-            >
-              업데이트
-            </TabsTrigger>
-            <TabsTrigger
-              value="analysis"
-              className={`rounded-full transition-all ${
-                activeTab === "analysis"
-                  ? "bg-yellow text-dark font-medium"
-                  : "text-gray hover:text-darkblue dark:hover:text-light"
-              }`}
-            >
-              분석
-            </TabsTrigger>
-            <TabsTrigger
-              value="news"
-              className={`rounded-full transition-all ${
-                activeTab === "news"
-                  ? "bg-yellow text-dark font-medium"
-                  : "text-gray hover:text-darkblue dark:hover:text-light"
-              }`}
-            >
-              소식
-            </TabsTrigger>
-          </TabsList>
+      <div className="bg-white dark:bg-darkblue border-b border-gray/10 sticky top-[120px] z-30">
+        <div className="p-4">
+          <Tabs defaultValue="all" onValueChange={setActiveTab}>
+            <TabsList className="grid grid-cols-5 bg-gray/10 dark:bg-darkblue/30 p-1 rounded-full w-full">
+              <TabsTrigger
+                value="all"
+                className={`rounded-full transition-all font-medium ${
+                  activeTab === "all"
+                    ? "bg-white dark:bg-darkblue text-darkblue dark:text-light shadow-sm"
+                    : "text-gray hover:text-darkblue dark:hover:text-light"
+                }`}
+              >
+                전체
+              </TabsTrigger>
+              <TabsTrigger
+                value="my"
+                className={`rounded-full transition-all font-medium ${
+                  activeTab === "my"
+                    ? "bg-white dark:bg-darkblue text-darkblue dark:text-light shadow-sm"
+                    : "text-gray hover:text-darkblue dark:hover:text-light"
+                }`}
+              >
+                내 글
+              </TabsTrigger>
+              <TabsTrigger
+                value="updates"
+                className={`rounded-full transition-all font-medium ${
+                  activeTab === "updates"
+                    ? "bg-white dark:bg-darkblue text-darkblue dark:text-light shadow-sm"
+                    : "text-gray hover:text-darkblue dark:hover:text-light"
+                }`}
+              >
+                업데이트
+              </TabsTrigger>
+              <TabsTrigger
+                value="analysis"
+                className={`rounded-full transition-all font-medium ${
+                  activeTab === "analysis"
+                    ? "bg-white dark:bg-darkblue text-darkblue dark:text-light shadow-sm"
+                    : "text-gray hover:text-darkblue dark:hover:text-light"
+                }`}
+              >
+                분석
+              </TabsTrigger>
+              <TabsTrigger
+                value="news"
+                className={`rounded-full transition-all font-medium ${
+                  activeTab === "news"
+                    ? "bg-white dark:bg-darkblue text-darkblue dark:text-light shadow-sm"
+                    : "text-gray hover:text-darkblue dark:hover:text-light"
+                }`}
+              >
+                소식
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      </div>
 
-          <TabsContent value="all" className="space-y-4">
-            {getFilteredPosts().map(renderPostCard)}
-          </TabsContent>
-
-          <TabsContent value="my" className="space-y-4">
+      {/* Content */}
+      <div className="flex-1 p-4">
+        <Tabs value={activeTab}>
+          <TabsContent value="all" className="space-y-4 mt-0">
             {getFilteredPosts().length > 0 ? (
               getFilteredPosts().map(renderPostCard)
             ) : (
-              <div className="text-center py-8 text-gray">
-                <p>작성한 게시물이 없습니다.</p>
+              <div className="text-center py-12">
+                <Users className="h-16 w-16 mx-auto mb-4 text-gray/30" />
+                <p className="text-gray text-lg font-medium">검색 결과가 없습니다</p>
+                <p className="text-gray/70 text-sm mt-1">다른 키워드로 검색해보세요</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="my" className="space-y-4 mt-0">
+            {getFilteredPosts().length > 0 ? (
+              getFilteredPosts().map(renderPostCard)
+            ) : (
+              <div className="text-center py-12">
+                <PenSquare className="h-16 w-16 mx-auto mb-4 text-gray/30" />
+                <p className="text-gray text-lg font-medium">작성한 게시물이 없습니다</p>
+                <p className="text-gray/70 text-sm mt-1 mb-4">첫 번째 게시물을 작성해보세요</p>
                 <Button
                   variant="outline"
-                  className="mt-4 rounded-xl border-green text-green hover:bg-green/10"
+                  className="rounded-full border-green text-green hover:bg-green/10"
                   onClick={() => setIsWriteDialogOpen(true)}
                 >
                   <PenSquare className="h-4 w-4 mr-2" />첫 게시물 작성하기
@@ -556,15 +685,15 @@ export function CommunityScreen() {
             )}
           </TabsContent>
 
-          <TabsContent value="updates" className="space-y-4">
+          <TabsContent value="updates" className="space-y-4 mt-0">
             {getFilteredPosts().map(renderPostCard)}
           </TabsContent>
 
-          <TabsContent value="analysis" className="space-y-4">
+          <TabsContent value="analysis" className="space-y-4 mt-0">
             {getFilteredPosts().map(renderPostCard)}
           </TabsContent>
 
-          <TabsContent value="news" className="space-y-4">
+          <TabsContent value="news" className="space-y-4 mt-0">
             {getFilteredPosts().map(renderPostCard)}
           </TabsContent>
         </Tabs>
@@ -572,68 +701,68 @@ export function CommunityScreen() {
 
       {/* Write post dialog */}
       <Dialog open={isWriteDialogOpen} onOpenChange={setIsWriteDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-xl bg-light dark:bg-darkblue border-gray/20">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-darkblue dark:text-light">새 게시물 작성</DialogTitle>
-            <DialogDescription>아래 양식을 작성하여 새 게시물을 등록하세요.</DialogDescription>
+        <DialogContent className="sm:max-w-[600px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
+          <DialogHeader className="pb-6">
+            <DialogTitle className="text-2xl font-bold text-darkblue dark:text-light">새 게시물 작성</DialogTitle>
+            <DialogDescription className="text-gray">투자 인사이트와 정보를 커뮤니티와 공유해보세요</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-6">
             <div>
-              <label htmlFor="post-title" className="text-sm font-medium text-darkblue dark:text-light block mb-2">
+              <label htmlFor="post-title" className="text-sm font-semibold text-darkblue dark:text-light block mb-3">
                 제목
               </label>
               <Input
                 id="post-title"
                 value={newPostTitle}
                 onChange={(e) => setNewPostTitle(e.target.value)}
-                placeholder="제목을 입력하세요"
-                className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/20"
+                placeholder="게시물 제목을 입력하세요"
+                className="rounded-xl border-gray/20 bg-gray/5 focus:bg-white h-12 text-base"
               />
             </div>
 
             <div>
-              <label htmlFor="post-content" className="text-sm font-medium text-darkblue dark:text-light block mb-2">
+              <label htmlFor="post-tag" className="text-sm font-semibold text-darkblue dark:text-light block mb-3">
+                카테고리
+              </label>
+              <select
+                id="post-tag"
+                value={newPostTag}
+                onChange={(e) => setNewPostTag(e.target.value)}
+                className="w-full rounded-xl border border-gray/20 bg-gray/5 focus:bg-white p-3 text-darkblue dark:text-light h-12"
+              >
+                <option value="제작 업데이트">📺 제작 업데이트</option>
+                <option value="투자 분석">📊 투자 분석</option>
+                <option value="캐스팅 소식">🎭 캐스팅 소식</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="post-content" className="text-sm font-semibold text-darkblue dark:text-light block mb-3">
                 내용
               </label>
               <Textarea
                 id="post-content"
                 value={newPostContent}
                 onChange={(e) => setNewPostContent(e.target.value)}
-                placeholder="내용을 입력하세요"
-                className="rounded-xl min-h-[150px] border-gray/20 bg-light dark:bg-darkblue/20"
+                placeholder="게시물 내용을 입력하세요..."
+                className="rounded-xl min-h-[200px] border-gray/20 bg-gray/5 focus:bg-white resize-none text-base leading-relaxed"
               />
-            </div>
-
-            <div>
-              <label htmlFor="post-tag" className="text-sm font-medium text-darkblue dark:text-light block mb-2">
-                태그
-              </label>
-              <select
-                id="post-tag"
-                value={newPostTag}
-                onChange={(e) => setNewPostTag(e.target.value)}
-                className="w-full rounded-xl border border-gray/20 bg-light dark:bg-darkblue/20 p-2 text-darkblue dark:text-light"
-              >
-                <option value="제작 업데이트">제작 업데이트</option>
-                <option value="투자 분석">투자 분석</option>
-                <option value="캐스팅 소식">캐스팅 소식</option>
-              </select>
             </div>
           </div>
 
-          <DialogFooter className="flex gap-3">
+          <DialogFooter className="flex gap-3 pt-6">
             <Button
               type="button"
               variant="outline"
-              className="flex-1 rounded-xl border-gray/20 text-gray"
+              className="flex-1 rounded-xl border-gray/20 text-gray h-12"
               onClick={() => setIsWriteDialogOpen(false)}
             >
               취소
             </Button>
             <Button
               type="button"
-              className="flex-1 rounded-xl bg-green hover:bg-green/90 text-light"
+              className="flex-1 rounded-xl bg-gradient-to-r from-green to-green/90 hover:from-green/90 hover:to-green/80 text-white h-12 font-semibold"
               onClick={handleSubmitPost}
             >
               게시하기
@@ -645,94 +774,126 @@ export function CommunityScreen() {
       {/* Read post dialog */}
       {selectedPost && (
         <Dialog open={isReadDialogOpen} onOpenChange={setIsReadDialogOpen}>
-          <DialogContent className="sm:max-w-[600px] rounded-xl bg-light dark:bg-darkblue border-gray/20">
-            <DialogHeader>
+          <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
+            <DialogHeader className="pb-6">
               <DialogTitle className="sr-only">게시물 상세</DialogTitle>
               <DialogDescription className="sr-only">게시물 내용과 댓글을 확인하세요.</DialogDescription>
             </DialogHeader>
-            <div className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 bg-yellow/20 text-darkblue dark:text-light">
-                    <AvatarFallback>{selectedPost.authorInitial}</AvatarFallback>
+
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-12 w-12 ring-2 ring-yellow/20">
+                    <AvatarFallback className="bg-gradient-to-br from-yellow/20 to-green/20 text-darkblue dark:text-light font-semibold">
+                      {selectedPost.authorInitial}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium text-darkblue dark:text-light">{selectedPost.author}</p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs text-gray">{selectedPost.time}</p>
-                      <span className="text-xs bg-light dark:bg-darkblue/50 text-darkblue dark:text-light px-2 py-0.5 rounded-full border border-gray/10">
+                    <p className="font-semibold text-darkblue dark:text-light">{selectedPost.author}</p>
+                    <div className="flex items-center gap-3 text-xs text-gray">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>{selectedPost.time}</span>
+                      </div>
+                      <span>•</span>
+                      <div className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        <span>{selectedPost.views || 0}회</span>
+                      </div>
+                      <Badge className={`text-xs font-medium border ${getTagColor(selectedPost.tag)}`}>
                         {selectedPost.tag}
-                      </span>
+                      </Badge>
                     </div>
                   </div>
                 </div>
 
-                {/* 내가 쓴 글인 경우 삭제 버튼 표시 */}
                 {selectedPost.author === currentUser && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
-                    onClick={openDeleteDialog}
+                    className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl"
+                    onClick={() => setIsDeleteDialogOpen(true)}
                   >
-                    <Trash2 className="h-4 w-4 mr-1" />
+                    <Trash2 className="h-4 w-4 mr-2" />
                     삭제
                   </Button>
                 )}
               </div>
 
-              <h2 className="text-xl font-bold mb-4 text-darkblue dark:text-light">{selectedPost.title}</h2>
-              <p className="text-darkblue/90 dark:text-light/90 whitespace-pre-line mb-6">{selectedPost.content}</p>
+              <h2 className="text-2xl font-bold mb-6 text-darkblue dark:text-light leading-tight">
+                {selectedPost.title}
+              </h2>
 
-              <div className="flex justify-between border-t border-gray/10 pt-4">
+              <div className="prose prose-sm max-w-none mb-8">
+                <p className="text-darkblue/80 dark:text-light/80 whitespace-pre-line leading-relaxed text-base">
+                  {selectedPost.content}
+                </p>
+              </div>
+
+              <div className="flex justify-between items-center py-4 border-t border-b border-gray/10">
                 <Button
-                  variant={selectedPost.liked ? "subtle" : "ghost"}
+                  variant="ghost"
                   size="sm"
-                  className={`${
-                    selectedPost.liked ? "bg-red-100 text-red-500 font-medium border border-red-200" : "text-gray"
-                  } hover:text-red-500 hover:bg-red-50 transition-all duration-300 transform ${selectedPost.liked ? "scale-105" : ""}`}
+                  className={`rounded-full transition-all duration-300 ${
+                    selectedPost.liked
+                      ? "bg-red-50 text-red-500 hover:bg-red-100 border border-red-200"
+                      : "text-gray hover:text-red-500 hover:bg-red-50"
+                  }`}
                   onClick={(e) => handleLike(selectedPost.id, e)}
                 >
-                  <ThumbsUp
-                    className={`h-5 w-5 mr-1.5 transition-all duration-300 ${
-                      selectedPost.liked ? "fill-red-500 scale-110" : ""
-                    }`}
-                  />
-                  <span className={selectedPost.liked ? "font-semibold" : ""}>좋아요 {selectedPost.likes}</span>
+                  <ThumbsUp className={`h-4 w-4 mr-2 transition-all ${selectedPost.liked ? "fill-red-500" : ""}`} />
+                  <span className="font-medium">좋아요 {selectedPost.likes}</span>
                 </Button>
-                <Button variant="ghost" size="sm" className="text-gray hover:text-darkblue dark:hover:text-light">
-                  <MessageCircle className="h-4 w-4 mr-1" />
-                  댓글 {selectedPost.comments.length}
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray hover:text-darkblue dark:hover:text-light rounded-full"
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  <span className="font-medium">댓글 {selectedPost.comments.length}</span>
                 </Button>
               </div>
 
               {/* Comments section */}
-              <div className="mt-4 border-t border-gray/10 pt-4">
-                <h3 className="font-medium text-darkblue dark:text-light mb-3">댓글</h3>
+              <div className="mt-6">
+                <h3 className="font-semibold text-lg text-darkblue dark:text-light mb-4">
+                  댓글 {selectedPost.comments.length}개
+                </h3>
                 {renderComments(selectedPost.comments)}
               </div>
 
               {/* Comment input area */}
-              <div className="mt-4 flex gap-2">
-                <Input
-                  placeholder="댓글을 입력하세요..."
-                  className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/20"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault()
-                      handleSubmitComment()
-                    }
-                  }}
-                />
-                <Button
-                  className="rounded-xl bg-green hover:bg-green/90 text-light"
-                  onClick={handleSubmitComment}
-                  disabled={!newComment.trim()}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
+              <div className="mt-6 p-4 bg-gray/5 dark:bg-darkblue/10 rounded-xl border border-gray/10">
+                <div className="flex gap-3">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarImage src={profileImage || "/placeholder.svg"} alt={currentUser} />
+                    <AvatarFallback className="bg-gradient-to-br from-yellow/20 to-green/20 text-darkblue dark:text-light text-xs font-semibold">
+                      {currentUser.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 flex gap-2">
+                    <Input
+                      placeholder="댓글을 입력하세요..."
+                      className="rounded-xl border-gray/20 bg-white dark:bg-darkblue/20 flex-1"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault()
+                          handleSubmitComment()
+                        }
+                      }}
+                    />
+                    <Button
+                      className="rounded-xl bg-green hover:bg-green/90 text-white px-4"
+                      onClick={handleSubmitComment}
+                      disabled={!newComment.trim()}
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </DialogContent>
@@ -741,16 +902,19 @@ export function CommunityScreen() {
 
       {/* Delete confirmation dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20">
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-darkblue dark:text-light">게시물 삭제</DialogTitle>
             <DialogDescription>이 게시물을 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</DialogDescription>
           </DialogHeader>
 
-          <div className="py-4 flex items-center justify-center text-center">
-            <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-lg flex items-center gap-3 text-red-500">
-              <AlertTriangle className="h-6 w-6" />
-              <p>삭제된 게시물은 복구할 수 없습니다.</p>
+          <div className="py-6 flex items-center justify-center">
+            <div className="bg-red-50 dark:bg-red-900/10 p-6 rounded-xl flex items-center gap-4 text-red-500">
+              <AlertTriangle className="h-8 w-8" />
+              <div>
+                <p className="font-semibold">삭제 확인</p>
+                <p className="text-sm">삭제된 게시물은 복구할 수 없습니다.</p>
+              </div>
             </div>
           </div>
 
@@ -758,19 +922,73 @@ export function CommunityScreen() {
             <Button
               type="button"
               variant="outline"
-              className="flex-1 rounded-xl border-gray/20 text-gray"
+              className="flex-1 rounded-xl border-gray/20 text-gray h-12"
               onClick={() => setIsDeleteDialogOpen(false)}
             >
               취소
             </Button>
             <Button
               type="button"
-              className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 text-white"
+              className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 text-white h-12 font-semibold"
               onClick={handleDeletePost}
             >
               삭제하기
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Filter Dialog */}
+      <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+        <DialogContent className="sm:max-w-[300px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-darkblue dark:text-light">정렬 옵션</DialogTitle>
+            <DialogDescription>게시물을 어떻게 정렬하시겠습니까?</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-4">
+            <Button
+              variant={sortBy === "latest" ? "default" : "ghost"}
+              className={`w-full justify-start rounded-xl ${
+                sortBy === "latest" ? "bg-yellow text-dark" : "text-darkblue dark:text-light"
+              }`}
+              onClick={() => {
+                setSortBy("latest")
+                setIsFilterOpen(false)
+              }}
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              최신순
+            </Button>
+
+            <Button
+              variant={sortBy === "views" ? "default" : "ghost"}
+              className={`w-full justify-start rounded-xl ${
+                sortBy === "views" ? "bg-yellow text-dark" : "text-darkblue dark:text-light"
+              }`}
+              onClick={() => {
+                setSortBy("views")
+                setIsFilterOpen(false)
+              }}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              조회수순
+            </Button>
+
+            <Button
+              variant={sortBy === "likes" ? "default" : "ghost"}
+              className={`w-full justify-start rounded-xl ${
+                sortBy === "likes" ? "bg-yellow text-dark" : "text-darkblue dark:text-light"
+              }`}
+              onClick={() => {
+                setSortBy("likes")
+                setIsFilterOpen(false)
+              }}
+            >
+              <ThumbsUp className="h-4 w-4 mr-2" />
+              좋아요순
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

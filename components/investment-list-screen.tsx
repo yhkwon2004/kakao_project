@@ -25,6 +25,7 @@ export function InvestmentListScreen() {
   const allInvestments = [
     {
       id: "1",
+      slug: "princess-imprinting-traitor",
       title: "황녀, 반역자를 각인시키다",
       description: "드라마 제작 진행 중",
       fundingGoal: "₩500,000,000",
@@ -36,6 +37,7 @@ export function InvestmentListScreen() {
     },
     {
       id: "2",
+      slug: "sword-family-youngest-son",
       title: "검술명가 막내아들",
       description: "애니메이션 프로젝트",
       fundingGoal: "₩800,000,000",
@@ -47,6 +49,7 @@ export function InvestmentListScreen() {
     },
     {
       id: "3",
+      slug: "becoming-family-head-this-life",
       title: "이번 생은 가주가 되겠습니다",
       description: "영화 각색 진행 중",
       fundingGoal: "₩1,200,000,000",
@@ -58,6 +61,7 @@ export function InvestmentListScreen() {
     },
     {
       id: "4",
+      slug: "rabbit-jerky-wolf-symbiotic-relationship",
       title: "토끼와 육포범의 공생관계",
       description: "드라마 제작 기획",
       fundingGoal: "₩600,000,000",
@@ -69,6 +73,7 @@ export function InvestmentListScreen() {
     },
     {
       id: "5",
+      slug: "bad-secretary",
       title: "나쁜 비서 [19세 완전판]",
       description: "웹드라마 제작",
       fundingGoal: "₩300,000,000",
@@ -80,6 +85,7 @@ export function InvestmentListScreen() {
     },
     {
       id: "6",
+      slug: "blood-sword-family-hunting-dog",
       title: "철혈검가 사냥개의 회귀",
       description: "애니메이션 제작",
       fundingGoal: "₩700,000,000",
@@ -91,6 +97,7 @@ export function InvestmentListScreen() {
     },
     {
       id: "7",
+      slug: "contract-husband-resembles-male-lead",
       title: "계약 남편이 남자 주인공과 달았다",
       description: "웹드라마 제작",
       fundingGoal: "₩400,000,000",
@@ -102,12 +109,25 @@ export function InvestmentListScreen() {
     },
     {
       id: "8",
+      slug: "villain-orca-baby",
       title: "흑막 범고래 아기님",
       description: "애니메이션 제작",
       fundingGoal: "₩900,000,000",
       fundingPercentage: 55,
       daysLeft: 12,
       roiRange: "18-25%",
+      category: "애니메이션",
+      status: "ongoing" as const,
+    },
+    {
+      id: "9",
+      slug: "ancient-magus-bride",
+      title: "마법사의 신부",
+      description: "애니메이션 제작",
+      fundingGoal: "₩550,000,000",
+      fundingPercentage: 60,
+      daysLeft: 8,
+      roiRange: "15-20%",
       category: "애니메이션",
       status: "ongoing" as const,
     },
@@ -273,7 +293,7 @@ export function InvestmentListScreen() {
               <Card
                 key={investment.id}
                 className="overflow-hidden rounded-xl cursor-pointer hover:shadow-md transition-shadow border-gray/20 bg-light dark:bg-darkblue/30"
-                onClick={() => router.push(`/webtoon/${investment.id}`)}
+                onClick={() => router.push(`/webtoon/${investment.slug}`)}
               >
                 <CardContent className="p-0">
                   <div className="relative h-32 w-full">

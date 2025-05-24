@@ -17,6 +17,8 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import Image from "next/image"
 // 파일 상단에 webtoons 데이터를 import 합니다.
 import { getWebtoonById, allWebtoons } from "@/data/webtoons"
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts"
 
 // 투자 성장 데이터 타입
 interface InvestmentGrowthData {
@@ -634,7 +636,7 @@ export function AssetScreen() {
     setInvestmentGrowthData(growthData)
   }
 
-  // 투자 성장 그래프 렌더링
+  // 투자 성장 그래프 렌더링을 누적 영역 그래프로 변경
   const renderInvestmentGrowthGraph = () => {
     if (investmentGrowthData.length === 0) {
       return (
@@ -644,130 +646,153 @@ export function AssetScreen() {
       )
     }
 
-    // 최대값 계산
-    const maxAmount = Math.max(...investmentGrowthData.map((d) => d.amount + d.profit))
-    // 그래프 높이를 위한 스케일 계산 (최대값의 20% 추가)
-    const graphScale = maxAmount > 0 ? maxAmount * 1.2 : 1000000
+    // 누적 영역 그래프용 데이터 변환
+    const areaChartData = investmentGrowthData.map((d) => ({
+      month: d.date,
+      amount: d.amount,
+      profit: d.profit,
+      total: d.amount + d.profit,
+    }))
+
+    // Y축 최대값 계산 (총합의 110%로 여유 공간 확보)
+    const maxValue = Math.max(...areaChartData.map((d) => d.total))
+    const yAxisMax = Math.ceil(maxValue * 1.1)
+
+    // 기간에 따른 날짜 포맷 결정
+    const getDateFormat = () => {
+      switch (dateRange) {
+        case "week":
+        case "month":
+          return "MM/dd" // 일 단위
+        case "3months":
+        case "6months":
+        case "year":
+        case "all":
+        default:
+          return "MM월" // 월 단위
+      }
+    }
+
+    const chartConfig = {
+      amount: {
+        label: "투자금",
+        color: "hsl(var(--chart-1))",
+      },
+      profit: {
+        label: "수익금",
+        color: "hsl(var(--chart-2))",
+      },
+    }
 
     return (
-      <div className="relative h-60 border border-gray/20 rounded-xl p-4 bg-light dark:bg-darkblue/20">
-        {/* Y축 레이블 */}
-        <div className="absolute left-0 top-0 bottom-0 w-12 flex flex-col justify-between text-xs text-gray py-6">
-          <span>{Math.round(graphScale / 10000) / 10}백만</span>
-          <span>{Math.round((graphScale * 0.75) / 10000) / 10}백만</span>
-          <span>{Math.round((graphScale * 0.5) / 10000) / 10}백만</span>
-          <span>{Math.round((graphScale * 0.25) / 10000) / 10}백만</span>
-          <span>0</span>
-        </div>
-
-        {/* 그래프 영역 */}
-        <div className="ml-12 h-full relative">
-          {/* 가로 그리드 라인 */}
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className="absolute w-full border-t border-gray/10" style={{ top: `${i * 25}%` }}></div>
-          ))}
-
-          {/* 투자금액 라인 */}
-          <svg className="absolute inset-0 h-full w-full overflow-visible">
-            <polyline
-              points={investmentGrowthData
-                .map(
-                  (d, i) => `${(i / (investmentGrowthData.length - 1)) * 100}% ${100 - (d.amount / graphScale) * 100}%`,
-                )
-                .join(" ")}
-              fill="none"
-              stroke="#45858C"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeDasharray={graphAnimated ? "0" : "1000"}
-              strokeDashoffset={graphAnimated ? "0" : "1000"}
-              style={{
-                transition: "stroke-dashoffset 1.5s ease-in-out, stroke-dasharray 1.5s ease-in-out",
+      <div className="w-full">
+        <ChartContainer config={chartConfig} className="h-60 w-full">
+          <AreaChart
+            accessibilityLayer
+            data={areaChartData}
+            width="100%"
+            height={240}
+            margin={{
+              top: 20,
+              right: 30,
+              left: 30,
+              bottom: 20,
+            }}
+          >
+            <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
+            <XAxis
+              dataKey="month"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickFormatter={(value) => {
+                const format = getDateFormat()
+                if (format === "MM/dd") {
+                  return value.slice(5).replace(".", "/")
+                } else {
+                  return value.slice(5, 7) + "월"
+                }
+              }}
+              interval={0}
+            />
+            <YAxis
+              domain={[0, yAxisMax]}
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tickFormatter={(value) => {
+                if (value >= 1000000) {
+                  return `${(value / 1000000).toFixed(0)}M`
+                } else if (value >= 1000) {
+                  return `${(value / 1000).toFixed(0)}K`
+                }
+                return value.toString()
               }}
             />
-            {investmentGrowthData.map((d, i) => (
-              <circle
-                key={`amount-${i}`}
-                cx={`${(i / (investmentGrowthData.length - 1)) * 100}%`}
-                cy={`${100 - (d.amount / graphScale) * 100}%`}
-                r="4"
-                fill="#45858C"
-                stroke="#FFFFFF"
-                strokeWidth="1"
-                opacity={graphAnimated ? "1" : "0"}
-                style={{
-                  transition: `opacity 0.3s ease-in-out ${i * 0.1}s`,
-                }}
-              />
-            ))}
-          </svg>
-
-          {/* 수익금액 라인 */}
-          <svg className="absolute inset-0 h-full w-full overflow-visible">
-            <polyline
-              points={investmentGrowthData
-                .map((d, i) => {
-                  const totalHeight = d.amount + d.profit
-                  return `${(i / (investmentGrowthData.length - 1)) * 100}% ${100 - (totalHeight / graphScale) * 100}%`
-                })
-                .join(" ")}
-              fill="none"
-              stroke="#F9DF52"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeDasharray={graphAnimated ? "0" : "1000"}
-              strokeDashoffset={graphAnimated ? "0" : "1000"}
-              style={{
-                transition: "stroke-dashoffset 1.5s ease-in-out 0.5s, stroke-dasharray 1.5s ease-in-out 0.5s",
+            <ChartTooltip
+              cursor={{ fill: "rgba(0, 0, 0, 0.1)" }}
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload
+                  return (
+                    <div className="bg-white dark:bg-darkblue border border-gray/20 rounded-lg p-3 shadow-lg">
+                      <p className="text-sm font-medium text-darkblue dark:text-light mb-2">
+                        {getDateFormat() === "MM/dd"
+                          ? `${label.slice(0, 4)}년 ${label.slice(5).replace(".", "월 ")}일`
+                          : `${label.slice(0, 4)}년 ${label.slice(5, 7)}월`}
+                      </p>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-[hsl(var(--chart-1))] rounded-sm"></div>
+                            <span className="text-xs text-gray">투자금</span>
+                          </div>
+                          <span className="text-sm font-medium text-darkblue dark:text-light">
+                            ₩{data.amount.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-[hsl(var(--chart-2))] rounded-sm"></div>
+                            <span className="text-xs text-gray">수익금</span>
+                          </div>
+                          <span className="text-sm font-medium text-profit">₩{data.profit.toLocaleString()}</span>
+                        </div>
+                        <div className="border-t border-gray/20 pt-1 mt-2">
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-xs font-medium text-gray">총액</span>
+                            <span className="text-sm font-bold text-darkblue dark:text-light">
+                              ₩{data.total.toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+                return null
               }}
             />
-            {investmentGrowthData.map((d, i) => {
-              const totalHeight = d.amount + d.profit
-              return (
-                <circle
-                  key={`total-${i}`}
-                  cx={`${(i / (investmentGrowthData.length - 1)) * 100}%`}
-                  cy={`${100 - (totalHeight / graphScale) * 100}%`}
-                  r="4"
-                  fill="#F9DF52"
-                  stroke="#FFFFFF"
-                  strokeWidth="1"
-                  opacity={graphAnimated ? "1" : "0"}
-                  style={{
-                    transition: `opacity 0.3s ease-in-out ${0.5 + i * 0.1}s`,
-                  }}
-                />
-              )
-            })}
-          </svg>
-
-          {/* X축 레이블 */}
-          <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[10px] text-gray">
-            {investmentGrowthData.map((data, index) => (
-              <span
-                key={index}
-                className="transform -rotate-45 origin-top-left translate-y-2"
-                style={{ marginLeft: index === 0 ? "0" : "-8px" }}
-              >
-                {data.date}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* 현재 날짜 표시 */}
-        <div
-          className="absolute top-2 left-14 bg-green/10 text-green px-2 py-1 rounded-full text-xs"
-          style={{
-            opacity: graphAnimated ? "1" : "0",
-            transform: graphAnimated ? "translateX(0)" : "translateX(-10px)",
-            transition: "opacity 0.5s ease-in-out 1s, transform 0.5s ease-in-out 1s",
-          }}
-        >
-          {new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })} 기준
-        </div>
+            <Area
+              dataKey="amount"
+              type="natural"
+              fill="var(--color-amount)"
+              fillOpacity={0.4}
+              stroke="var(--color-amount)"
+              strokeWidth={2}
+              stackId="a"
+            />
+            <Area
+              dataKey="profit"
+              type="natural"
+              fill="var(--color-profit)"
+              fillOpacity={0.4}
+              stroke="var(--color-profit)"
+              strokeWidth={2}
+              stackId="a"
+            />
+          </AreaChart>
+        </ChartContainer>
       </div>
     )
   }
