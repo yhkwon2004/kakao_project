@@ -35,6 +35,25 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 
+// 돈 단위 포맷팅 함수 (억 단위 포함)
+const formatCurrencyWithEok = (amount: number): string => {
+  if (amount >= 100000000) {
+    // 1억 이상
+    const eok = Math.floor(amount / 100000000)
+    const man = Math.floor((amount % 100000000) / 10000)
+    if (man > 0) {
+      return `${eok}억 ${man.toLocaleString()}만원`
+    } else {
+      return `${eok}억원`
+    }
+  } else if (amount >= 10000) {
+    // 1만원 이상
+    return `${Math.floor(amount / 10000).toLocaleString()}만원`
+  } else {
+    return `${amount.toLocaleString()}원`
+  }
+}
+
 // 투자자 증가 추이 데이터 타입
 interface InvestmentGrowthData {
   date: string
@@ -1038,7 +1057,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             </div>
             <span className="text-sm font-medium text-darkblue dark:text-light">내 잔액</span>
           </div>
-          <span className="font-bold text-green text-lg">₩{userBalance.toLocaleString()}</span>
+          <span className="font-bold text-green text-lg">₩{formatCurrencyWithEok(userBalance)}</span>
         </div>
       </div>
 
@@ -1293,7 +1312,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
       {/* 투자 성공 모달 */}
       <Dialog open={isSuccessModalOpen} onOpenChange={setIsSuccessModalOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-darkblue border-0 shadow-2xl z-[100]">
+        <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-darkblue border-0 shadow-2xl z-[100] mx-4">
           <div className="text-center py-6">
             {/* 성공 아이콘 */}
             <div className="mx-auto w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
@@ -1315,7 +1334,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 <div className="bg-gradient-to-r from-blue/10 to-blue/5 p-4 rounded-xl border border-blue/20">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-darkblue dark:text-light">투자 금액</span>
-                    <span className="text-xl font-bold text-blue-600">₩{investmentResult.amount.toLocaleString()}</span>
+                    <span className="text-xl font-bold text-blue-600">
+                      ₩{formatCurrencyWithEok(investmentResult.amount)}
+                    </span>
                   </div>
                 </div>
 
@@ -1324,7 +1345,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-darkblue dark:text-light">예상 수익금</span>
                     <span className="text-xl font-bold text-green-600">
-                      ₩{investmentResult.expectedReturn.toLocaleString()}
+                      ₩{formatCurrencyWithEok(investmentResult.expectedReturn)}
                     </span>
                   </div>
                   <div className="text-right mt-1">
@@ -1370,7 +1391,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
       {/* 투자 모달 */}
       <Dialog open={isInvestModalOpen} onOpenChange={setIsInvestModalOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
+        <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100] mx-4">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">
               투자 금액 입력
@@ -1548,7 +1569,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
       {/* 잔액 부족 다이얼로그 */}
       <Dialog open={isInsufficientBalanceDialogOpen} onOpenChange={setIsInsufficientBalanceDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
+        <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[80vh] overflow-y-auto rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100] mx-4">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-bold text-red-500">⚠️ 잔액 부족</DialogTitle>
           </DialogHeader>
@@ -1588,7 +1609,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
       {/* 충전 확인 다이얼로그 */}
       <Dialog open={isChargeConfirmDialogOpen} onOpenChange={setIsChargeConfirmDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
+        <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[80vh] overflow-y-auto rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100] mx-4">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">
               💳 충전 페이지 이동
@@ -1629,7 +1650,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
       {/* 투자 확인 다이얼로그 */}
       <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
+        <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[80vh] overflow-y-auto rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100] mx-4">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">투자 확인</DialogTitle>
           </DialogHeader>
@@ -1648,9 +1669,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                     <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                     <span className="text-sm font-medium text-darkblue dark:text-light">투자 금액</span>
                   </div>
-                  <span className="text-xl font-bold text-blue-600">
-                    {typeof investmentAmount === "number" ? investmentAmount.toLocaleString() : "0"}원
-                  </span>
+                  <span className="text-xl font-bold text-blue-600">{formatCurrencyWithEok(investmentAmount)}</span>
                 </div>
               </div>
 
@@ -1661,9 +1680,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     <span className="text-sm font-medium text-darkblue dark:text-light">예상 수익금</span>
                   </div>
-                  <span className="text-xl font-bold text-green-600">
-                    {typeof expectedReturn === "number" ? expectedReturn.toLocaleString() : "0"}원
-                  </span>
+                  <span className="text-xl font-bold text-green-600">{formatCurrencyWithEok(expectedReturn)}</span>
                 </div>
                 <div className="mt-2 text-right">
                   <span className="text-xs text-green-600 font-medium">+{expectedROIValue}% 수익률</span>
@@ -1675,7 +1692,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-darkblue dark:text-light">현재 잔액</span>
-                    <span className="font-bold text-darkblue dark:text-light">{userBalance.toLocaleString()}원</span>
+                    <span className="font-bold text-darkblue dark:text-light">
+                      {formatCurrencyWithEok(userBalance)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-darkblue dark:text-light">투자 후 잔액</span>

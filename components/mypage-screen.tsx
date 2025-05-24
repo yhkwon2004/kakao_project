@@ -199,7 +199,7 @@ export function MyPageScreen() {
   const menuItems = [
     {
       id: "payment",
-      label: "결제 및 포인트 관리",
+      label: "결제수단 및 내역확인",
       icon: CreditCard,
       href: "/mypage/payment",
       description: "결제수단 추가/삭제, 충전 내역 및 사용 내역 조회, 보유 포인트 표시",
@@ -227,7 +227,7 @@ export function MyPageScreen() {
     },
     {
       id: "completed",
-      label: "종료된 프로젝트 보기",
+      label: "모집완료된 프로젝트 보기",
       icon: Package,
       href: "/mypage/completed",
       description: "완료된 투자 프로젝트 리스트, 투자 성과 요약, 피드백 남기기",

@@ -125,7 +125,7 @@ export function MileageScreen() {
         // 연속 출석 일수 계산
         calculateAttendanceStreak(parsedData.history)
       } else {
-        // 초기 마일리지 데이터 설정
+        // 초기 마일리지 데이터 설정 - 완전히 빈 상태로 시작
         const initialData = {
           totalMileage: 0,
           history: [],
@@ -133,6 +133,8 @@ export function MileageScreen() {
         }
         localStorage.setItem("userMileage", JSON.stringify(initialData))
         setMileageData(initialData)
+        setAttendanceStreak(0)
+        setHasCheckedToday(false)
       }
     }
 

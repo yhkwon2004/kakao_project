@@ -23,6 +23,10 @@ export function FavoritesScreen() {
     const storedFavorites = localStorage.getItem("favoriteWebtoons")
     if (storedFavorites) {
       setFavoriteWebtoons(JSON.parse(storedFavorites))
+    } else {
+      // 초기 즐겨찾기 데이터를 빈 배열로 설정
+      setFavoriteWebtoons([])
+      localStorage.setItem("favoriteWebtoons", JSON.stringify([]))
     }
   }, [])
 

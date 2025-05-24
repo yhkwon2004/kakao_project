@@ -22,6 +22,25 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
 
+// 돈 단위 포맷팅 함수 (억 단위 포함)
+const formatCurrencyWithEok = (amount: number): string => {
+  if (amount >= 100000000) {
+    // 1억 이상
+    const eok = Math.floor(amount / 100000000)
+    const man = Math.floor((amount % 100000000) / 10000)
+    if (man > 0) {
+      return `${eok}억 ${man.toLocaleString()}만원`
+    } else {
+      return `${eok}억원`
+    }
+  } else if (amount >= 10000) {
+    // 1만원 이상
+    return `${Math.floor(amount / 10000).toLocaleString()}만원`
+  } else {
+    return `${amount.toLocaleString()}원`
+  }
+}
+
 // 완료된 프로젝트 데이터 타입
 interface CompletedProject {
   id: string
@@ -49,42 +68,8 @@ export function CompletedProjectsScreen() {
   const [adaptationInterest, setAdaptationInterest] = useState("high")
   const [completedProjects, setCompletedProjects] = useState<CompletedProject[]>([])
 
-  // 완료된 프로젝트 데이터 초기값
-  const defaultCompletedProjects: CompletedProject[] = [
-    {
-      id: "bad-secretary",
-      title: "나쁜 비서",
-      genre: "로맨스, 드라마",
-      investedAmount: 3400000,
-      returnAmount: 3910000,
-      roi: 15,
-      completionDate: "2023-04-15",
-      investors: 342,
-      hasFeedback: false,
-      thumbnail: "/images/나쁜-비서-cover.png",
-      slug: "bad-secretary",
-      feedback: "",
-      adaptationInterest: "",
-      investmentDate: "2023-04-01", // 투자일 설정
-    },
-    {
-      id: "blood-sword-family-hunting-dog",
-      title: "철혈검가 사냥개의 회귀",
-      genre: "액션, 판타지",
-      investedAmount: 2800000,
-      returnAmount: 3360000,
-      roi: 20,
-      completionDate: "2023-06-22",
-      investors: 256,
-      hasFeedback: true,
-      thumbnail: "/webtoons/검술명가-막내아들.png",
-      slug: "blood-sword-family-hunting-dog", // 라우팅 경로 수정
-      feedback:
-        "캐릭터의 성장 과정과 액션 장면이 인상적이었습니다. 특히 주인공의 복수 스토리가 드라마틱하게 전개되어 몰입감이 뛰어났습니다. 드라마화된다면 액션 장면에 중점을 두면 좋을 것 같습니다.",
-      adaptationInterest: "high",
-      investmentDate: "2023-05-20", // 투자일 설정
-    },
-  ]
+  // 완료된 프로젝트 데이터 초기값을 빈 배열로 변경
+  const defaultCompletedProjects: CompletedProject[] = []
 
   // 컴포넌트 마운트 시 로컬 스토리지에서 데이터 로드 또는 초기 데이터 저장
   useEffect(() => {
@@ -197,12 +182,12 @@ export function CompletedProjectsScreen() {
               <div className="bg-light dark:bg-darkblue/20 p-3 rounded-xl">
                 <p className="text-sm text-gray">총 투자 금액</p>
                 <p className="text-xl font-bold text-darkblue dark:text-light">
-                  ₩{(totalInvestedAmount || 0).toLocaleString()}
+                  {formatCurrencyWithEok(totalInvestedAmount || 0)}
                 </p>
               </div>
               <div className="bg-light dark:bg-darkblue/20 p-3 rounded-xl">
                 <p className="text-sm text-gray">총 수익 금액</p>
-                <p className="text-xl font-bold text-profit">₩{(totalReturnAmount || 0).toLocaleString()}</p>
+                <p className="text-xl font-bold text-profit">{formatCurrencyWithEok(totalReturnAmount || 0)}</p>
               </div>
               <div className="bg-light dark:bg-darkblue/20 p-3 rounded-xl">
                 <p className="text-sm text-gray">평균 수익률</p>
@@ -252,12 +237,12 @@ export function CompletedProjectsScreen() {
                       <div>
                         <p className="text-xs text-gray">투자 금액</p>
                         <p className="font-medium text-darkblue dark:text-light">
-                          ₩{(project?.investedAmount || 0).toLocaleString()}
+                          {formatCurrencyWithEok(project?.investedAmount || 0)}
                         </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray">수익 금액</p>
-                        <p className="font-medium text-profit">₩{(project?.returnAmount || 0).toLocaleString()}</p>
+                        <p className="font-medium text-profit">{formatCurrencyWithEok(project?.returnAmount || 0)}</p>
                       </div>
                     </div>
                   </div>
@@ -300,11 +285,13 @@ export function CompletedProjectsScreen() {
 
       {/* 피드백 다이얼로그 */}
       <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-light dark:bg-darkblue">
-          <DialogHeader>
-            <DialogTitle className="text-darkblue dark:text-light">투자 후기 및 드라마화 피드백</DialogTitle>
-            <DialogDescription>
-              {currentProject?.title}에 대한 투자 후기와 드라마화 관련 의견을 남겨주세요. 제작사에 전달됩니다.
+        <DialogContent className="max-w-[95vw] sm:max-w-[500px] max-h-[90vh] overflow-y-auto bg-light dark:bg-darkblue mx-4">
+          <DialogHeader className="pb-4 sm:pb-6">
+            <DialogTitle className="text-lg sm:text-xl text-darkblue dark:text-light">
+              투자 후기 및 드라마화 피드백
+            </DialogTitle>
+            <DialogDescription className="text-sm sm:text-base">
+              {currentProject?.title}에 대한 투자 후기와 드라마화 관련 의견을 남겨주세요.
             </DialogDescription>
           </DialogHeader>
 
@@ -316,7 +303,7 @@ export function CompletedProjectsScreen() {
               <Textarea
                 id="feedback"
                 placeholder="웹툰의 어떤 점이 좋았는지, 드라마화 시 어떤 부분을 강조하면 좋을지 의견을 남겨주세요."
-                className="min-h-[120px] bg-light dark:bg-darkblue/50 border-gray/20"
+                className="min-h-[100px] sm:min-h-[120px] bg-light dark:bg-darkblue/50 border-gray/20 text-sm sm:text-base"
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
               />
@@ -351,11 +338,18 @@ export function CompletedProjectsScreen() {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setFeedbackOpen(false)} className="border-gray/20 text-gray">
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setFeedbackOpen(false)}
+              className="w-full sm:w-auto border-gray/20 text-gray h-12"
+            >
               취소
             </Button>
-            <Button onClick={handleFeedbackSubmit} className="bg-yellow hover:bg-yellow/90 text-dark">
+            <Button
+              onClick={handleFeedbackSubmit}
+              className="w-full sm:w-auto bg-yellow hover:bg-yellow/90 text-dark h-12"
+            >
               제출하기
             </Button>
           </DialogFooter>

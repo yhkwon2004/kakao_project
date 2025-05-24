@@ -26,8 +26,26 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog"
+
+// 돈 단위 포맷팅 함수 (억 단위 포함)
+const formatCurrencyWithEok = (amount: number): string => {
+  if (amount >= 100000000) {
+    // 1억 이상
+    const eok = Math.floor(amount / 100000000)
+    const man = Math.floor((amount % 100000000) / 10000)
+    if (man > 0) {
+      return `${eok}억 ${man.toLocaleString()}만원`
+    } else {
+      return `${eok}억원`
+    }
+  } else if (amount >= 10000) {
+    // 1만원 이상
+    return `${Math.floor(amount / 10000).toLocaleString()}만원`
+  } else {
+    return `${amount.toLocaleString()}원`
+  }
+}
 
 export function AccountSettingsScreen() {
   const router = useRouter()
@@ -272,69 +290,35 @@ export function AccountSettingsScreen() {
 
       {/* 비밀번호 변경 다이얼로그 */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent className="sm:max-w-md rounded-xl bg-light dark:bg-darkblue/90">
-          <DialogHeader>
-            <DialogTitle className="text-darkblue dark:text-light">비밀번호 변경</DialogTitle>
-            <DialogDescription className="text-gray">
+        <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-light dark:bg-darkblue/90 mx-4">
+          <DialogHeader className="pb-4 sm:pb-6">
+            <DialogTitle className="text-lg sm:text-xl font-bold text-darkblue dark:text-light">
+              비밀번호 변경
+            </DialogTitle>
+            <DialogDescription className="text-sm sm:text-base text-gray">
               비밀번호를 변경하려면 현재 비밀번호를 입력한 후 새 비밀번호를 설정하세요.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+
+          <div className="space-y-4 py-2 sm:py-4">
             <div className="space-y-2">
-              <label htmlFor="current-password" className="text-sm font-medium text-darkblue dark:text-light">
-                현재 비밀번호
-              </label>
-              <Input
-                id="current-password"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/20"
-              />
+              <label className="text-sm font-semibold text-darkblue dark:text-light">현재 비밀번호</label>
+              <Input className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/20 h-12 sm:h-14" />
             </div>
             <div className="space-y-2">
-              <label htmlFor="new-password" className="text-sm font-medium text-darkblue dark:text-light">
-                새 비밀번호
-              </label>
-              <Input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/20"
-              />
+              <label className="text-sm font-semibold text-darkblue dark:text-light">새 비밀번호</label>
+              <Input className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/20 h-12 sm:h-14" />
             </div>
             <div className="space-y-2">
-              <label htmlFor="confirm-password" className="text-sm font-medium text-darkblue dark:text-light">
-                비밀번호 확인
-              </label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/20"
-              />
+              <label className="text-sm font-semibold text-darkblue dark:text-light">비밀번호 확인</label>
+              <Input className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/20 h-12 sm:h-14" />
             </div>
-            {passwordError && (
-              <div className="text-red-500 text-sm flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                {passwordError}
-              </div>
-            )}
           </div>
-          <DialogFooter className="sm:justify-between">
-            <DialogClose asChild>
-              <Button variant="outline" className="rounded-xl border-gray/20 text-gray">
-                취소
-              </Button>
-            </DialogClose>
-            <Button
-              onClick={handlePasswordChange}
-              className="rounded-xl bg-yellow hover:bg-yellow/90 text-dark font-medium"
-              disabled={isChangingPassword}
-            >
-              {isChangingPassword ? "변경 중..." : "비밀번호 변경"}
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4 sm:pt-6">
+            <Button className="w-full sm:w-auto rounded-xl border-gray/20 text-gray h-12">취소</Button>
+            <Button className="w-full sm:w-auto rounded-xl bg-yellow hover:bg-yellow/90 text-dark font-medium h-12">
+              비밀번호 변경
             </Button>
           </DialogFooter>
         </DialogContent>
