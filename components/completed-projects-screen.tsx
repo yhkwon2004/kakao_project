@@ -61,7 +61,7 @@ export function CompletedProjectsScreen() {
       completionDate: "2023-04-15",
       investors: 342,
       hasFeedback: false,
-      thumbnail: "/images/나쁜-비서.jpg",
+      thumbnail: "/images/나쁜-비서.png",
       slug: "bad-secretary",
       feedback: "",
       adaptationInterest: "",
@@ -233,7 +233,7 @@ export function CompletedProjectsScreen() {
                     <img
                       src={
                         project.thumbnail ||
-                        `/placeholder.svg?height=80&width=80&query=${encodeURIComponent(project.title) || "/placeholder.svg"}`
+                        `/placeholder.svg?height=80&width=80&query=${encodeURIComponent(project.title)}`
                       }
                       alt={project.title}
                       className="w-full h-full object-cover"
