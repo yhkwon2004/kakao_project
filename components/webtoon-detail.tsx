@@ -4,7 +4,19 @@ import type React from "react"
 
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, Sparkles, Star, TrendingUp, Wallet } from "lucide-react"
+import {
+  ChevronLeft,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Wallet,
+  Users,
+  Clock,
+  Target,
+  BarChart3,
+  Calendar,
+  Award,
+} from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useToast } from "@/components/ui/use-toast"
 import Image from "next/image"
@@ -54,7 +66,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   // 웹툰 데이터가 없는 경우 기본값 설정
   const webtoon = {
     id,
-    title: webtoonData?.title || "웹툰 정보를 찾을 수 없습니다",
+    title: webtoonData?.title || "웹툰 정보를 찾을 ��� 없습니다",
     ageRating: webtoonData?.ageRating || "15",
     genre: webtoonData?.genre || "정보 없음",
     director: webtoonData?.director || "정보 없음",
@@ -632,11 +644,11 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     const chartConfig = {
       existing: {
         label: "기존 투자자",
-        color: "hsl(142, 76%, 36%)", // 초록색
+        color: "#10B981", // 초록색 (고정값)
       },
       new: {
         label: "신규 투자자",
-        color: "hsl(0, 84%, 60%)", // 빨간색
+        color: "#EF4444", // 빨간색 (고정값)
       },
     }
 
@@ -660,7 +672,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 bottom: 20,
               }}
             >
-              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
+              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} stroke="#e5e7eb" />
               <XAxis
                 dataKey="month"
                 tickLine={false}
@@ -668,6 +680,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 tickMargin={8}
                 tickFormatter={(value) => value.slice(5) + "월"}
                 interval={0}
+                stroke="#6b7280"
               />
               <YAxis
                 domain={[0, yAxisMax]}
@@ -675,6 +688,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 axisLine={false}
                 tickMargin={8}
                 tickFormatter={(value) => `${value}명`}
+                stroke="#6b7280"
               />
               <ChartTooltip
                 cursor={{ fill: "rgba(0, 0, 0, 0.1)" }}
@@ -717,18 +731,18 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
               <Area
                 dataKey="existing"
                 type="natural"
-                fill="hsl(142, 76%, 36%)"
+                fill="#10B981"
                 fillOpacity={0.4}
-                stroke="hsl(142, 76%, 36%)"
+                stroke="#10B981"
                 strokeWidth={2}
                 stackId="a"
               />
               <Area
                 dataKey="new"
                 type="natural"
-                fill="hsl(0, 84%, 60%)"
+                fill="#EF4444"
                 fillOpacity={0.4}
-                stroke="hsl(0, 84%, 60%)"
+                stroke="#EF4444"
                 strokeWidth={2}
                 stackId="a"
               />
@@ -783,11 +797,11 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     const chartConfig = {
       cumulative: {
         label: "누적 투자금",
-        color: "hsl(217, 91%, 60%)", // 파란색
+        color: "#3B82F6", // 파란색 (고정값)
       },
       new: {
         label: "신규 투자금",
-        color: "hsl(142, 76%, 36%)", // 초록색
+        color: "#10B981", // 초록색 (고정값)
       },
     }
 
@@ -811,7 +825,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 bottom: 20,
               }}
             >
-              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} />
+              <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.3} stroke="#e5e7eb" />
               <XAxis
                 dataKey="month"
                 tickLine={false}
@@ -819,6 +833,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 tickMargin={8}
                 tickFormatter={(value) => value.slice(5) + "월"}
                 interval={0}
+                stroke="#6b7280"
               />
               <YAxis
                 domain={[0, yAxisMax]}
@@ -833,11 +848,13 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   }
                   return `${value}만`
                 }}
+                stroke="#6b7280"
               />
               <ChartTooltip
                 cursor={{ fill: "rgba(0, 0, 0, 0.1)" }}
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
+                    const data = payload[0].payload
                     return (
                       <div className="bg-white dark:bg-darkblue border border-gray/20 rounded-lg p-3 shadow-lg">
                         <p className="text-sm font-medium text-darkblue dark:text-light mb-2">
@@ -880,18 +897,18 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
               <Area
                 dataKey="cumulative"
                 type="natural"
-                fill="hsl(217, 91%, 60%)"
+                fill="#3B82F6"
                 fillOpacity={0.4}
-                stroke="hsl(217, 91%, 60%)"
+                stroke="#3B82F6"
                 strokeWidth={2}
                 stackId="a"
               />
               <Area
                 dataKey="new"
                 type="natural"
-                fill="hsl(142, 76%, 36%)"
+                fill="#10B981"
                 fillOpacity={0.4}
-                stroke="hsl(142, 76%, 36%)"
+                stroke="#10B981"
                 strokeWidth={2}
                 stackId="a"
               />
@@ -905,7 +922,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   return (
     <div className="flex flex-col pb-32 bg-light dark:bg-dark">
       {/* 헤더 */}
-      <div className="flex justify-between items-center p-4 border-b border-gray/10">
+      <div className="flex justify-between items-center p-4 border-b border-gray/10 bg-white/80 dark:bg-darkblue/80 backdrop-blur-sm sticky top-0 z-40">
         <div className="flex items-center">
           <Button variant="ghost" size="icon" className="mr-2" onClick={() => router.back()}>
             <ChevronLeft className="h-5 w-5" />
@@ -918,8 +935,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </Avatar>
         </Button>
       </div>
+
       {/* 웹툰 이미지 */}
-      <div className="relative h-80 w-full bg-light flex items-center justify-center">
+      <div className="relative h-80 w-full bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 flex items-center justify-center">
         <Image
           src={webtoonData?.thumbnail || "/gray-placeholder.png"}
           alt={webtoon.title}
@@ -927,126 +945,159 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           className="object-cover"
         />
 
-        {/* 드라마화 완료 뱃지 표시 */}
-        {webtoon.isDramatized && (
-          <div className="absolute top-4 left-4 bg-green text-light text-xs font-medium px-3 py-1 rounded-full z-10 flex items-center">
-            <Sparkles className="h-3 w-3 mr-1" />
-            드라마화 완료
-          </div>
-        )}
+        {/* 그라데이션 오버레이 */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-        {/* 남은 일수 표시 (드라마화 안된 경우만) */}
-        {!webtoon.isDramatized && webtoon.status === "ongoing" && (
-          <div className="absolute top-4 left-4 bg-yellow text-dark text-xs font-medium px-3 py-1 rounded-full z-10">
-            {webtoon.daysLeft}일 남음
-          </div>
-        )}
+        {/* 상태 뱃지들 */}
+        <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+          {webtoon.isDramatized && (
+            <div className="bg-green/90 backdrop-blur-sm text-light text-xs font-medium px-3 py-1.5 rounded-full flex items-center shadow-lg">
+              <Sparkles className="h-3 w-3 mr-1" />
+              드라마화 완료
+            </div>
+          )}
 
-        {/* 투자 마감 표시 (드라마화 안됐지만 완료된 경우) */}
-        {!webtoon.isDramatized && webtoon.status === "completed" && (
-          <div className="absolute top-4 left-4 bg-gray text-light text-xs font-medium px-3 py-1 rounded-full z-10">
-            투자 마감
-          </div>
-        )}
+          {!webtoon.isDramatized && webtoon.status === "ongoing" && (
+            <div className="bg-yellow/90 backdrop-blur-sm text-dark text-xs font-medium px-3 py-1.5 rounded-full shadow-lg">
+              <Clock className="h-3 w-3 mr-1 inline" />
+              {webtoon.daysLeft}일 남음
+            </div>
+          )}
+
+          {!webtoon.isDramatized && webtoon.status === "completed" && (
+            <div className="bg-gray/90 backdrop-blur-sm text-light text-xs font-medium px-3 py-1.5 rounded-full shadow-lg">
+              투자 마감
+            </div>
+          )}
+        </div>
 
         {/* 진행률 표시 */}
-        <div className="absolute top-4 right-4 bg-darkblue/80 text-light text-xs font-medium px-3 py-1 rounded-full z-10">
+        <div className="absolute top-4 right-4 bg-darkblue/90 backdrop-blur-sm text-light text-xs font-medium px-3 py-1.5 rounded-full z-10 shadow-lg">
+          <Target className="h-3 w-3 mr-1 inline" />
           {dynamicProgress.toFixed(0)}% 모집됨
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 bg-dark/80 p-4">
-          <h2 className="text-xl font-bold text-light">{webtoon.title}</h2>
-          <p className="text-gray text-sm">{webtoon.genre}</p>
+        {/* 제목 및 장르 */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
+          <h1 className="text-2xl font-bold text-white mb-1">{webtoon.title}</h1>
+          <p className="text-gray-200 text-sm">{webtoon.genre}</p>
         </div>
       </div>
-      <p className="text-xs text-gray text-center mt-1 px-4">
+
+      <p className="text-xs text-gray text-center mt-2 px-4">
         ※ 현재는 임시 이미지입니다. 추후 실제 이미지로 교체될 수 있습니다.
       </p>
+
       {/* 사용자 잔액 표시 */}
-      <div className="p-4 pt-2">
-        <div className="flex items-center justify-between bg-green/10 rounded-xl p-3">
+      <div className="p-4">
+        <div className="flex items-center justify-between bg-gradient-to-r from-green/10 to-emerald/10 rounded-xl p-4 border border-green/20 shadow-sm">
           <div className="flex items-center">
-            <Wallet className="h-5 w-5 text-green mr-2" />
+            <div className="bg-green/20 p-2 rounded-lg mr-3">
+              <Wallet className="h-5 w-5 text-green" />
+            </div>
             <span className="text-sm font-medium text-darkblue dark:text-light">내 잔액</span>
           </div>
-          <span className="font-bold text-green">₩{userBalance.toLocaleString()}</span>
+          <span className="font-bold text-green text-lg">₩{userBalance.toLocaleString()}</span>
         </div>
       </div>
+
       {/* 웹툰 상세 정보 */}
       <div className="p-4 pt-0">
         {/* 주요 정보 카드 */}
-        <Card className="rounded-xl mb-6 border-gray/20 bg-light dark:bg-darkblue/30">
-          <CardContent className="p-4">
-            {/* 웹툰 상세 정보 카드 부분에서 toLocaleString() 호출 전에 안전 검사 추가 */}
-            <div className="flex justify-between items-center mb-2">
-              <div>
-                <p className="text-sm text-gray">현재 모금액</p>
-                <p className="font-bold text-lg text-darkblue dark:text-light">
-                  ₩{typeof dynamicCurrentRaised === "number" ? dynamicCurrentRaised.toLocaleString() : "0"}
-                </p>
+        <Card className="rounded-2xl mb-6 border-gray/20 bg-white dark:bg-darkblue/30 shadow-lg overflow-hidden">
+          <CardContent className="p-0">
+            {/* 헤더 섹션 */}
+            <div className="bg-gradient-to-r from-blue/5 to-purple/5 p-6 border-b border-gray/10">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <p className="text-sm text-gray font-medium">현재 모금액</p>
+                  <p className="font-bold text-2xl text-darkblue dark:text-light">
+                    ₩{typeof dynamicCurrentRaised === "number" ? dynamicCurrentRaised.toLocaleString() : "0"}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray font-medium">목표 금액</p>
+                  <p className="font-semibold text-lg text-darkblue dark:text-light">
+                    ₩{typeof webtoon.goalAmount === "number" ? webtoon.goalAmount.toLocaleString() : "0"}
+                  </p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray">목표 금액</p>
-                <p className="font-medium text-darkblue dark:text-light">
-                  ₩{typeof webtoon.goalAmount === "number" ? webtoon.goalAmount.toLocaleString() : "0"}
-                </p>
+
+              <Progress
+                value={dynamicProgress}
+                className="h-4 mb-4 bg-gray/20 transition-all duration-1000 ease-out"
+                indicatorClassName="bg-gradient-to-r from-yellow to-green transition-all duration-1000"
+              />
+
+              <div className="flex justify-between items-center">
+                <p className="text-sm text-darkblue dark:text-light font-medium">{dynamicProgress.toFixed(1)}% 완료</p>
+                <div className="flex items-center bg-green/10 px-3 py-1 rounded-full">
+                  <Award className="h-3 w-3 text-green mr-1" />
+                  <p className="text-sm font-medium text-green">예상 수익률: {webtoon.expectedROI}%</p>
+                </div>
               </div>
-            </div>
-
-            <Progress
-              value={dynamicProgress}
-              className="h-3 mb-3 bg-gray/20 transition-all duration-1000 ease-out"
-              indicatorClassName="bg-gradient-to-r from-yellow to-green transition-all duration-1000"
-            />
-
-            <div className="flex justify-between items-center mb-3">
-              <p className="text-sm text-darkblue dark:text-light">{dynamicProgress.toFixed(1)}% 완료</p>
-              <p className="text-sm font-medium text-green">예상 수익률: {webtoon.expectedROI}%</p>
             </div>
 
             {/* 투자 현황 정보 카드 */}
-            <div className="grid grid-cols-3 gap-3 mb-3">
-              {/* 남은 기간 */}
-              <div className="bg-gradient-to-br from-orange/10 to-red/10 rounded-lg p-3 border border-orange/20 text-center">
-                <div className="flex items-center justify-center mb-1">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full mr-1"></div>
-                  <span className="text-xs font-medium text-gray">남은 기간</span>
+            <div className="p-6">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                {/* 남은 기간 */}
+                <div className="bg-gradient-to-br from-orange/10 to-red/10 rounded-xl p-4 border border-orange/20">
+                  <div className="flex items-center mb-2">
+                    <div className="bg-orange/20 p-1.5 rounded-lg mr-2">
+                      <Clock className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <span className="text-xs font-medium text-gray">남은 기간</span>
+                  </div>
+                  <p className="text-xl font-bold text-orange-600">
+                    {webtoon.status === "completed" ? "마감" : `${webtoon.daysLeft}일`}
+                  </p>
                 </div>
-                <p className="text-lg font-bold text-orange-600">
-                  {webtoon.status === "completed" ? "마감" : `${webtoon.daysLeft}일`}
-                </p>
+
+                {/* 투자자 수 */}
+                <div className="bg-gradient-to-br from-green/10 to-emerald/10 rounded-xl p-4 border border-green/20">
+                  <div className="flex items-center mb-2">
+                    <div className="bg-green/20 p-1.5 rounded-lg mr-2">
+                      <Users className="h-4 w-4 text-green-600" />
+                    </div>
+                    <span className="text-xs font-medium text-gray">투자자 수</span>
+                  </div>
+                  <p className="text-xl font-bold text-green-600">{dynamicTotalInvestors.toLocaleString()}명</p>
+                </div>
               </div>
 
-              {/* 투자자 수 */}
-              <div className="bg-gradient-to-br from-green/10 to-emerald/10 rounded-lg p-3 border border-green/20 text-center">
-                <div className="flex items-center justify-center mb-1">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
-                  <span className="text-xs font-medium text-gray">투자자 수</span>
+              <div className="grid grid-cols-1 gap-4">
+                {/* 남은 투자금액 */}
+                <div className="bg-gradient-to-br from-blue/10 to-purple/10 rounded-xl p-4 border border-blue/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="bg-blue/20 p-1.5 rounded-lg mr-2">
+                        <BarChart3 className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <span className="text-sm font-medium text-darkblue dark:text-light">남은 투자금액</span>
+                    </div>
+                    <p className="text-xl font-bold text-blue-600">
+                      {Math.max(0, webtoon.goalAmount - dynamicCurrentRaised) >= 1000000
+                        ? `${Math.floor(Math.max(0, webtoon.goalAmount - dynamicCurrentRaised) / 10000).toLocaleString()}만원`
+                        : `${Math.max(0, webtoon.goalAmount - dynamicCurrentRaised).toLocaleString()}원`}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-lg font-bold text-green-600">{dynamicTotalInvestors.toLocaleString()}명</p>
-              </div>
 
-              {/* 남은 투자금액 */}
-              <div className="bg-gradient-to-br from-blue/10 to-purple/10 rounded-lg p-3 border border-blue/20 text-center">
-                <div className="flex items-center justify-center mb-1">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-1"></div>
-                  <span className="text-xs font-medium text-gray">남은 금액</span>
+                {/* 진행률 요약 */}
+                <div className="bg-gradient-to-r from-purple/10 to-indigo/10 rounded-xl p-4 border border-purple/20">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <div className="bg-purple/20 p-1.5 rounded-lg mr-2">
+                        <Target className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <span className="text-sm font-medium text-darkblue dark:text-light">목표까지</span>
+                    </div>
+                    <span className="text-xl font-bold text-purple-600">
+                      {Math.max(0, 100 - dynamicProgress).toFixed(1)}% 남음
+                    </span>
+                  </div>
                 </div>
-                <p className="text-lg font-bold text-blue-600">
-                  {Math.max(0, webtoon.goalAmount - dynamicCurrentRaised) >= 1000000
-                    ? `${Math.floor(Math.max(0, webtoon.goalAmount - dynamicCurrentRaised) / 1000000)}만원`
-                    : `${Math.max(0, webtoon.goalAmount - dynamicCurrentRaised).toLocaleString()}원`}
-                </p>
-              </div>
-            </div>
-
-            {/* 진행률 요약 */}
-            <div className="bg-gradient-to-r from-purple/10 to-indigo/10 rounded-lg p-3 border border-purple/20">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-darkblue dark:text-light">목표까지</span>
-                <span className="text-lg font-bold text-purple-600">
-                  {Math.max(0, 100 - dynamicProgress).toFixed(1)}% 남음
-                </span>
               </div>
             </div>
           </CardContent>
@@ -1054,12 +1105,12 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
         {/* 탭 컨텐츠 */}
         <Tabs defaultValue="summary" onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 mb-4 bg-light dark:bg-darkblue/20 p-1 rounded-full">
+          <TabsList className="grid grid-cols-3 mb-6 bg-white dark:bg-darkblue/20 p-1 rounded-xl shadow-sm border border-gray/10">
             <TabsTrigger
               value="summary"
-              className={`rounded-full transition-all ${
+              className={`rounded-lg transition-all font-medium ${
                 activeTab === "summary"
-                  ? "bg-yellow text-dark font-medium"
+                  ? "bg-yellow text-dark shadow-sm"
                   : "text-gray hover:text-darkblue dark:hover:text-light"
               }`}
             >
@@ -1067,9 +1118,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             </TabsTrigger>
             <TabsTrigger
               value="investors"
-              className={`rounded-full transition-all ${
+              className={`rounded-lg transition-all font-medium ${
                 activeTab === "investors"
-                  ? "bg-yellow text-dark font-medium"
+                  ? "bg-yellow text-dark shadow-sm"
                   : "text-gray hover:text-darkblue dark:hover:text-light"
               }`}
             >
@@ -1077,9 +1128,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             </TabsTrigger>
             <TabsTrigger
               value="amount"
-              className={`rounded-full transition-all ${
+              className={`rounded-lg transition-all font-medium ${
                 activeTab === "amount"
-                  ? "bg-yellow text-dark font-medium"
+                  ? "bg-yellow text-dark shadow-sm"
                   : "text-gray hover:text-darkblue dark:hover:text-light"
               }`}
             >
@@ -1088,42 +1139,49 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </TabsList>
 
           <TabsContent value="summary">
-            <Card className="rounded-xl mb-6 border-gray/20 bg-light dark:bg-darkblue/30">
-              <CardContent className="p-4">
-                <h3 className="font-bold mb-3 text-darkblue dark:text-light">작품 소개</h3>
-                <p className="text-sm text-darkblue/80 dark:text-light/80 whitespace-pre-line">{webtoon.summary}</p>
+            <Card className="rounded-2xl mb-6 border-gray/20 bg-white dark:bg-darkblue/30 shadow-lg">
+              <CardContent className="p-6">
+                <h3 className="font-bold mb-4 text-darkblue dark:text-light text-lg">작품 소개</h3>
+                <p className="text-sm text-darkblue/80 dark:text-light/80 whitespace-pre-line leading-relaxed mb-6">
+                  {webtoon.summary}
+                </p>
 
-                <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-gray/10">
-                  <div>
-                    <p className="text-sm text-gray">감독</p>
-                    <p className="font-medium text-darkblue dark:text-light">{webtoon.director}</p>
+                <div className="grid grid-cols-1 gap-4 pt-4 border-t border-gray/10">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray/5 p-3 rounded-lg">
+                      <p className="text-xs text-gray font-medium mb-1">감독</p>
+                      <p className="font-medium text-darkblue dark:text-light">{webtoon.director}</p>
+                    </div>
+                    <div className="bg-gray/5 p-3 rounded-lg">
+                      <p className="text-xs text-gray font-medium mb-1">제작사</p>
+                      <p className="font-medium text-darkblue dark:text-light">{webtoon.productionCompany}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray">제작사</p>
-                    <p className="font-medium text-darkblue dark:text-light">{webtoon.productionCompany}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray">배급사</p>
+                  <div className="bg-gray/5 p-3 rounded-lg">
+                    <p className="text-xs text-gray font-medium mb-1">배급사</p>
                     <p className="font-medium text-darkblue dark:text-light">{webtoon.distributor}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="rounded-xl mb-6 border-gray/20 bg-light dark:bg-darkblue/30">
-              <CardContent className="p-4">
-                <h3 className="font-bold mb-3 text-darkblue dark:text-light">최신 제작 업데이트</h3>
-                <p className="text-sm text-darkblue/80 dark:text-light/80">{webtoon.updateLog}</p>
+            <Card className="rounded-2xl mb-6 border-gray/20 bg-white dark:bg-darkblue/30 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center mb-4">
+                  <Calendar className="h-5 w-5 text-blue-600 mr-2" />
+                  <h3 className="font-bold text-darkblue dark:text-light text-lg">최신 제작 업데이트</h3>
+                </div>
+                <p className="text-sm text-darkblue/80 dark:text-light/80 leading-relaxed">{webtoon.updateLog}</p>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="investors">
-            <Card className="rounded-xl mb-6 border-gray/20 bg-light dark:bg-darkblue/30">
-              <CardContent className="p-4">
+            <Card className="rounded-2xl mb-6 border-gray/20 bg-white dark:bg-darkblue/30 shadow-lg">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="h-5 w-5 text-yellow" />
-                  <h3 className="font-bold text-darkblue dark:text-light">투자자 증가 추이</h3>
+                  <h3 className="font-bold text-darkblue dark:text-light text-lg">투자자 증가 추이</h3>
                 </div>
                 {renderInvestorGrowthGraph()}
               </CardContent>
@@ -1131,11 +1189,11 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </TabsContent>
 
           <TabsContent value="amount">
-            <Card className="rounded-xl mb-6 border-gray/20 bg-light dark:bg-darkblue/30">
-              <CardContent className="p-4">
+            <Card className="rounded-2xl mb-6 border-gray/20 bg-white dark:bg-darkblue/30 shadow-lg">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <TrendingUp className="h-5 w-5 text-green" />
-                  <h3 className="font-bold text-darkblue dark:text-light">투자금액 증가 추이</h3>
+                  <h3 className="font-bold text-darkblue dark:text-light text-lg">투자금액 증가 추이</h3>
                 </div>
                 {renderAmountGrowthGraph()}
               </CardContent>
@@ -1143,29 +1201,48 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </TabsContent>
         </Tabs>
 
-        <div className="fixed bottom-0 left-0 right-0 flex gap-3 p-4 bg-light dark:bg-dark border-t border-gray/10 shadow-lg z-50">
-          <Button
-            className={`flex-1 rounded-xl h-12 text-light ${
-              !canInvest() ? "bg-gray hover:bg-gray/90" : "bg-green hover:bg-green/90"
-            }`}
-            onClick={handleInvest}
-            disabled={isInvestmentDisabled}
-          >
-            💰 투자하기
-          </Button>
-          <Button
-            variant="outline"
-            className={`rounded-xl w-12 h-12 ${
-              isFavorite
-                ? "bg-yellow/10 border-yellow text-yellow hover:bg-yellow/20"
-                : "border-gray text-gray hover:bg-light dark:hover:bg-darkblue/30"
-            }`}
-            onClick={handleFavorite}
-          >
-            <Star className={`h-5 w-5 ${isFavorite ? "fill-yellow" : ""}`} />
-          </Button>
+        {/* 고정 하단 버튼 */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-dark/95 backdrop-blur-sm border-t border-gray/10 shadow-2xl z-50">
+          <div className="flex gap-3 p-4 max-w-md mx-auto">
+            <Button
+              className={`flex-1 rounded-xl h-14 text-white font-semibold shadow-lg transition-all duration-200 ${
+                !canInvest()
+                  ? "bg-gray-400 hover:bg-gray-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transform hover:scale-105"
+              }`}
+              onClick={handleInvest}
+              disabled={isInvestmentDisabled}
+            >
+              <div className="flex items-center justify-center">
+                <Wallet className="h-5 w-5 mr-2" />
+                투자하기
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className={`rounded-xl w-14 h-14 border-2 transition-all duration-200 ${
+                isFavorite
+                  ? "bg-yellow/10 border-yellow text-yellow hover:bg-yellow/20 shadow-lg"
+                  : "border-gray-300 text-gray-500 hover:bg-gray-50 dark:hover:bg-darkblue/30"
+              }`}
+              onClick={handleFavorite}
+            >
+              <Star className={`h-6 w-6 ${isFavorite ? "fill-yellow" : ""}`} />
+            </Button>
+          </div>
+
+          {/* 상태 메시지 */}
+          {getStatusMessage() && (
+            <div className="px-4 pb-2">
+              <p className="text-xs text-center text-gray-500 bg-gray-100 dark:bg-gray-800 py-2 px-3 rounded-lg">
+                {getStatusMessage()}
+              </p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* 투자 모달 */}
       <Dialog open={isInvestModalOpen} onOpenChange={setIsInvestModalOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
           <DialogHeader>
@@ -1342,6 +1419,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       {/* 잔액 부족 다이얼로그 */}
       <Dialog open={isInsufficientBalanceDialogOpen} onOpenChange={setIsInsufficientBalanceDialogOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
@@ -1384,6 +1462,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       {/* 투자 확인 다이얼로그 */}
       <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">

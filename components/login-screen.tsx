@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Logo } from "@/components/logo"
-import { saveUserToStorage, getUserFromStorage } from "@/lib/auth"
+import { saveUserToStorage, getUserFromStorage, clearUserFromStorage } from "@/lib/auth"
 import { useToast } from "@/components/ui/use-toast"
 import { Eye, EyeOff } from "lucide-react"
 import { createClient } from "@supabase/supabase-js"
@@ -27,6 +27,7 @@ export function LoginScreen() {
   const [name, setName] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showSplash, setShowSplash] = useState(true)
+  const [lastActivity, setLastActivity] = useState(Date.now())
   const router = useRouter()
   const { toast } = useToast()
 
@@ -44,6 +45,54 @@ export function LoginScreen() {
 
     return () => clearTimeout(timer)
   }, [router])
+
+  // 자동 로그아웃 기능을 위한 useEffect 추가 (기존 useEffect들 아래에)
+  useEffect(() => {
+    let inactivityTimer: NodeJS.Timeout
+
+    const resetTimer = () => {
+      setLastActivity(Date.now())
+      clearTimeout(inactivityTimer)
+
+      inactivityTimer = setTimeout(
+        () => {
+          // 30분(1800000ms) 후 자동 로그아웃
+          const user = getUserFromStorage()
+          if (user) {
+            clearUserFromStorage()
+            toast({
+              title: "자동 로그아웃",
+              description: "30분간 활동이 없어 자동으로 로그아웃되었습니다.",
+              duration: 5000,
+            })
+            router.push("/")
+          }
+        },
+        30 * 60 * 1000,
+      ) // 30분
+    }
+
+    const handleActivity = () => {
+      resetTimer()
+    }
+
+    // 사용자 활동 감지 이벤트들
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click"]
+
+    events.forEach((event) => {
+      document.addEventListener(event, handleActivity, true)
+    })
+
+    // 초기 타이머 설정
+    resetTimer()
+
+    return () => {
+      clearTimeout(inactivityTimer)
+      events.forEach((event) => {
+        document.removeEventListener(event, handleActivity, true)
+      })
+    }
+  }, [router, toast])
 
   const resetGuestData = async () => {
     try {
@@ -246,6 +295,105 @@ export function LoginScreen() {
 
       if (guestError) throw guestError
 
+      // 게스트 계정에 초기 데이터 설정
+      const initialInvestments = [
+        {
+          id: "bad-secretary",
+          title: "나쁜 비서 [19세 완전판]",
+          amount: 500000,
+          date: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 75일 전
+          status: "완료됨",
+          expectedROI: 10,
+          progress: 100,
+          slug: "bad-secretary",
+          thumbnail: "/images/나쁜-비서.png",
+        },
+        {
+          id: "blood-sword-family-hunting-dog",
+          title: "철혈검가 사냥개의 회귀",
+          amount: 750000,
+          date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 90일 전
+          status: "완료됨",
+          expectedROI: 16,
+          progress: 100,
+          slug: "blood-sword-family-hunting-dog",
+          thumbnail: "/images/철혈검가-사냥개의-회귀.png",
+        },
+      ]
+
+      const initialFavorites = [
+        {
+          id: "moving",
+          title: "무빙",
+          genre: "액션, 판타지",
+          status: "투자 가능",
+          notification: true,
+          slug: "moving",
+          invested: false,
+        },
+        {
+          id: "hospital-playlist",
+          title: "슬기로운 의사생활",
+          genre: "의료드라마",
+          status: "투자 가능",
+          notification: true,
+          slug: "hospital-playlist",
+          invested: false,
+        },
+      ]
+
+      // 로컬 스토리지에 초기 데이터 저장
+      if (typeof window !== "undefined") {
+        localStorage.setItem("userInvestments", JSON.stringify(initialInvestments))
+        localStorage.setItem("favoriteWebtoons", JSON.stringify(initialFavorites))
+
+        // 완료된 프로젝트 데이터도 추가
+        const completedProjects = [
+          {
+            id: "bad-secretary",
+            title: "나쁜 비서 [19세 완전판]",
+            genre: "로맨스, 드라마",
+            investedAmount: 500000,
+            returnAmount: 550000, // 10% 수익
+            roi: 10,
+            completionDate: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            investors: 342,
+            hasFeedback: false,
+            thumbnail: "/images/나쁜-비서.png",
+            slug: "bad-secretary",
+            feedback: "",
+            adaptationInterest: "",
+            investmentDate: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          },
+          {
+            id: "blood-sword-family-hunting-dog",
+            title: "철혈검가 사냥개의 회귀",
+            genre: "액션, 판타지",
+            investedAmount: 750000,
+            returnAmount: 870000, // 16% 수익
+            roi: 16,
+            completionDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            investors: 256,
+            hasFeedback: true,
+            thumbnail: "/images/철혈검가-사냥개의-회귀.png",
+            slug: "blood-sword-family-hunting-dog",
+            feedback:
+              "캐릭터의 성장 과정과 액션 장면이 인상적이었습니다. 특히 주인공의 복수 스토리가 드라마틱하게 전개되어 몰입감이 뛰어났습니다.",
+            adaptationInterest: "high",
+            investmentDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          },
+        ]
+        localStorage.setItem("completedProjects", JSON.stringify(completedProjects))
+
+        // 마일리지 초기 데이터 (0P)
+        const initialMileage = {
+          totalMileage: 0,
+          history: [],
+          lastAttendanceDate: null,
+        }
+        localStorage.setItem("userMileage", JSON.stringify(initialMileage))
+      }
+
       // Save guest user to storage
       saveUserToStorage({
         email: guestData.email,
@@ -256,7 +404,7 @@ export function LoginScreen() {
       toast({
         title: `${platform} 로그인 성공`,
         description: "환영합니다!",
-        duration: 300, // 0.3초 후 사라짐
+        duration: 300,
       })
 
       router.push("/home")

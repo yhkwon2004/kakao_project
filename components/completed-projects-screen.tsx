@@ -127,11 +127,14 @@ export function CompletedProjectsScreen() {
     }
   }, [])
 
-  // 투자 성과 요약 계산
-  const totalInvestedAmount = completedProjects.reduce((sum, p) => sum + p.investedAmount, 0)
-  const totalReturnAmount = completedProjects.reduce((sum, p) => sum + p.returnAmount, 0)
-  const averageROI = Math.round(completedProjects.reduce((sum, p) => sum + p.roi, 0) / completedProjects.length)
-  const completedProjectsCount = completedProjects.length
+  // 투자 성과 요약 계산 - 안전한 계산으로 수정
+  const totalInvestedAmount = completedProjects.reduce((sum, p) => sum + (p?.investedAmount || 0), 0)
+  const totalReturnAmount = completedProjects.reduce((sum, p) => sum + (p?.returnAmount || 0), 0)
+  const averageROI =
+    completedProjects.length > 0
+      ? Math.round(completedProjects.reduce((sum, p) => sum + (p?.roi || 0), 0) / completedProjects.length)
+      : 0
+  const completedProjectsCount = completedProjects?.length || 0
 
   const handleProjectClick = (slug: string) => {
     router.push(`/webtoon/${slug}`)
@@ -194,20 +197,20 @@ export function CompletedProjectsScreen() {
               <div className="bg-light dark:bg-darkblue/20 p-3 rounded-xl">
                 <p className="text-sm text-gray">총 투자 금액</p>
                 <p className="text-xl font-bold text-darkblue dark:text-light">
-                  ₩{totalInvestedAmount.toLocaleString()}
+                  ₩{(totalInvestedAmount || 0).toLocaleString()}
                 </p>
               </div>
               <div className="bg-light dark:bg-darkblue/20 p-3 rounded-xl">
                 <p className="text-sm text-gray">총 수익 금액</p>
-                <p className="text-xl font-bold text-profit">₩{totalReturnAmount.toLocaleString()}</p>
+                <p className="text-xl font-bold text-profit">₩{(totalReturnAmount || 0).toLocaleString()}</p>
               </div>
               <div className="bg-light dark:bg-darkblue/20 p-3 rounded-xl">
                 <p className="text-sm text-gray">평균 수익률</p>
-                <p className="text-xl font-bold text-profit">{averageROI}%</p>
+                <p className="text-xl font-bold text-profit">{averageROI || 0}%</p>
               </div>
               <div className="bg-light dark:bg-darkblue/20 p-3 rounded-xl">
                 <p className="text-sm text-gray">완료된 프로젝트</p>
-                <p className="text-xl font-bold text-darkblue dark:text-light">{completedProjectsCount}개</p>
+                <p className="text-xl font-bold text-darkblue dark:text-light">{completedProjectsCount || 0}개</p>
               </div>
             </div>
           </CardContent>
@@ -249,12 +252,12 @@ export function CompletedProjectsScreen() {
                       <div>
                         <p className="text-xs text-gray">투자 금액</p>
                         <p className="font-medium text-darkblue dark:text-light">
-                          ₩{project.investedAmount.toLocaleString()}
+                          ₩{(project?.investedAmount || 0).toLocaleString()}
                         </p>
                       </div>
                       <div>
                         <p className="text-xs text-gray">수익 금액</p>
-                        <p className="font-medium text-profit">₩{project.returnAmount.toLocaleString()}</p>
+                        <p className="font-medium text-profit">₩{(project?.returnAmount || 0).toLocaleString()}</p>
                       </div>
                     </div>
                   </div>
@@ -265,7 +268,7 @@ export function CompletedProjectsScreen() {
                   <div className="flex gap-4">
                     <div>
                       <p className="text-xs text-gray">최종 수익률</p>
-                      <p className="font-medium text-profit">{project.roi}%</p>
+                      <p className="font-medium text-profit">{project?.roi || 0}%</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray">투자일</p>
