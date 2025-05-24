@@ -752,14 +752,14 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
                   {/* 선형 그래프 */}
                   <div className="relative h-48 bg-gradient-to-t from-blue/5 to-transparent rounded-lg p-4 border border-blue/10 overflow-hidden">
-                    <svg className="w-full h-full" viewBox="0 0 300 160" preserveAspectRatio="none">
+                    <svg className="w-full h-full" viewBox="0 0 320 180" preserveAspectRatio="none">
                       {/* 그리드 라인 */}
                       <defs>
                         <pattern id="grid" width="50" height="32" patternUnits="userSpaceOnUse">
                           <path d="M 50 0 L 0 0 0 32" fill="none" stroke="#e5e7eb" strokeWidth="0.5" opacity="0.3" />
                         </pattern>
                       </defs>
-                      <rect width="100%" height="100%" fill="url(#grid)" />
+                      <rect x="20" y="20" width="280" height="140" fill="url(#grid)" />
 
                       {/* 투자자 수 증가 라인 */}
                       <polyline
@@ -771,15 +771,15 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                         points={investorGrowthData
                           .map(
                             (value, index) =>
-                              `${(index / (investorGrowthData.length - 1)) * 300},${160 - (value / maxInvestors) * 130}`,
+                              `${20 + (index / (investorGrowthData.length - 1)) * 280},${160 - (value / maxInvestors) * 120}`,
                           )
                           .join(" ")}
                       />
 
                       {/* 데이터 포인트 */}
                       {investorGrowthData.map((value, index) => {
-                        const x = (index / (investorGrowthData.length - 1)) * 300
-                        const y = 160 - (value / maxInvestors) * 130
+                        const x = 20 + (index / (investorGrowthData.length - 1)) * 280
+                        const y = 160 - (value / maxInvestors) * 120
                         return (
                           <g key={index}>
                             <circle cx={x} cy={y} r="3" fill="#3B82F6" stroke="white" strokeWidth="2" />
@@ -802,9 +802,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                         points={`${investorGrowthData
                           .map(
                             (value, index) =>
-                              `${(index / (investorGrowthData.length - 1)) * 300},${160 - (value / maxInvestors) * 130}`,
+                              `${20 + (index / (investorGrowthData.length - 1)) * 280},${160 - (value / maxInvestors) * 120}`,
                           )
-                          .join(" ")} 300,160 0,160`}
+                          .join(" ")} 300,160 20,160`}
                         opacity="0.2"
                       />
 
