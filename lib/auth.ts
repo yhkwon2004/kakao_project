@@ -1,121 +1,106 @@
-import { getUserByEmail, updateUserTheme, resetGuestData, verifyPassword, updateUserPassword } from "@/lib/db"
+"use client"
 
-// User info type definition
 export interface User {
-  id?: string
-  email: string
+  id: string
   name: string
+  email: string
   profileImage?: string
-  theme?: string
   balance?: number
+  theme?: "light" | "dark"
 }
 
-// Functions to save/retrieve/clear user info from local storage
-export const saveUserToStorage = (user: User) => {
-  if (typeof window !== "undefined") {
-    localStorage.setItem("currentUser", JSON.stringify(user))
+// 로컬 스토리지 키
+const CURRENT_USER_KEY = "currentUser"
+
+// 사용자 정보 저장
+export const saveUserToStorage = (user: User): void => {
+  try {
+    // 새 사용자인 경우 기본 잔액 설정
+    if (user.balance === undefined) {
+      user.balance = 150000
+    }
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user))
+  } catch (error) {
+    console.error("사용자 정보 저장 실패:", error)
   }
 }
 
+// 사용자 정보 가져오기
 export const getUserFromStorage = (): User | null => {
-  if (typeof window !== "undefined") {
-    const userStr = localStorage.getItem("currentUser")
-    if (userStr) {
-      return JSON.parse(userStr)
-    }
-  }
-  return null
-}
-
-export const clearUserFromStorage = () => {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("currentUser")
-  }
-}
-
-// Image storage related functions
-export const saveImageToStorage = (key: string, imageUrl: string) => {
-  if (typeof window !== "undefined") {
-    const images = JSON.parse(localStorage.getItem("uploadedImages") || "{}")
-    images[key] = imageUrl
-    localStorage.setItem("uploadedImages", JSON.stringify(images))
-  }
-}
-
-export const getImageFromStorage = (key: string) => {
-  if (typeof window !== "undefined") {
-    const images = JSON.parse(localStorage.getItem("uploadedImages") || "{}")
-    return images[key] || null
-  }
-  return null
-}
-
-// Profile update
-export const updateUserProfile = async (name?: string, profileImage?: string, theme?: string) => {
-  const user = getUserFromStorage()
-  if (user) {
-    if (name) user.name = name
-    if (profileImage) user.profileImage = profileImage
-    if (theme) {
-      user.theme = theme
-      // Update theme in database
-      await updateUserTheme(user.email, theme)
-    }
-    saveUserToStorage(user)
-    return true
-  }
-  return false
-}
-
-// Guest login
-export const loginAsGuest = async () => {
   try {
-    // Reset guest data
-    await resetGuestData()
+    const userStr = localStorage.getItem(CURRENT_USER_KEY)
+    if (!userStr) return null
 
-    // Get guest user data
-    const guestData = await getUserByEmail("guest_social@guest.fake")
+    const user = JSON.parse(userStr)
 
-    if (!guestData) {
-      throw new Error("Guest user not found")
+    // 기본값 설정
+    if (user.balance === undefined) {
+      user.balance = 150000
+      saveUserToStorage(user) // 업데이트된 정보 저장
     }
 
-    // Save guest user to storage
-    saveUserToStorage({
-      id: guestData.id,
-      email: guestData.email,
-      name: guestData.name,
-      theme: guestData.theme,
-      balance: guestData.balance,
-    })
+    return user
+  } catch (error) {
+    console.error("사용자 정보 로드 실패:", error)
+    return null
+  }
+}
+
+// 사용자 정보 업데이트
+export const updateUserInStorage = (updates: Partial<User>): boolean => {
+  try {
+    const currentUser = getUserFromStorage()
+    if (!currentUser) return false
+
+    const updatedUser = { ...currentUser, ...updates }
+    saveUserToStorage(updatedUser)
+
+    // 다른 컴포넌트에 변경 알림
+    window.dispatchEvent(new Event("userDataChanged"))
 
     return true
   } catch (error) {
-    console.error("Error logging in as guest:", error)
+    console.error("사용자 정보 업데이트 실패:", error)
     return false
   }
 }
 
-// Check if user is a guest account
-export const isGuestAccount = (email: string): boolean => {
-  return email === "guest_social@guest.fake"
+// 사용자 로그아웃
+export const logoutUser = (): void => {
+  try {
+    localStorage.removeItem(CURRENT_USER_KEY)
+    // 다른 사용자 관련 데이터도 정리할 수 있음
+    window.dispatchEvent(new Event("userDataChanged"))
+  } catch (error) {
+    console.error("로그아웃 실패:", error)
+  }
 }
 
-// Change user password
-export const changeUserPassword = async (currentPassword: string, newPassword: string): Promise<boolean> => {
-  const user = getUserFromStorage()
-  if (!user || !user.email) return false
+// 로그인 상태 확인
+export const isLoggedIn = (): boolean => {
+  return getUserFromStorage() !== null
+}
 
-  try {
-    // Verify current password
-    const isPasswordValid = await verifyPassword(user.email, currentPassword)
-    if (!isPasswordValid) return false
-
-    // Update password
-    const success = await updateUserPassword(user.email, newPassword)
-    return success
-  } catch (error) {
-    console.error("Error changing password:", error)
-    return false
+// 게스트 사용자 생성
+export const createGuestUser = (): User => {
+  const guestUser: User = {
+    id: "guest_" + Date.now(),
+    name: "게스트",
+    email: "guest@example.com",
+    balance: 150000,
+    theme: "light",
   }
+
+  saveUserToStorage(guestUser)
+  return guestUser
+}
+
+// 사용자 잔액 업데이트
+export const updateUserBalance = (newBalance: number): boolean => {
+  return updateUserInStorage({ balance: newBalance })
+}
+
+// 사용자 테마 업데이트
+export const updateUserTheme = (theme: "light" | "dark"): boolean => {
+  return updateUserInStorage({ theme })
 }
