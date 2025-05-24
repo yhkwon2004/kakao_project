@@ -125,7 +125,7 @@ export function MileageScreen() {
         // 연속 출석 일수 계산
         calculateAttendanceStreak(parsedData.history)
       } else {
-        // 초기 마일리지 데이터 설정 - 완전히 빈 상태로 시작
+        // 초기 마일리지 데이터 설정
         const initialData = {
           totalMileage: 0,
           history: [],
@@ -133,8 +133,6 @@ export function MileageScreen() {
         }
         localStorage.setItem("userMileage", JSON.stringify(initialData))
         setMileageData(initialData)
-        setAttendanceStreak(0)
-        setHasCheckedToday(false)
       }
     }
 
@@ -456,7 +454,7 @@ export function MileageScreen() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-4">
                   <ShoppingBag className="h-5 w-5 text-green" />
-                  <h3 className="font-bold text-darkblue dark:text-light">굿즈 교환</h3>
+                  <h3 className="font-bold text-darkblue dark:text-light">굿즈 교���</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

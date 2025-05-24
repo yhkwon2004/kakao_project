@@ -19,7 +19,7 @@ import {
   Calendar,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
-import { getUserFromStorage, clearUserFromStorage, updateUserProfile } from "@/lib/auth"
+import { getUserFromStorage, clearUserFromStorage, updateUserProfile, saveUserToStorage } from "@/lib/auth"
 import { createClient } from "@supabase/supabase-js"
 import { useToast } from "@/components/ui/use-toast"
 
@@ -199,7 +199,7 @@ export function MyPageScreen() {
   const menuItems = [
     {
       id: "payment",
-      label: "결제수단 및 내역확인",
+      label: "결제 및 포인트 관리",
       icon: CreditCard,
       href: "/mypage/payment",
       description: "결제수단 추가/삭제, 충전 내역 및 사용 내역 조회, 보유 포인트 표시",
@@ -227,7 +227,7 @@ export function MyPageScreen() {
     },
     {
       id: "completed",
-      label: "모집완료된 프로젝트 보기",
+      label: "종료된 프로젝트 보기",
       icon: Package,
       href: "/mypage/completed",
       description: "완료된 투자 프로젝트 리스트, 투자 성과 요약, 피드백 남기기",
@@ -306,12 +306,26 @@ export function MyPageScreen() {
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 border-2 border-light relative">
                 {profileImage ? (
-                  <AvatarImage src={profileImage || "/placeholder.svg"} alt={userName} />
-                ) : (
-                  <AvatarFallback>
-                    <User className="h-8 w-8" />
-                  </AvatarFallback>
-                )}
+                  <AvatarImage
+                    src={profileImage || "/placeholder.svg"}
+                    alt={userName}
+                    onError={(e) => {
+                      // Handle image loading error by falling back to default
+                      const target = e.target as HTMLImageElement
+                      target.style.display = "none"
+                      // Clear invalid profile image from storage
+                      const user = getUserFromStorage()
+                      if (user) {
+                        user.profileImage = undefined
+                        saveUserToStorage(user)
+                        setProfileImage(null)
+                      }
+                    }}
+                  />
+                ) : null}
+                <AvatarFallback>
+                  <User className="h-8 w-8" />
+                </AvatarFallback>
               </Avatar>
               <Button
                 variant="ghost"

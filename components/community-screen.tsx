@@ -38,25 +38,6 @@ import { useToast } from "@/components/ui/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { getUserFromStorage } from "@/lib/auth"
 
-// 돈 단위 포맷팅 함수 (억 단위 포함)
-const formatCurrencyWithEok = (amount: number): string => {
-  if (amount >= 100000000) {
-    // 1억 이상
-    const eok = Math.floor(amount / 100000000)
-    const man = Math.floor((amount % 100000000) / 10000)
-    if (man > 0) {
-      return `${eok}억 ${man.toLocaleString()}만원`
-    } else {
-      return `${eok}억원`
-    }
-  } else if (amount >= 10000) {
-    // 1만원 이상
-    return `${Math.floor(amount / 10000).toLocaleString()}만원`
-  } else {
-    return `${amount.toLocaleString()}원`
-  }
-}
-
 // Comment type definition
 interface Comment {
   id: string
@@ -720,11 +701,9 @@ export function CommunityScreen() {
 
       {/* Write post dialog */}
       <Dialog open={isWriteDialogOpen} onOpenChange={setIsWriteDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-darkblue border border-gray/20 mx-4">
+        <DialogContent className="sm:max-w-[600px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
           <DialogHeader className="pb-6">
-            <DialogTitle className="text-xl sm:text-2xl font-bold text-darkblue dark:text-light">
-              새 게시물 작성
-            </DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-darkblue dark:text-light">새 게시물 작성</DialogTitle>
             <DialogDescription className="text-gray">투자 인사이트와 정보를 커뮤니티와 공유해보세요</DialogDescription>
           </DialogHeader>
 
@@ -738,7 +717,7 @@ export function CommunityScreen() {
                 value={newPostTitle}
                 onChange={(e) => setNewPostTitle(e.target.value)}
                 placeholder="게시물 제목을 입력하세요"
-                className="rounded-xl border-gray/20 bg-gray/5 focus:bg-white h-12 sm:h-14 text-base"
+                className="rounded-xl border-gray/20 bg-gray/5 focus:bg-white h-12 text-base"
               />
             </div>
 
@@ -767,7 +746,7 @@ export function CommunityScreen() {
                 value={newPostContent}
                 onChange={(e) => setNewPostContent(e.target.value)}
                 placeholder="게시물 내용을 입력하세요..."
-                className="rounded-xl min-h-[150px] sm:min-h-[200px] border-gray/20 bg-gray/5 focus:bg-white resize-none text-base leading-relaxed"
+                className="rounded-xl min-h-[200px] border-gray/20 bg-gray/5 focus:bg-white resize-none text-base leading-relaxed"
               />
             </div>
           </div>
@@ -795,7 +774,7 @@ export function CommunityScreen() {
       {/* Read post dialog */}
       {selectedPost && (
         <Dialog open={isReadDialogOpen} onOpenChange={setIsReadDialogOpen}>
-          <DialogContent className="max-w-[95vw] sm:max-w-[700px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-darkblue border border-gray/20 mx-4">
+          <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
             <DialogHeader className="pb-6">
               <DialogTitle className="sr-only">게시물 상세</DialogTitle>
               <DialogDescription className="sr-only">게시물 내용과 댓글을 확인하세요.</DialogDescription>
@@ -923,7 +902,7 @@ export function CommunityScreen() {
 
       {/* Delete confirmation dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[80vh] overflow-y-auto rounded-2xl bg-white dark:bg-darkblue border border-gray/20 mx-4">
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-darkblue dark:text-light">게시물 삭제</DialogTitle>
             <DialogDescription>이 게시물을 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</DialogDescription>
@@ -961,7 +940,7 @@ export function CommunityScreen() {
 
       {/* Filter Dialog */}
       <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[300px] max-h-[80vh] overflow-y-auto rounded-2xl bg-white dark:bg-darkblue border border-gray/20 mx-4">
+        <DialogContent className="sm:max-w-[300px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-darkblue dark:text-light">정렬 옵션</DialogTitle>
             <DialogDescription>게시물을 어떻게 정렬하시겠습니까?</DialogDescription>

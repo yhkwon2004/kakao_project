@@ -20,23 +20,12 @@ import { getWebtoonById, allWebtoons } from "@/data/webtoons"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts"
 
-// 기존 formatCurrency 함수를 다음으로 교체
-const formatCurrencyWithEok = (amount: number): string => {
-  if (amount >= 100000000) {
-    // 1억 이상
-    const eok = Math.floor(amount / 100000000)
-    const man = Math.floor((amount % 100000000) / 10000)
-    if (man > 0) {
-      return `${eok}억 ${man.toLocaleString()}만원`
-    } else {
-      return `${eok}억원`
-    }
-  } else if (amount >= 10000) {
-    // 1만원 이상
+// 금액 포맷팅 함수 수정 (파일 상단에)
+const formatCurrency = (amount: number): string => {
+  if (amount >= 1000000) {
     return `${Math.floor(amount / 10000).toLocaleString()}만원`
-  } else {
-    return `${amount.toLocaleString()}원`
   }
+  return `${amount.toLocaleString()}원`
 }
 
 // 투자 성장 데이터 타입
@@ -82,7 +71,41 @@ interface CompletedProject {
 }
 
 // 기본 종료된 프로젝트 데이터
-const defaultCompletedProjects: CompletedProject[] = []
+const defaultCompletedProjects: CompletedProject[] = [
+  {
+    id: "bad-secretary",
+    title: "나쁜 비서 [19세 완전판]",
+    genre: "로맨스, 드라마",
+    investedAmount: 3400000,
+    returnAmount: 4148000, // 22% 수익률로 계산
+    roi: 22, // 15에서 22로 변경
+    completionDate: "2023-04-15",
+    investors: 342,
+    hasFeedback: false,
+    thumbnail: "/webtoons/나쁜-비서.png",
+    slug: "bad-secretary",
+    feedback: "",
+    adaptationInterest: "",
+    investmentDate: "2023-04-01",
+  },
+  {
+    id: "blood-sword-family-hunting-dog",
+    title: "철혈검가 사냥개의 회귀",
+    genre: "액션, 판타지",
+    investedAmount: 2800000,
+    returnAmount: 3304000, // 18% 수익률로 계산
+    roi: 18, // 20에서 18로 변경
+    completionDate: "2023-06-22",
+    investors: 256,
+    hasFeedback: true,
+    thumbnail: "/webtoons/검술명가-막내아들.png",
+    slug: "blood-sword-family-hunting-dog",
+    feedback:
+      "캐릭터의 성장 과정과 액션 장면이 인상적이었습니다. 특히 주인공의 복수 스토리가 드라마틱하게 전개되어 몰입감이 뛰어났습니다. 드라마화된다면 액션 장면에 중점을 두면 좋을 것 같습니다.",
+    adaptationInterest: "high",
+    investmentDate: "2023-05-20",
+  },
+]
 
 // 웹툰 ID로 웹툰 제목 가져오기
 const getWebtoonTitle = (id: string): string => {
@@ -822,7 +845,7 @@ export function AssetScreen() {
               <div>
                 <p className="text-sm text-gray">총 투자액</p>
                 <p className="text-xl font-bold text-darkblue dark:text-light">
-                  {formatCurrencyWithEok(assetSummary.totalInvested || 0)}
+                  {formatCurrency(assetSummary.totalInvested || 0)}
                 </p>
               </div>
               <div
@@ -839,7 +862,7 @@ export function AssetScreen() {
               <div>
                 <p className="text-sm text-gray">예상 수익</p>
                 <p className="text-xl font-bold text-profit">
-                  {formatCurrencyWithEok(Math.round(assetSummary.expectedReturns || 0))}
+                  {formatCurrency(Math.round(assetSummary.expectedReturns || 0))}
                 </p>
               </div>
               <div>
@@ -1041,7 +1064,7 @@ export function AssetScreen() {
                       <div>
                         <p className="text-xs text-gray">투자 금액</p>
                         <p className="font-medium text-darkblue dark:text-light">
-                          {formatCurrencyWithEok(investment.amount || 0)}
+                          {formatCurrency(investment.amount || 0)}
                         </p>
                       </div>
                       <div>

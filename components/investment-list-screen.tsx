@@ -11,28 +11,6 @@ import { ChevronLeft, Search, Filter } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { Switch } from "@/components/ui/switch"
 
-// 돈 단위 포맷팅 함수 (억 단위 포함)
-const formatCurrencyWithEok = (amount: string): string => {
-  // 문자열에서 숫자 추출 (₩ 제거)
-  const numericAmount = Number.parseInt(amount.replace(/[^\d]/g, ""))
-
-  if (numericAmount >= 100000000) {
-    // 1억 이상
-    const eok = Math.floor(numericAmount / 100000000)
-    const man = Math.floor((numericAmount % 100000000) / 10000)
-    if (man > 0) {
-      return `₩${eok}억 ${man.toLocaleString()}만원`
-    } else {
-      return `₩${eok}억원`
-    }
-  } else if (numericAmount >= 10000) {
-    // 1만원 이상
-    return `₩${Math.floor(numericAmount / 10000).toLocaleString()}만원`
-  } else {
-    return `₩${numericAmount.toLocaleString()}원`
-  }
-}
-
 export function InvestmentListScreen() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
@@ -333,9 +311,7 @@ export function InvestmentListScreen() {
                           )}
                         </div>
                         <p className="text-sm text-gray">{investment.description}</p>
-                        <p className="text-xs text-darkblue dark:text-light mt-1">
-                          목표: {formatCurrencyWithEok(investment.fundingGoal)}
-                        </p>
+                        <p className="text-xs text-darkblue dark:text-light mt-1">목표: {investment.fundingGoal}</p>
                       </div>
                       <div>
                         <div className="flex justify-between items-center text-xs mb-1">

@@ -33,26 +33,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-
-// 돈 단위 포맷팅 함수 (억 단위 포함)
-const formatCurrencyWithEok = (amount: number): string => {
-  if (amount >= 100000000) {
-    // 1억 이상
-    const eok = Math.floor(amount / 100000000)
-    const man = Math.floor((amount % 100000000) / 10000)
-    if (man > 0) {
-      return `${eok}억 ${man.toLocaleString()}만원`
-    } else {
-      return `${eok}억원`
-    }
-  } else if (amount >= 10000) {
-    // 1만원 이상
-    return `${Math.floor(amount / 10000).toLocaleString()}만원`
-  } else {
-    return `${amount.toLocaleString()}원`
-  }
-}
 
 // 투자자 증가 추이 데이터 타입
 interface InvestmentGrowthData {
@@ -76,7 +56,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   const [userBalance, setUserBalance] = useState(150000) // 기본 잔액 설정
   const [hasInvested, setHasInvested] = useState(false) // 투자 여부 상태 추가
   const [isInvestModalOpen, setIsInvestModalOpen] = useState(false)
-  const [keypadInput, setKeypadInput] = useState("10000")
+  const [keypadInput, setKeypadInput] = useState("0")
   const [inputError, setInputError] = useState("")
   const [investmentGrowthData, setInvestmentGrowthData] = useState<InvestmentGrowthData[]>([])
   const [isInsufficientBalanceDialogOpen, setIsInsufficientBalanceDialogOpen] = useState(false)
@@ -580,7 +560,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   // 투자 모달 열기 함수
   const openInvestModal = () => {
     if (canInvest()) {
-      setKeypadInput(investmentAmount.toString())
+      setKeypadInput("0")
       setInputError("")
       setIsInvestModalOpen(true)
     } else if (investmentAmount > userBalance) {
@@ -1057,7 +1037,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             </div>
             <span className="text-sm font-medium text-darkblue dark:text-light">내 잔액</span>
           </div>
-          <span className="font-bold text-green text-lg">₩{formatCurrencyWithEok(userBalance)}</span>
+          <span className="font-bold text-green text-lg">₩{userBalance.toLocaleString()}</span>
         </div>
       </div>
 
@@ -1312,7 +1292,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
       {/* 투자 성공 모달 */}
       <Dialog open={isSuccessModalOpen} onOpenChange={setIsSuccessModalOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-darkblue border-0 shadow-2xl z-[100] mx-4">
+        <DialogContent className="sm:max-w-[425px] rounded-2xl bg-white dark:bg-darkblue border-0 shadow-2xl z-[100]">
           <div className="text-center py-6">
             {/* 성공 아이콘 */}
             <div className="mx-auto w-20 h-20 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mb-6 shadow-lg">
@@ -1334,9 +1314,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 <div className="bg-gradient-to-r from-blue/10 to-blue/5 p-4 rounded-xl border border-blue/20">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-darkblue dark:text-light">투자 금액</span>
-                    <span className="text-xl font-bold text-blue-600">
-                      ₩{formatCurrencyWithEok(investmentResult.amount)}
-                    </span>
+                    <span className="text-xl font-bold text-blue-600">₩{investmentResult.amount.toLocaleString()}</span>
                   </div>
                 </div>
 
@@ -1345,7 +1323,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-darkblue dark:text-light">예상 수익금</span>
                     <span className="text-xl font-bold text-green-600">
-                      ₩{formatCurrencyWithEok(investmentResult.expectedReturn)}
+                      ₩{investmentResult.expectedReturn.toLocaleString()}
                     </span>
                   </div>
                   <div className="text-right mt-1">
@@ -1391,17 +1369,17 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
       {/* 투자 모달 */}
       <Dialog open={isInvestModalOpen} onOpenChange={setIsInvestModalOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[90vh] overflow-y-auto rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100] mx-4">
+        <DialogContent className="w-[95vw] max-w-[425px] max-h-[90vh] overflow-y-auto rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100] p-4">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">
               투자 금액 입력
             </DialogTitle>
           </DialogHeader>
 
-          <div className="py-4">
+          <div className="py-2 space-y-4">
             {/* 투자 금액 표시 */}
             <div
-              className={`p-6 rounded-2xl mb-6 text-center border transition-all duration-300 ${
+              className={`p-4 rounded-2xl text-center border transition-all duration-300 ${
                 Number.parseInt(keypadInput, 10) > userBalance
                   ? "bg-gradient-to-br from-red/20 to-red/10 border-red/40 animate-pulse"
                   : "bg-gradient-to-br from-green/10 to-yellow/10 border-green/20"
@@ -1412,141 +1390,135 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 <p className="text-xs text-gray font-medium">잔액: {userBalance.toLocaleString()}원</p>
               </div>
               <p
-                className={`text-4xl font-bold tracking-tight ${
+                className={`text-3xl md:text-4xl font-bold tracking-tight ${
                   Number.parseInt(keypadInput, 10) > userBalance ? "text-red-500" : "text-darkblue dark:text-light"
                 }`}
               >
-                {Number.parseInt(keypadInput, 10).toLocaleString()}원
+                {keypadInput === "0" ? "0원" : `${Number.parseInt(keypadInput, 10).toLocaleString()}원`}
               </p>
               {Number.parseInt(keypadInput, 10) > userBalance && (
                 <p className="text-sm text-red-500 font-medium mt-2 animate-bounce">⚠️ 잔액이 부족합니다</p>
               )}
             </div>
 
-            {/* 직접 금액 입력 필드 */}
-            <div className="mb-6">
-              <label htmlFor="direct-amount" className="block text-sm font-semibold text-darkblue dark:text-light mb-2">
-                직접 금액 입력
-              </label>
-              <div className="relative">
-                <Input
-                  id="direct-amount"
-                  type="text"
-                  placeholder="금액을 입력하세요"
-                  className="pl-10 text-right pr-4 py-3 h-14 text-lg font-semibold rounded-xl border-2 border-gray/20 focus:border-green/50 transition-colors"
-                  defaultValue={Number.parseInt(keypadInput, 10).toLocaleString()}
-                  onChange={handleDirectInputChange}
-                />
-                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray font-medium">₩</span>
-              </div>
-              {inputError && <p className="text-xs text-red-500 mt-2 font-medium">{inputError}</p>}
+            {/* 빠른 선택 버튼 - 상단에 1줄로 배치 */}
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setKeypadInput("10000")
+                  setInputError("")
+                }}
+                className="rounded-full h-10 px-4 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200 whitespace-nowrap flex-shrink-0"
+              >
+                만원
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setKeypadInput("100000")
+                  setInputError("")
+                }}
+                className="rounded-full h-10 px-4 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200 whitespace-nowrap flex-shrink-0"
+              >
+                10만원
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setKeypadInput("1000000")
+                  setInputError("")
+                }}
+                className="rounded-full h-10 px-4 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200 whitespace-nowrap flex-shrink-0"
+              >
+                100만원
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setKeypadInput("10000000")
+                  setInputError("")
+                }}
+                className="rounded-full h-10 px-4 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200 whitespace-nowrap flex-shrink-0"
+              >
+                1000만원
+              </Button>
             </div>
 
-            {/* 예상 수익 및 잔액 정보 */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-gradient-to-br from-green/10 to-green/5 p-4 rounded-xl border border-green/20">
-                <p className="text-xs text-gray font-medium mb-1">예상 수익금</p>
-                <p className="text-lg font-bold text-green">
-                  {Math.round(Number.parseInt(keypadInput, 10) * (1 + expectedROIValue / 100)).toLocaleString()}원
-                </p>
-              </div>
-              <div className="bg-gradient-to-br from-yellow/10 to-yellow/5 p-4 rounded-xl border border-yellow/20">
-                <p className="text-xs text-gray font-medium mb-1">투자 후 잔액</p>
-                <p className="text-lg font-bold text-darkblue dark:text-light">
-                  {Math.max(0, userBalance - Number.parseInt(keypadInput, 10)).toLocaleString()}원
-                </p>
-              </div>
-            </div>
-
-            {/* 숫자 키패드 */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
+            {/* 전화번호 다이얼 스타일 숫자 키패드 */}
+            <div className="grid grid-cols-3 gap-3">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                 <Button
                   key={num}
                   variant="outline"
-                  className="h-16 text-xl font-bold rounded-xl border-2 border-gray/20 text-darkblue dark:text-light hover:bg-green/10 hover:border-green/30 transition-all duration-200 shadow-sm"
-                  onClick={() => setKeypadInput((num * 10000).toString())}
+                  className="h-14 text-xl font-bold rounded-full border-2 border-gray/20 text-darkblue dark:text-light hover:bg-green/10 hover:border-green/30 transition-all duration-200 shadow-sm"
+                  onClick={() => {
+                    if (keypadInput === "0") {
+                      setKeypadInput(num.toString())
+                    } else {
+                      setKeypadInput((prev) => prev + num.toString())
+                    }
+                    setInputError("")
+                  }}
                 >
-                  {num}만원
+                  {num}
                 </Button>
               ))}
               <Button
                 variant="outline"
-                className="h-16 text-lg font-bold rounded-xl border-2 border-gray/20 text-darkblue dark:text-light hover:bg-red/10 hover:border-red/30 transition-all duration-200 shadow-sm"
+                className="h-14 text-sm font-bold rounded-full border-2 border-gray/20 text-darkblue dark:text-light hover:bg-red/10 hover:border-red/30 transition-all duration-200 shadow-sm"
                 onClick={() => setKeypadInput("0")}
               >
                 초기화
               </Button>
               <Button
                 variant="outline"
-                className="h-16 text-lg font-bold rounded-xl border-2 border-gray/20 text-darkblue dark:text-light hover:bg-blue/10 hover:border-blue/30 transition-all duration-200 shadow-sm"
-                onClick={() => setKeypadInput("100000000")}
+                className="h-14 text-xl font-bold rounded-full border-2 border-gray/20 text-darkblue dark:text-light hover:bg-blue/10 hover:border-blue/30 transition-all duration-200 shadow-sm"
+                onClick={() => {
+                  if (keypadInput === "0") {
+                    setKeypadInput("0")
+                  } else {
+                    setKeypadInput((prev) => prev + "0")
+                  }
+                  setInputError("")
+                }}
               >
-                1억원
+                0
               </Button>
               <Button
                 variant="outline"
-                className="h-16 text-lg font-bold rounded-xl border-2 border-yellow/30 bg-gradient-to-br from-yellow/10 to-yellow/5 text-darkblue dark:text-light hover:bg-yellow/20 hover:border-yellow/50 transition-all duration-200 shadow-sm"
-                onClick={() => setKeypadInput(userBalance.toString())}
+                className="h-14 text-sm font-bold rounded-full border-2 border-gray/20 text-darkblue dark:text-light hover:bg-orange/10 hover:border-orange/30 transition-all duration-200 shadow-sm"
+                onClick={() => {
+                  if (keypadInput.length > 1) {
+                    setKeypadInput((prev) => prev.slice(0, -1))
+                  } else {
+                    setKeypadInput("0")
+                  }
+                  setInputError("")
+                }}
               >
-                전액
+                ⌫
               </Button>
             </div>
 
-            {/* 빠른 선택 버튼 */}
-            <div className="flex flex-wrap gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setKeypadInput("500000")}
-                className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
-              >
-                50만원
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setKeypadInput("1000000")}
-                className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
-              >
-                100만원
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setKeypadInput("10000000")}
-                className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
-              >
-                1천만원
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setKeypadInput("100000000")}
-                className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
-              >
-                1억원
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setKeypadInput("50000000")}
-                className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
-              >
-                5억원
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setKeypadInput("1000000000")}
-                className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
-              >
-                10억원
-              </Button>
+            {/* 예상 수익 및 잔액 정보 */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gradient-to-br from-green/10 to-green/5 p-3 rounded-xl border border-green/20">
+                <p className="text-xs text-gray font-medium mb-1">예상 수익금</p>
+                <p className="text-base font-bold text-green">
+                  {Math.round(Number.parseInt(keypadInput, 10) * (1 + expectedROIValue / 100)).toLocaleString()}원
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-yellow/10 to-yellow/5 p-3 rounded-xl border border-yellow/20">
+                <p className="text-xs text-gray font-medium mb-1">투자 후 잔액</p>
+                <p className="text-base font-bold text-darkblue dark:text-light">
+                  {Math.max(0, userBalance - Number.parseInt(keypadInput, 10)).toLocaleString()}원
+                </p>
+              </div>
             </div>
           </div>
 
-          <DialogFooter className="flex gap-4 sm:justify-center pt-6">
+          <DialogFooter className="flex gap-3 sm:justify-center pt-4">
             <Button
               type="button"
               variant="outline"
@@ -1569,7 +1541,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
       {/* 잔액 부족 다이얼로그 */}
       <Dialog open={isInsufficientBalanceDialogOpen} onOpenChange={setIsInsufficientBalanceDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[80vh] overflow-y-auto rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100] mx-4">
+        <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-bold text-red-500">⚠️ 잔액 부족</DialogTitle>
           </DialogHeader>
@@ -1609,7 +1581,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
       {/* 충전 확인 다이얼로그 */}
       <Dialog open={isChargeConfirmDialogOpen} onOpenChange={setIsChargeConfirmDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[80vh] overflow-y-auto rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100] mx-4">
+        <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">
               💳 충전 페이지 이동
@@ -1650,7 +1622,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
       {/* 투자 확인 다이얼로그 */}
       <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[425px] max-h-[80vh] overflow-y-auto rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100] mx-4">
+        <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">투자 확인</DialogTitle>
           </DialogHeader>
@@ -1669,7 +1641,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                     <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                     <span className="text-sm font-medium text-darkblue dark:text-light">투자 금액</span>
                   </div>
-                  <span className="text-xl font-bold text-blue-600">{formatCurrencyWithEok(investmentAmount)}</span>
+                  <span className="text-xl font-bold text-blue-600">
+                    {typeof investmentAmount === "number" ? investmentAmount.toLocaleString() : "0"}원
+                  </span>
                 </div>
               </div>
 
@@ -1680,7 +1654,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     <span className="text-sm font-medium text-darkblue dark:text-light">예상 수익금</span>
                   </div>
-                  <span className="text-xl font-bold text-green-600">{formatCurrencyWithEok(expectedReturn)}</span>
+                  <span className="text-xl font-bold text-green-600">
+                    {typeof expectedReturn === "number" ? expectedReturn.toLocaleString() : "0"}원
+                  </span>
                 </div>
                 <div className="mt-2 text-right">
                   <span className="text-xs text-green-600 font-medium">+{expectedROIValue}% 수익률</span>
@@ -1692,9 +1668,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-darkblue dark:text-light">현재 잔액</span>
-                    <span className="font-bold text-darkblue dark:text-light">
-                      {formatCurrencyWithEok(userBalance)}
-                    </span>
+                    <span className="font-bold text-darkblue dark:text-light">{userBalance.toLocaleString()}원</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-darkblue dark:text-light">투자 후 잔액</span>
