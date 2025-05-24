@@ -42,6 +42,8 @@ export function AccountSettingsScreen() {
   const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [passwordError, setPasswordError] = useState("")
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
   // 사용자 정보 불러오기
   useEffect(() => {
@@ -139,6 +141,38 @@ export function AccountSettingsScreen() {
       console.error("Password change error:", error)
     } finally {
       setIsChangingPassword(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true)
+
+    try {
+      // 모든 사용자 데이터 삭제
+      clearUserFromStorage()
+      localStorage.removeItem("investments")
+      localStorage.removeItem("user-profile")
+      localStorage.removeItem("favorites")
+      localStorage.removeItem("mileage")
+      localStorage.removeItem("community-posts")
+
+      toast({
+        title: "계정 삭제 완료",
+        description: "계정이 성공적으로 삭제되었습니다.",
+      })
+
+      // 로그인 페이지로 리다이렉트
+      router.push("/")
+    } catch (error) {
+      toast({
+        title: "계정 삭제 실패",
+        description: "계정 삭제 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
+      console.error("Account deletion error:", error)
+    } finally {
+      setIsDeletingAccount(false)
+      setShowDeleteDialog(false)
     }
   }
 
@@ -267,6 +301,22 @@ export function AccountSettingsScreen() {
             <LogOut className="h-4 w-4 mr-2" />
             로그아웃
           </Button>
+          {!isGuest && (
+            <Button
+              variant="outline"
+              className="w-full rounded-xl border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              <AlertCircle className="h-4 w-4 mr-2" />
+              계정 삭제
+            </Button>
+          )}
+          {isGuest && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-gray/10 text-gray">
+              <AlertCircle className="h-4 w-4" />
+              <p className="text-sm">게스트 계정은 삭제할 수 없습니다</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -335,6 +385,48 @@ export function AccountSettingsScreen() {
               disabled={isChangingPassword}
             >
               {isChangingPassword ? "변경 중..." : "비밀번호 변경"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 계정 삭제 확인 다이얼로그 */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-md rounded-xl bg-light dark:bg-darkblue/90">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 dark:text-red-400 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              계정 삭제
+            </DialogTitle>
+            <DialogDescription className="text-gray">
+              정말로 계정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없으며, 모든 투자 내역과 데이터가 영구적으로
+              삭제됩니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="bg-red-50 dark:bg-red-950/20 p-4 rounded-xl border border-red-200 dark:border-red-800">
+              <h4 className="font-medium text-red-800 dark:text-red-200 mb-2">삭제될 데이터:</h4>
+              <ul className="text-sm text-red-700 dark:text-red-300 space-y-1">
+                <li>• 모든 투자 내역</li>
+                <li>• 프로필 정보</li>
+                <li>• 즐겨찾기 목록</li>
+                <li>• 마일리지 포인트</li>
+                <li>• 커뮤니티 활동 기록</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-between">
+            <DialogClose asChild>
+              <Button variant="outline" className="rounded-xl border-gray/20 text-gray">
+                취소
+              </Button>
+            </DialogClose>
+            <Button
+              onClick={handleDeleteAccount}
+              className="rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium"
+              disabled={isDeletingAccount}
+            >
+              {isDeletingAccount ? "삭제 중..." : "계정 삭제"}
             </Button>
           </DialogFooter>
         </DialogContent>

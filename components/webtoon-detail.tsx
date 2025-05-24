@@ -443,8 +443,17 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
         {/* 제목 및 장르 */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
-          <h1 className="text-2xl font-bold text-white mb-1">{webtoon.title}</h1>
-          <p className="text-gray-200 text-sm">{webtoon.genre}</p>
+          <h1 className="text-2xl font-bold text-white mb-3">{webtoon.title}</h1>
+          <div className="flex flex-wrap gap-2">
+            {webtoon.genre.split(",").map((genre, index) => (
+              <span
+                key={index}
+                className="bg-yellow/90 text-dark text-xs font-semibold px-3 py-1 rounded-full shadow-lg"
+              >
+                {genre.trim()}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -916,7 +925,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </DialogHeader>
 
           {/* 투자 금액 표시 */}
-          <div className="py-4 space-y-6">
+          <div className="py-3 space-y-4">
             {/* 투자 금액 표시 */}
             <div
               className={`p-6 rounded-2xl text-center border-2 transition-all duration-300 ${
@@ -1052,51 +1061,6 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 >
                   ⌫
                 </Button>
-              </div>
-            </div>
-
-            {/* 투자 정보 요약 - 전문적인 카드 디자인 */}
-            <div className="grid grid-cols-1 gap-3">
-              <div className="bg-gradient-to-r from-green/10 to-emerald/10 p-4 rounded-2xl border border-green/20 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-green/20 rounded-lg flex items-center justify-center">
-                      <BarChart3 className="h-4 w-4 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray font-medium">예상 수익금</p>
-                      <p className="text-lg font-bold text-green-600">
-                        {Math.round(Number.parseInt(keypadInput, 10) * (1 + expectedROIValue / 100)).toLocaleString()}원
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-green-600 font-semibold">+{expectedROIValue}%</p>
-                    <p className="text-xs text-gray">수익률</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-r from-yellow/10 to-orange/10 p-4 rounded-2xl border border-yellow/20 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-yellow/20 rounded-lg flex items-center justify-center">
-                      <Wallet className="h-4 w-4 text-yellow-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray font-medium">투자 후 잔액</p>
-                      <p className="text-lg font-bold text-darkblue dark:text-light">
-                        {Math.max(0, userBalance - Number.parseInt(keypadInput, 10)).toLocaleString()}원
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-yellow-600 font-semibold">
-                      {((Math.max(0, userBalance - Number.parseInt(keypadInput, 10)) / userBalance) * 100).toFixed(0)}%
-                    </p>
-                    <p className="text-xs text-gray">잔여율</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

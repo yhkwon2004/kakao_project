@@ -1,338 +1,335 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronLeft, Search, Filter } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ChevronLeft, TrendingUp, Calendar } from "lucide-react"
 import { Logo } from "@/components/logo"
-import { Switch } from "@/components/ui/switch"
+
+interface Investment {
+  id: string
+  title: string
+  amount: number
+  expectedROI: number
+  status: string
+  date: string
+  progress?: number
+}
 
 export function InvestmentListScreen() {
   const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState("all")
-  const [progressFilter, setProgressFilter] = useState("all")
-  const [timeFilter, setTimeFilter] = useState("all")
-  const [showFilters, setShowFilters] = useState(false)
-  // 완료된 항목 표시 여부를 제어하는 상태 (기본값: true - 완료된 항목 표시)
-  const [showCompleted, setShowCompleted] = useState(true)
+  const [activeTab, setActiveTab] = useState("all")
+  const [investments, setInvestments] = useState<Investment[]>([])
 
-  // 투자 프로젝트 데이터 (실제로는 API에서 가져와야 함)
-  const allInvestments = [
-    {
-      id: "1",
-      slug: "princess-imprinting-traitor",
-      title: "황녀, 반역자를 각인시키다",
-      description: "드라마 제작 진행 중",
-      fundingGoal: "₩500,000,000",
-      fundingPercentage: 65,
-      daysLeft: 7,
-      roiRange: "12-18%",
-      category: "드라마",
-      status: "ongoing" as const,
-    },
-    {
-      id: "2",
-      slug: "sword-family-youngest-son",
-      title: "검술명가 막내아들",
-      description: "애니메이션 프로젝트",
-      fundingGoal: "₩800,000,000",
-      fundingPercentage: 45,
-      daysLeft: 10,
-      roiRange: "15-22%",
-      category: "애니메이션",
-      status: "ongoing" as const,
-    },
-    {
-      id: "3",
-      slug: "becoming-family-head-this-life",
-      title: "이번 생은 가주가 되겠습니다",
-      description: "영화 각색 진행 중",
-      fundingGoal: "₩1,200,000,000",
-      fundingPercentage: 72,
-      daysLeft: 5,
-      roiRange: "18-25%",
-      category: "영화",
-      status: "ongoing" as const,
-    },
-    {
-      id: "4",
-      slug: "rabbit-jerky-wolf-symbiotic-relationship",
-      title: "토끼와 육포범의 공생관계",
-      description: "드라마 제작 기획",
-      fundingGoal: "₩600,000,000",
-      fundingPercentage: 85,
-      daysLeft: 3,
-      roiRange: "14-20%",
-      category: "드라마",
-      status: "ongoing" as const,
-    },
-    {
-      id: "5",
-      slug: "bad-secretary",
-      title: "나쁜 비서",
-      description: "웹드라마 제작",
-      fundingGoal: "₩300,000,000",
-      fundingPercentage: 95,
-      daysLeft: 0,
-      roiRange: "10-15%",
-      category: "웹드라마",
-      status: "completed" as const,
-    },
-    {
-      id: "6",
-      slug: "blood-sword-family-hunting-dog",
-      title: "철혈검가 사냥개의 회귀",
-      description: "애니메이션 제작",
-      fundingGoal: "₩700,000,000",
-      fundingPercentage: 60,
-      daysLeft: 0,
-      roiRange: "16-23%",
-      category: "애니메이션",
-      status: "completed" as const,
-    },
-    {
-      id: "7",
-      slug: "contract-husband-resembles-male-lead",
-      title: "계약 남편이 남자 주인공과 달았다",
-      description: "웹드라마 제작",
-      fundingGoal: "₩400,000,000",
-      fundingPercentage: 30,
-      daysLeft: 0,
-      roiRange: "12-18%",
-      category: "웹드라마",
-      status: "completed" as const,
-    },
-    {
-      id: "8",
-      slug: "villain-orca-baby",
-      title: "흑막 범고래 아기님",
-      description: "애니메이션 제작",
-      fundingGoal: "₩900,000,000",
-      fundingPercentage: 55,
-      daysLeft: 12,
-      roiRange: "18-25%",
-      category: "애니메이션",
-      status: "ongoing" as const,
-    },
-    {
-      id: "9",
-      slug: "ancient-magus-bride",
-      title: "마법사의 신부",
-      description: "애니메이션 제작",
-      fundingGoal: "₩550,000,000",
-      fundingPercentage: 60,
-      daysLeft: 8,
-      roiRange: "15-20%",
-      category: "애니메이션",
-      status: "ongoing" as const,
-    },
-  ]
+  useEffect(() => {
+    const loadInvestments = () => {
+      // 투자 내역 로드
+      const investmentsStr = localStorage.getItem("userInvestments")
+      let userInvestments: Investment[] = []
 
-  // 필��링된 투자 프로젝트 가져오기
-  const getFilteredInvestments = () => {
-    return allInvestments.filter((investment) => {
-      // 완료된 항목 필터링 - showCompleted가 false일 경우 완료된 항목 제외
-      // 상태 변경 시 실시간으로 목록이 업데이트됨
-      if (!showCompleted && investment.status === "completed") {
-        return false
+      if (investmentsStr) {
+        userInvestments = JSON.parse(investmentsStr)
+      } else {
+        // 기본 투자 데이터 설정
+        userInvestments = [
+          {
+            id: "bad-secretary",
+            title: "나쁜 비서",
+            amount: 300000,
+            expectedROI: 15,
+            status: "완료",
+            date: "2024-01-15",
+            progress: 100,
+          },
+          {
+            id: "blood-sword-family-hunting-dog",
+            title: "철혈검가 사냥개의 회귀",
+            amount: 500000,
+            expectedROI: 20,
+            status: "완료",
+            date: "2024-01-10",
+            progress: 100,
+          },
+          {
+            id: "princess-imprinting-traitor",
+            title: "황녀, 반역자를 각인시키다",
+            amount: 250000,
+            expectedROI: 18,
+            status: "진행중",
+            date: "2024-02-01",
+            progress: 65,
+          },
+          {
+            id: "becoming-family-head-this-life",
+            title: "이번 생은 가주가 되겠습니다",
+            amount: 400000,
+            expectedROI: 22,
+            status: "진행중",
+            date: "2024-02-05",
+            progress: 72,
+          },
+        ]
+        localStorage.setItem("userInvestments", JSON.stringify(userInvestments))
       }
 
-      // 검색어 필터링
-      if (searchQuery && !investment.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-        return false
-      }
+      setInvestments(userInvestments)
+    }
 
-      // 카테고리 필터링
-      if (categoryFilter !== "all" && investment.category !== categoryFilter) {
-        return false
-      }
+    loadInvestments()
 
-      // 진행률 필터링
-      if (progressFilter === "high" && investment.fundingPercentage < 70) {
-        return false
-      } else if (
-        progressFilter === "medium" &&
-        (investment.fundingPercentage < 40 || investment.fundingPercentage >= 70)
-      ) {
-        return false
-      } else if (progressFilter === "low" && investment.fundingPercentage >= 40) {
-        return false
+    // localStorage 변경 감지를 위한 이벤트 리스너
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "userInvestments") {
+        loadInvestments()
       }
+    }
 
-      // 남은 시간 필터링
-      if (timeFilter === "urgent" && investment.daysLeft > 3) {
-        return false
-      } else if (timeFilter === "soon" && (investment.daysLeft <= 3 || investment.daysLeft > 7)) {
-        return false
-      } else if (timeFilter === "plenty" && investment.daysLeft <= 7) {
-        return false
+    // 페이지 포커스 시 데이터 새로고침
+    const handleFocus = () => {
+      loadInvestments()
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("focus", handleFocus)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("focus", handleFocus)
+    }
+  }, [])
+
+  const renderInvestmentCard = (investment: Investment) => {
+    const getWebtoonImage = (id: string) => {
+      const imageMap: { [key: string]: string } = {
+        "bad-secretary": "/webtoons/나쁜-비서.png",
+        "blood-sword-family-hunting-dog": "/images/철혈검가-사냥개의-회귀.png",
+        "princess-imprinting-traitor": "/placeholder.svg?height=80&width=80&query=princess fantasy webtoon",
+        "becoming-family-head-this-life": "/webtoons/이번생은-가주가-되겠습니다.png",
+        "sword-family-youngest-son": "/webtoons/검술명가-막내아들.png",
+        "ancient-magus-bride": "/webtoons/마법사의-신부.png",
       }
+      return imageMap[id] || "/placeholder.svg?height=80&width=80&query=webtoon cover"
+    }
 
-      return true
-    })
+    const currentValue = Math.round(investment.amount * (1 + investment.expectedROI / 100))
+    const profit = currentValue - investment.amount
+    const isProfit = profit > 0
+
+    return (
+      <Card
+        key={investment.id}
+        className="rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200 border-gray/20 bg-light dark:bg-darkblue/30"
+        onClick={() => router.push(`/webtoon/${investment.id}`)}
+      >
+        <CardContent className="p-0">
+          <div className="flex">
+            <div className="relative w-20 h-24 flex-shrink-0">
+              <img
+                src={getWebtoonImage(investment.id) || "/placeholder.svg"}
+                alt={investment.title}
+                className="w-full h-full object-cover"
+              />
+              <div
+                className={`absolute top-2 right-2 w-3 h-3 rounded-full border-2 border-white shadow-sm ${
+                  investment.status === "진행중"
+                    ? "bg-gradient-to-r from-green-400 to-green-500"
+                    : "bg-gradient-to-r from-blue-400 to-blue-500"
+                }`}
+              />
+            </div>
+
+            <div className="flex-1 p-4">
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex-1">
+                  <h3 className="font-bold text-darkblue dark:text-light mb-1 text-sm leading-tight">
+                    {investment.title}
+                  </h3>
+                  <div className="flex items-center gap-2 text-xs text-gray mb-2">
+                    <Calendar className="h-3 w-3" />
+                    <span>투자일: {investment.date}</span>
+                  </div>
+                </div>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ml-2 ${
+                    investment.status === "완료"
+                      ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
+                      : "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                  }`}
+                >
+                  {investment.status}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <p className="text-xs text-gray">투자 금액</p>
+                  <p className="font-medium text-darkblue dark:text-light text-sm">
+                    ₩{investment.amount.toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray">현재 가치</p>
+                  <p className="font-medium text-darkblue dark:text-light text-sm">₩{currentValue.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                  <p className="text-xs text-gray">수익/손실</p>
+                  <p className={`font-medium text-sm ${isProfit ? "text-green-600" : "text-red-500"}`}>
+                    {isProfit ? "+" : ""}₩{profit.toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray">수익률</p>
+                  <p className={`font-medium text-sm ${isProfit ? "text-green-600" : "text-red-500"}`}>
+                    {isProfit ? "+" : ""}
+                    {investment.expectedROI}%
+                  </p>
+                </div>
+              </div>
+
+              {investment.status === "진행중" && investment.progress && (
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <p className="text-xs text-gray">제작 진행도</p>
+                    <p className="text-xs text-darkblue dark:text-light">{investment.progress}%</p>
+                  </div>
+                  <Progress
+                    value={investment.progress}
+                    className="h-2 bg-gray/20"
+                    indicatorClassName="bg-gradient-to-r from-yellow-400 to-yellow-500"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
-  const filteredInvestments = getFilteredInvestments()
+  const filteredInvestments = investments.filter((investment) => {
+    if (activeTab === "all") return true
+    if (activeTab === "active") return investment.status === "진행중"
+    if (activeTab === "completed") return investment.status === "완료"
+    return true
+  })
+
+  const totalInvested = investments.reduce((sum, inv) => sum + inv.amount, 0)
+  const totalCurrentValue = investments.reduce(
+    (sum, inv) => sum + Math.round(inv.amount * (1 + inv.expectedROI / 100)),
+    0,
+  )
+  const totalProfit = totalCurrentValue - totalInvested
+  const totalProfitRate = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0
 
   return (
     <div className="flex flex-col pb-20 bg-light dark:bg-dark">
       {/* 헤더 */}
-      <div className="flex items-center p-4 border-b border-gray/10">
+      <div className="flex items-center p-4 border-b border-gray/10 bg-white/80 dark:bg-darkblue/80 backdrop-blur-sm sticky top-0 z-40">
         <Button variant="ghost" size="icon" className="mr-2" onClick={() => router.back()}>
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <Logo size="sm" showSubtitle={false} />
       </div>
 
-      {/* 검색 및 필터 */}
+      {/* 투자 요약 */}
       <div className="p-4">
-        <div className="flex gap-2 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray" />
-            <Input
-              placeholder="투자 프로젝트 검색"
-              className="pl-9 rounded-xl border-gray/20"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-xl border-gray/20"
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="h-4 w-4 text-gray" />
-          </Button>
-        </div>
-
-        {/* 완료된 항목 표시 여부 토글 스위치 */}
-        {/* 
-          완료된 항목 표시 여부를 제어하는 토글 스위치
-          - 기본값: ON (완료된 항목 표시)
-          - OFF: 완료된 항목 숨김
-          - 상태 변경 시 실시간으로 목록이 업데이트됨
-          - 사용자가 원하는 항목만 필터링하여 볼 수 있도록 함
-        */}
-        <div className="flex items-center justify-between p-3 mb-4 bg-light dark:bg-darkblue/20 rounded-xl border border-gray/10">
-          <span className="text-sm text-darkblue dark:text-light">
-            {showCompleted ? "완료된 항목 보기" : "완료된 항목 숨기기"}
-          </span>
-          <Switch
-            checked={showCompleted}
-            onCheckedChange={setShowCompleted}
-            className="data-[state=checked]:bg-green"
-          />
-        </div>
-
-        {showFilters && (
-          <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-light dark:bg-darkblue/20 rounded-xl border border-gray/10">
-            <div>
-              <label className="text-xs text-gray mb-1 block">카테고리</label>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="rounded-lg border-gray/20 h-9">
-                  <SelectValue placeholder="모든 카테고리" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 카테고리</SelectItem>
-                  <SelectItem value="드라마">드라마</SelectItem>
-                  <SelectItem value="웹드라마">웹드라마</SelectItem>
-                  <SelectItem value="영화">영화</SelectItem>
-                  <SelectItem value="애니메이션">애니메이션</SelectItem>
-                </SelectContent>
-              </Select>
+        <Card className="rounded-xl mb-6 border-gray/20 bg-gradient-to-br from-blue-600 to-purple-700 text-white">
+          <CardHeader className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="h-5 w-5" />
+              <h2 className="font-bold">투자 포트폴리오</h2>
             </div>
-
-            <div>
-              <label className="text-xs text-gray mb-1 block">진행률</label>
-              <Select value={progressFilter} onValueChange={setProgressFilter}>
-                <SelectTrigger className="rounded-lg border-gray/20 h-9">
-                  <SelectValue placeholder="모든 진행률" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 진행률</SelectItem>
-                  <SelectItem value="high">높음 (70% 이상)</SelectItem>
-                  <SelectItem value="medium">중간 (40-70%)</SelectItem>
-                  <SelectItem value="low">낮음 (40% 미만)</SelectItem>
-                </SelectContent>
-              </Select>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-blue-100 text-xs font-medium">총 투자금액</p>
+                <p className="text-xl font-bold">₩{totalInvested.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-blue-100 text-xs font-medium">현재 가치</p>
+                <p className="text-xl font-bold">₩{totalCurrentValue.toLocaleString()}</p>
+              </div>
             </div>
-
-            <div>
-              <label className="text-xs text-gray mb-1 block">남은 시간</label>
-              <Select value={timeFilter} onValueChange={setTimeFilter}>
-                <SelectTrigger className="rounded-lg border-gray/20 h-9">
-                  <SelectValue placeholder="모든 기간" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">모든 기간</SelectItem>
-                  <SelectItem value="urgent">긴급 (3일 이하)</SelectItem>
-                  <SelectItem value="soon">곧 마감 (4-7일)</SelectItem>
-                  <SelectItem value="plenty">여유 (7일 초과)</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <p className="text-blue-100 text-xs font-medium">총 수익</p>
+                <p className={`text-lg font-bold ${totalProfit >= 0 ? "text-green-300" : "text-red-300"}`}>
+                  {totalProfit >= 0 ? "+" : ""}₩{totalProfit.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <p className="text-blue-100 text-xs font-medium">수익률</p>
+                <p className={`text-lg font-bold ${totalProfitRate >= 0 ? "text-green-300" : "text-red-300"}`}>
+                  {totalProfitRate >= 0 ? "+" : ""}
+                  {totalProfitRate.toFixed(1)}%
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* 투자 프로젝트 목록 */}
+      {/* 투자 목록 */}
       <div className="p-4">
-        <h2 className="text-lg font-bold mb-4 text-darkblue dark:text-light">
-          전체 투자 프로젝트 ({filteredInvestments.length})
-        </h2>
+        <h2 className="font-bold mb-4 text-darkblue dark:text-light">투자 내역</h2>
 
-        {filteredInvestments.length > 0 ? (
-          <div className="space-y-4">
-            {filteredInvestments.map((investment) => (
-              <Card
-                key={investment.id}
-                className="overflow-hidden rounded-xl cursor-pointer hover:shadow-md transition-shadow border-gray/20 bg-light dark:bg-darkblue/30"
-                onClick={() => router.push(`/webtoon/${investment.slug}`)}
-              >
-                <CardContent className="p-0">
-                  <div className="relative h-32 w-full">
-                    <div className="absolute inset-0 bg-light dark:bg-darkblue/30" />
-                    <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                      <div>
-                        <div className="flex justify-between items-start">
-                          <h3 className="font-bold text-lg text-darkblue dark:text-light">{investment.title}</h3>
-                          {investment.status === "completed" ? (
-                            <span className="bg-green text-light text-xs px-2 py-1 rounded-full">완료됨</span>
-                          ) : (
-                            <span className="bg-yellow text-dark text-xs px-2 py-1 rounded-full">
-                              {investment.daysLeft}일 남음
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray">{investment.description}</p>
-                        <p className="text-xs text-darkblue dark:text-light mt-1">목표: {investment.fundingGoal}</p>
-                      </div>
-                      <div>
-                        <div className="flex justify-between items-center text-xs mb-1">
-                          <span className="text-gray">{investment.fundingPercentage}% 모집됨</span>
-                          <span className="text-profit font-medium">예상 수익률: {investment.roiRange}</span>
-                        </div>
-                        <Progress
-                          value={investment.fundingPercentage}
-                          className="h-1.5 bg-gray/20"
-                          indicatorClassName={investment.status === "completed" ? "bg-green" : "bg-yellow"}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
+        <Tabs defaultValue="all" onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-3 mb-4 bg-light dark:bg-darkblue/20 p-1 rounded-full">
+            <TabsTrigger
+              value="all"
+              className={`rounded-full transition-all ${
+                activeTab === "all"
+                  ? "bg-yellow text-dark font-medium"
+                  : "text-gray hover:text-darkblue dark:hover:text-light"
+              }`}
+            >
+              전체 ({investments.length})
+            </TabsTrigger>
+            <TabsTrigger
+              value="active"
+              className={`rounded-full transition-all ${
+                activeTab === "active"
+                  ? "bg-yellow text-dark font-medium"
+                  : "text-gray hover:text-darkblue dark:hover:text-light"
+              }`}
+            >
+              진행중 ({investments.filter((inv) => inv.status === "진행중").length})
+            </TabsTrigger>
+            <TabsTrigger
+              value="completed"
+              className={`rounded-full transition-all ${
+                activeTab === "completed"
+                  ? "bg-yellow text-dark font-medium"
+                  : "text-gray hover:text-darkblue dark:hover:text-light"
+              }`}
+            >
+              완료 ({investments.filter((inv) => inv.status === "완료").length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all" className="space-y-4">
+            {filteredInvestments.map(renderInvestmentCard)}
+          </TabsContent>
+
+          <TabsContent value="active" className="space-y-4">
+            {filteredInvestments.map(renderInvestmentCard)}
+          </TabsContent>
+
+          <TabsContent value="completed" className="space-y-4">
+            {filteredInvestments.map(renderInvestmentCard)}
+          </TabsContent>
+        </Tabs>
+
+        {filteredInvestments.length === 0 && (
           <div className="flex items-center justify-center h-32 bg-light dark:bg-darkblue/20 rounded-xl">
-            <p className="text-gray">검색 결과가 없습니다.</p>
+            <p className="text-gray">해당 조건의 투자 내역이 없습니다.</p>
           </div>
         )}
       </div>

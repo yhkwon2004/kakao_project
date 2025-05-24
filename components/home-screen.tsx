@@ -124,9 +124,6 @@ export function HomeScreen() {
               <Play className="h-4 w-4 text-green mr-2" />
               <h2 className="font-bold text-darkblue dark:text-light">드라마화 웹툰</h2>
             </div>
-            <Button variant="ghost" size="sm" className="text-green" onClick={() => router.push("/webtoons")}>
-              더보기
-            </Button>
           </div>
 
           <div className="overflow-x-auto">
@@ -166,8 +163,8 @@ export function HomeScreen() {
               <TrendingUp className="h-4 w-4 text-yellow mr-2" />
               <h2 className="font-bold text-darkblue dark:text-light">투자 가능한 웹툰</h2>
             </div>
-            <Button variant="ghost" size="sm" className="text-green" onClick={() => router.push("/investments")}>
-              더보기
+            <Button variant="ghost" size="sm" className="text-green" onClick={() => router.push("/webtoons")}>
+              전체 웹툰
             </Button>
           </div>
 
