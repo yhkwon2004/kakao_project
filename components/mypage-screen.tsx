@@ -74,8 +74,12 @@ export function MyPageScreen() {
       if (user.profileImage) {
         setProfileImage(user.profileImage)
       }
-      if (user.balance) {
+      if (user.balance !== undefined) {
         setPoints(user.balance)
+      } else {
+        // Only set default balance if user doesn't have balance property at all
+        // Don't automatically charge when balance is 0
+        setPoints(0)
       }
 
       // 마일리지 데이터 로드

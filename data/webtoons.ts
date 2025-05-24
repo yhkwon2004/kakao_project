@@ -366,7 +366,7 @@ export const investmentWebtoons: Webtoon[] = [
     fundingGoal: "₩400,000,000",
     description: "웹드라마 제작",
     thumbnail:
-      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%EA%B3%84%EC%95%BD%20%EB%82%A8%ED%8E%B8%EC%9D%B4%20%EB%82%A8%EC%9E%90%20%EC%A3%BC%EC%9D%B8%EA%B3%B5%EA%B3%BC%20%EB%8B%AE%EC%95%98%EB%8B%A4.jpg-ARhnVjkBMAnbIFSCb8F470npREQbcD.jpeg",
+      "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%EA%B3%84%EC%95%BD%20%EB%82%A8%ED%8E%B8%EC%9D%B4%20%EB%82%A8%EC%9E%90%20%EC%A3%BC%EC%9D%B8%EA%B3%B5%EA%B3%BC%20%EB%8B%AEl%EC%95%98%EB%8B%A4.jpg-ARhnVjkBMAnbIFSCb8F470npREQbcD.jpeg",
     currentRaised: 120000000,
     goalAmount: 400000000,
     totalInvestors: 450,
@@ -444,3 +444,60 @@ export function getWebtoonById(id: string): Webtoon | undefined {
 
 // 기존 allWebtoons를 webtoons라는 이름으로도 export
 export const webtoons = allWebtoons
+
+// 웹툰 데이터 업데이트 함수
+export function updateWebtoonData(id: string, updates: Partial<Webtoon>) {
+  const storedWebtoons = localStorage.getItem("webtoonsData")
+  const webtoonsData = storedWebtoons ? JSON.parse(storedWebtoons) : {}
+
+  webtoonsData[id] = {
+    ...webtoonsData[id],
+    ...updates,
+  }
+
+  localStorage.setItem("webtoonsData", JSON.stringify(webtoonsData))
+
+  // 이벤트 발생으로 다른 컴포넌트에 알림
+  window.dispatchEvent(new Event("webtoonDataChanged"))
+}
+
+// 업데이트된 웹툰 데이터 가져오기
+export function getUpdatedWebtoonById(id: string): Webtoon | undefined {
+  const baseWebtoon = getWebtoonById(id)
+  if (!baseWebtoon) return undefined
+
+  const storedWebtoons = localStorage.getItem("webtoonsData")
+  if (storedWebtoons) {
+    const webtoonsData = JSON.parse(storedWebtoons)
+    if (webtoonsData[id]) {
+      return {
+        ...baseWebtoon,
+        currentRaised: webtoonsData[id].currentRaised || baseWebtoon.currentRaised,
+        fundingPercentage: webtoonsData[id].progress || baseWebtoon.fundingPercentage,
+        totalInvestors: webtoonsData[id].totalInvestors || baseWebtoon.totalInvestors,
+        status: webtoonsData[id].status || baseWebtoon.status,
+      }
+    }
+  }
+
+  return baseWebtoon
+}
+
+// 모든 웹툰 데이터를 업데이트된 버전으로 가져오기
+export function getAllUpdatedWebtoons(): Webtoon[] {
+  const storedWebtoons = localStorage.getItem("webtoonsData")
+  const webtoonsData = storedWebtoons ? JSON.parse(storedWebtoons) : {}
+
+  return allWebtoons.map((webtoon) => {
+    if (webtoonsData[webtoon.id]) {
+      return {
+        ...webtoon,
+        currentRaised: webtoonsData[webtoon.id].currentRaised || webtoon.currentRaised,
+        fundingPercentage: webtoonsData[webtoon.id].progress || webtoon.fundingPercentage,
+        totalInvestors: webtoonsData[webtoon.id].totalInvestors || webtoon.totalInvestors,
+        status: webtoonsData[webtoon.id].status || webtoon.status,
+      }
+    }
+    return webtoon
+  })
+}

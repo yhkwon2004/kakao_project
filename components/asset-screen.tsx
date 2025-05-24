@@ -20,6 +20,14 @@ import { getWebtoonById, allWebtoons } from "@/data/webtoons"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from "recharts"
 
+// 금액 포맷팅 함수 수정 (파일 상단에)
+const formatCurrency = (amount: number): string => {
+  if (amount >= 1000000) {
+    return `${Math.floor(amount / 10000).toLocaleString()}만원`
+  }
+  return `${amount.toLocaleString()}원`
+}
+
 // 투자 성장 데이터 타입
 interface InvestmentGrowthData {
   date: string
@@ -69,8 +77,8 @@ const defaultCompletedProjects: CompletedProject[] = [
     title: "나쁜 비서 [19세 완전판]",
     genre: "로맨스, 드라마",
     investedAmount: 3400000,
-    returnAmount: 3910000,
-    roi: 15,
+    returnAmount: 4148000, // 22% 수익률로 계산
+    roi: 22, // 15에서 22로 변경
     completionDate: "2023-04-15",
     investors: 342,
     hasFeedback: false,
@@ -85,8 +93,8 @@ const defaultCompletedProjects: CompletedProject[] = [
     title: "철혈검가 사냥개의 회귀",
     genre: "액션, 판타지",
     investedAmount: 2800000,
-    returnAmount: 3360000,
-    roi: 20,
+    returnAmount: 3304000, // 18% 수익률로 계산
+    roi: 18, // 20에서 18로 변경
     completionDate: "2023-06-22",
     investors: 256,
     hasFeedback: true,
@@ -133,19 +141,13 @@ const getWebtoonThumbnail = (id: string): string => {
   return "/webtoon-scene.png"
 }
 
-// 종료된 프로젝트 데이터 초기화 함수를 수정하여 게스트 계정만 종료된 프로젝트를 가지도록 변경
+// 종료된 프로젝트 데이터 초기화 함수를 수정하여 모든 사용자가 기본 완료된 프로젝트를 가지도록 변경
 const initializeCompletedProjects = () => {
-  // 현재 로그인한 사용자 정보 가져오기
-  const user = getUserFromStorage()
-
-  // 게스트 계정인지 확인
-  const isGuest = user?.email === "guest_social@guest.fake"
-
-  // 로컬 스토리지에 종료된 프로젝트 데이터가 없으면 기본 데이터 저장 (게스트 계정만)
+  // 로컬 스토리지에 종료된 프로젝트 데이터가 없으면 기본 데이터 저장 (모든 사용자)
   const storedProjects = localStorage.getItem("completedProjects")
-  if (!storedProjects && isGuest) {
+  if (!storedProjects) {
     localStorage.setItem("completedProjects", JSON.stringify(defaultCompletedProjects))
-    console.log("게스트 계정용 종료된 프로젝트 데이터 초기화 완료")
+    console.log("기본 종료된 프로젝트 데이터 초기화 완료")
 
     // 자산 관리와 연결을 위해 완료된 투자 데이터도 저장
     const completedInvestments = defaultCompletedProjects.map((project) => ({
@@ -172,21 +174,6 @@ const initializeCompletedProjects = () => {
     })
 
     localStorage.setItem("userInvestments", JSON.stringify(updatedInvestments))
-
-    // 데이터 변경 이벤트 발생
-    window.dispatchEvent(new Event("userDataChanged"))
-  } else if (!isGuest && storedProjects) {
-    // 일반 계정인데 종료된 프로젝트 데이터가 있는 경우 (이전에 게스트 계정으로 로그인했던 경우)
-    // 종료된 프로젝트 데이터 초기화
-    localStorage.removeItem("completedProjects")
-
-    // 투자 데이터에서 종료된 프로젝트 관련 데이터 제거
-    const existingInvestments = JSON.parse(localStorage.getItem("userInvestments") || "[]")
-    const filteredInvestments = existingInvestments.filter(
-      (inv) => !defaultCompletedProjects.some((project) => project.id === inv.id),
-    )
-
-    localStorage.setItem("userInvestments", JSON.stringify(filteredInvestments))
 
     // 데이터 변경 이벤트 발생
     window.dispatchEvent(new Event("userDataChanged"))
@@ -437,12 +424,14 @@ export function AssetScreen() {
       if (storedInvestments) {
         try {
           const parsedInvestments = JSON.parse(storedInvestments)
-          // 날짜 정보가 없는 경우 현재 날짜 추가
           parsedInvestments.forEach((inv: any) => {
-            // 웹툰 데이터 가져오기
             const webtoonData = getWebtoonById(inv.id)
 
-            // 썸네일 설정 (ID 기반 하드코딩된 썸네일 우선)
+            // 로컬 스토리지에서 업데이트된 웹툰 데이터 확인
+            const storedWebtoons = localStorage.getItem("webtoonsData")
+            const webtoonsData = storedWebtoons ? JSON.parse(storedWebtoons) : {}
+            const updatedWebtoonData = webtoonsData[inv.id]
+
             let thumbnailUrl = ""
             if (inv.id === "bad-secretary") {
               thumbnailUrl = "/images/나쁜-비서.png"
@@ -456,27 +445,38 @@ export function AssetScreen() {
               thumbnailUrl = "/webtoon-scene.png"
             }
 
+            // 상태 결정 (업데이트된 데이터 우선)
+            let status = inv.status || "진행중"
+            let progress = inv.progress || 0
+
+            if (updatedWebtoonData) {
+              status = updatedWebtoonData.status === "completed" ? "완료됨" : "진행중"
+              progress = updatedWebtoonData.progress || progress
+            }
+
             const investment: Investment = {
               id: inv.id || `inv-${Math.random().toString(36).substr(2, 9)}`,
               title: webtoonData ? webtoonData.title : inv.title || "투자 프로젝트",
               amount: inv.amount || 0,
-              progress: inv.progress || 0,
+              progress: progress,
               expectedROI: inv.expectedROI || 0,
-              status: inv.status || "진행중",
+              status: status,
               slug: inv.slug || inv.id,
               date: inv.date || getCurrentDate(),
-              isCompleted: inv.progress === 100,
+              isCompleted: status === "완료됨" || progress >= 100,
               thumbnail: thumbnailUrl,
             }
 
-            // 웹툰 데이터 연동
-            if (webtoonData) {
+            if (webtoonData && updatedWebtoonData) {
+              investment.fundingPercentage = updatedWebtoonData.progress
+              investment.currentRaised = updatedWebtoonData.currentRaised
+              investment.goalAmount = webtoonData.goalAmount
+            } else if (webtoonData) {
               investment.fundingPercentage = webtoonData.fundingPercentage
               investment.currentRaised = webtoonData.currentRaised
               investment.goalAmount = webtoonData.goalAmount
             }
 
-            // 맵에 추가 (중복 방지)
             investmentMap.set(investment.id, investment)
           })
         } catch (error) {
@@ -567,12 +567,20 @@ export function AssetScreen() {
 
     window.addEventListener("userDataChanged", handleCustomEvent)
 
+    // 웹툰 데이터 변경 감지
+    const handleWebtoonDataChange = () => {
+      loadInvestments()
+    }
+
+    window.addEventListener("webtoonDataChanged", handleWebtoonDataChange)
+
     // 1분마다 데이터 새로고침 (실시간 업데이트 시뮬레이션)
     const intervalId = setInterval(loadInvestments, 60000)
 
     return () => {
       window.removeEventListener("storage", handleStorageChange)
       window.removeEventListener("userDataChanged", handleCustomEvent)
+      window.removeEventListener("webtoonDataChanged", handleWebtoonDataChange)
       clearInterval(intervalId)
     }
   }, [dateRange])
@@ -833,10 +841,11 @@ export function AssetScreen() {
           </CardHeader>
           <CardContent className="p-4">
             <div className="grid grid-cols-2 gap-4">
+              {/* 총 투자 금액 계산 부분 수정 (line 280 근처) */}
               <div>
                 <p className="text-sm text-gray">총 투자액</p>
                 <p className="text-xl font-bold text-darkblue dark:text-light">
-                  ₩{(assetSummary.totalInvested || 0).toLocaleString()}
+                  {formatCurrency(assetSummary.totalInvested || 0)}
                 </p>
               </div>
               <div
@@ -849,10 +858,11 @@ export function AssetScreen() {
                   <ChevronRight className="h-4 w-4 ml-1 text-gray" />
                 </div>
               </div>
+              {/* 예상 수익 부분 수정 */}
               <div>
                 <p className="text-sm text-gray">예상 수익</p>
                 <p className="text-xl font-bold text-profit">
-                  ₩{Math.round(assetSummary.expectedReturns || 0).toLocaleString()}
+                  {formatCurrency(Math.round(assetSummary.expectedReturns || 0))}
                 </p>
               </div>
               <div>
@@ -1050,10 +1060,11 @@ export function AssetScreen() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 mb-2">
+                      {/* 투자 목록에서 투자 금액 표시 부분 수정 (line 450 근처) */}
                       <div>
                         <p className="text-xs text-gray">투자 금액</p>
                         <p className="font-medium text-darkblue dark:text-light">
-                          ₩{(investment.amount || 0).toLocaleString()}
+                          {formatCurrency(investment.amount || 0)}
                         </p>
                       </div>
                       <div>

@@ -45,6 +45,40 @@ export function HomeScreen() {
     }
   }, [showSearch])
 
+  // 웹툰 데이터 업데이트 반영
+  useEffect(() => {
+    // 웹툰 데이터 변경 감지
+    const handleWebtoonDataChange = () => {
+      // 로컬 스토리지에서 업데이트된 웹툰 데이터 로드
+      const storedWebtoons = localStorage.getItem("webtoonsData")
+      if (storedWebtoons) {
+        const webtoonsData = JSON.parse(storedWebtoons)
+
+        // investmentWebtoons 데이터 업데이트
+        investmentWebtoons.forEach((webtoon) => {
+          if (webtoonsData[webtoon.id]) {
+            const updatedData = webtoonsData[webtoon.id]
+            webtoon.currentRaised = updatedData.currentRaised || webtoon.currentRaised
+            webtoon.fundingPercentage = updatedData.progress || webtoon.fundingPercentage
+            webtoon.totalInvestors = updatedData.totalInvestors || webtoon.totalInvestors
+            webtoon.status = updatedData.status || webtoon.status
+          }
+        })
+
+        // 컴포넌트 리렌더링 강제
+        setUserName((prev) => prev + "")
+      }
+    }
+
+    window.addEventListener("webtoonDataChanged", handleWebtoonDataChange)
+    window.addEventListener("storage", handleWebtoonDataChange)
+
+    return () => {
+      window.removeEventListener("webtoonDataChanged", handleWebtoonDataChange)
+      window.removeEventListener("storage", handleWebtoonDataChange)
+    }
+  }, [])
+
   // 이 부분을 수정하여 중앙 데이터 소스에서 가져오도록 변경
   // featuredDramas 변수 선언 부분을 삭제하고 import로 대체
 
@@ -109,6 +143,26 @@ export function HomeScreen() {
   // 총 투자 금액이 높은 순으로 정렬하여 사용자에게 가장 인기 있는 프로젝트를 보여줌
   const top3Investments = investmentWebtoons.slice(0, 3)
 
+  // 인기 투자 프로젝트 렌더링 시 실시간 데이터 사용
+  const getUpdatedInvestmentData = () => {
+    const storedWebtoons = localStorage.getItem("webtoonsData")
+    const webtoonsData = storedWebtoons ? JSON.parse(storedWebtoons) : {}
+
+    return top3Investments.map((investment) => {
+      if (webtoonsData[investment.id]) {
+        const updatedData = webtoonsData[investment.id]
+        return {
+          ...investment,
+          currentRaised: updatedData.currentRaised || investment.currentRaised,
+          fundingPercentage: updatedData.progress || investment.fundingPercentage,
+          totalInvestors: updatedData.totalInvestors || investment.totalInvestors,
+          status: updatedData.status || investment.status,
+        }
+      }
+      return investment
+    })
+  }
+
   // Filtered webtoons based on search and filters
   const getFilteredWebtoons = () => {
     return investmentWebtoons.filter((webtoon) => {
@@ -156,7 +210,8 @@ export function HomeScreen() {
 
   // Filtered investments based on search and filters
   const getFilteredInvestments = () => {
-    return top3Investments.filter((investment) => {
+    const updatedInvestments = getUpdatedInvestmentData()
+    return updatedInvestments.filter((investment) => {
       // Search filter
       if (searchQuery && !investment.title.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false

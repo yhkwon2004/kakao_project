@@ -17,7 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Badge } from "@/components/ui/badge"
@@ -30,13 +29,28 @@ interface InvestmentRecord {
   date: string
   status: string
   roi?: number
+  type: "investment"
 }
+
+// 충전 내역 타입
+interface ChargeRecord {
+  id: string
+  amount: number
+  date: string
+  method: string
+  status: string
+  type: "charge"
+}
+
+// 통합 내역 타입
+type TransactionRecord = InvestmentRecord | ChargeRecord
 
 export function PaymentScreen() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("payment")
   const [currentBalance, setCurrentBalance] = useState(130000)
   const [investmentHistory, setInvestmentHistory] = useState<InvestmentRecord[]>([])
+  const [chargeHistory, setChargeHistory] = useState<ChargeRecord[]>([])
   const [loading, setLoading] = useState(false)
 
   const [isChargeDialogOpen, setIsChargeDialogOpen] = useState(false)
@@ -44,6 +58,10 @@ export function PaymentScreen() {
   const [chargeAmount, setChargeAmount] = useState("")
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("")
   const [chargeStep, setChargeStep] = useState(1) // 1: 결제수단, 2: 금액, 3: 확인
+  const [alertModal, setAlertModal] = useState({ isOpen: false, title: "", message: "" })
+
+  // 최대 충전 금액 설정 (1억)
+  const MAX_CHARGE_AMOUNT = 100000000
 
   useEffect(() => {
     // 사용자 정보에서 잔액 로드
@@ -69,6 +87,61 @@ export function PaymentScreen() {
     }
   }, [])
 
+  // 충전 기록 로드
+  const loadChargeHistory = () => {
+    try {
+      const storedChargeHistory = localStorage.getItem("chargeHistory")
+      if (storedChargeHistory) {
+        const parsedHistory = JSON.parse(storedChargeHistory)
+        // 날짜순으로 정렬 (최신순)
+        parsedHistory.sort(
+          (a: ChargeRecord, b: ChargeRecord) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        )
+        setChargeHistory(parsedHistory)
+      } else {
+        // 기본 더미 데이터
+        const defaultChargeHistory: ChargeRecord[] = [
+          {
+            id: "charge-4",
+            date: "2024-01-15",
+            amount: 50000,
+            method: "신용카드",
+            status: "완료",
+            type: "charge",
+          },
+          {
+            id: "charge-3",
+            date: "2024-01-10",
+            amount: 100000,
+            method: "계좌이체",
+            status: "완료",
+            type: "charge",
+          },
+          {
+            id: "charge-2",
+            date: "2024-01-05",
+            amount: 30000,
+            method: "신용카드",
+            status: "완료",
+            type: "charge",
+          },
+          {
+            id: "charge-1",
+            date: "2024-01-01",
+            amount: 200000,
+            method: "계좌이체",
+            status: "완료",
+            type: "charge",
+          },
+        ]
+        setChargeHistory(defaultChargeHistory)
+        localStorage.setItem("chargeHistory", JSON.stringify(defaultChargeHistory))
+      }
+    } catch (error) {
+      console.error("충전 기록 로드 오류:", error)
+    }
+  }
+
   // 투자 내역 로드 (동적)
   const loadInvestmentHistory = () => {
     setLoading(true)
@@ -88,6 +161,7 @@ export function PaymentScreen() {
             date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toLocaleDateString("ko-KR"),
             status: "completed",
             roi: 18,
+            type: "investment",
           },
           {
             id: "bad-secretary",
@@ -96,6 +170,7 @@ export function PaymentScreen() {
             date: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toLocaleDateString("ko-KR"),
             status: "completed",
             roi: 22,
+            type: "investment",
           },
         ]
         allInvestments = [...guestDummyData]
@@ -115,6 +190,7 @@ export function PaymentScreen() {
               date: new Date(investment.date || Date.now()).toLocaleDateString("ko-KR"),
               status: investment.status || "진행중",
               roi: investment.expectedROI,
+              type: "investment",
             }
           })
 
@@ -143,6 +219,7 @@ export function PaymentScreen() {
               date: new Date(project.investmentDate || project.completionDate).toLocaleDateString("ko-KR"),
               status: "completed",
               roi: project.roi,
+              type: "investment",
             }
           })
 
@@ -168,6 +245,11 @@ export function PaymentScreen() {
     }
   }
 
+  // 컴포넌트 마운트 시 충전 기록 로드
+  useEffect(() => {
+    loadChargeHistory()
+  }, [])
+
   // 결제 내역 탭이 활성화될 때 투자 내역 로드
   useEffect(() => {
     if (activeTab === "history") {
@@ -181,6 +263,7 @@ export function PaymentScreen() {
       if (activeTab === "history") {
         loadInvestmentHistory()
       }
+      loadChargeHistory()
     }
 
     window.addEventListener("userDataChanged", handleDataChange)
@@ -222,19 +305,12 @@ export function PaymentScreen() {
 
   // 충전 기록 렌더링
   const renderChargeHistory = () => {
-    const chargeHistory = [
-      { date: "2024-01-15", amount: 50000, method: "신용카드", status: "완료" },
-      { date: "2024-01-10", amount: 100000, method: "계좌이체", status: "완료" },
-      { date: "2024-01-05", amount: 30000, method: "신용카드", status: "완료" },
-      { date: "2024-01-01", amount: 200000, method: "계좌이체", status: "완료" },
-    ]
-
     return (
       <div className="space-y-3">
         <h3 className="font-bold text-darkblue dark:text-light mb-4">최근 충전 기록</h3>
-        {chargeHistory.map((record, index) => (
+        {chargeHistory.slice(0, 4).map((record, index) => (
           <div
-            key={index}
+            key={record.id}
             className="flex justify-between items-center p-4 bg-white dark:bg-darkblue/20 rounded-xl border border-gray/10 hover:shadow-sm transition-shadow"
           >
             <div className="flex items-center gap-3">
@@ -260,6 +336,13 @@ export function PaymentScreen() {
     )
   }
 
+  // 통합 거래 내역 생성 (투자 + 충전)
+  const getCombinedHistory = (): TransactionRecord[] => {
+    const combined: TransactionRecord[] = [...investmentHistory, ...chargeHistory]
+    // 날짜순으로 정렬 (최신순)
+    return combined.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }
+
   const handleChargeStart = () => {
     setChargeStep(1)
     setSelectedPaymentMethod("")
@@ -269,7 +352,11 @@ export function PaymentScreen() {
 
   const handlePaymentMethodNext = () => {
     if (!selectedPaymentMethod) {
-      alert("결제 수단을 선택해주세요.")
+      setAlertModal({
+        isOpen: true,
+        title: "결제 수단 선택",
+        message: "결제 수단을 선택해주세요.",
+      })
       return
     }
     setChargeStep(2)
@@ -278,11 +365,27 @@ export function PaymentScreen() {
   const handleAmountNext = () => {
     const amount = Number.parseInt(chargeAmount)
     if (isNaN(amount) || amount <= 0) {
-      alert("유효한 충전 금액을 입력해주세요.")
+      setAlertModal({
+        isOpen: true,
+        title: "충전 금액 오류",
+        message: "유효한 충전 금액을 입력해주세요.",
+      })
       return
     }
     if (amount < 1000) {
-      alert("최소 충전 금액은 1,000원입니다.")
+      setAlertModal({
+        isOpen: true,
+        title: "최소 충전 금액",
+        message: "최소 충전 금액은 1,000원입니다.",
+      })
+      return
+    }
+    if (amount > MAX_CHARGE_AMOUNT) {
+      setAlertModal({
+        isOpen: true,
+        title: "최대 충전 금액 초과",
+        message: `최대 충전 금액은 ${MAX_CHARGE_AMOUNT.toLocaleString()}원입니다.`,
+      })
       return
     }
     setIsChargeDialogOpen(false)
@@ -291,13 +394,28 @@ export function PaymentScreen() {
 
   const handleCharge = () => {
     const amount = Number.parseInt(chargeAmount)
+    const selectedMethod = getSelectedPaymentMethodInfo()
 
     // 사용자 정보 업데이트 (localStorage)
     const user = getUserFromStorage()
-    if (user) {
+    if (user && selectedMethod) {
       const updatedBalance = (user.balance || 0) + amount
       const updatedUser = { ...user, balance: updatedBalance }
       localStorage.setItem("currentUser", JSON.stringify(updatedUser))
+
+      // 새로운 충전 기록 추가
+      const newChargeRecord: ChargeRecord = {
+        id: `charge-${Date.now()}`,
+        amount: amount,
+        date: new Date().toLocaleDateString("ko-KR"),
+        method: selectedMethod.name,
+        status: "완료",
+        type: "charge",
+      }
+
+      const updatedChargeHistory = [newChargeRecord, ...chargeHistory]
+      setChargeHistory(updatedChargeHistory)
+      localStorage.setItem("chargeHistory", JSON.stringify(updatedChargeHistory))
 
       // 이벤트 발생
       window.dispatchEvent(new Event("userDataChanged"))
@@ -309,7 +427,11 @@ export function PaymentScreen() {
       setSelectedPaymentMethod("")
       setChargeStep(1)
 
-      alert(`${amount.toLocaleString()}원 충전이 완료되었습니다.`)
+      setAlertModal({
+        isOpen: true,
+        title: "충전 완료",
+        message: `${amount.toLocaleString()}원 충전이 완료되었습니다.`,
+      })
     } else {
       alert("사용자 정보를 찾을 수 없습니다.")
     }
@@ -319,6 +441,7 @@ export function PaymentScreen() {
     return paymentMethods.find((method) => method.id === selectedPaymentMethod)
   }
 
+  // 빠른 선택 금액 (기존 + 새로운 큰 금액)
   const quickAmounts = [10000, 30000, 50000, 100000, 300000, 500000]
 
   return (
@@ -340,7 +463,7 @@ export function PaymentScreen() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-yellow rounded-xl flex items-center justify-center">
-                  <Wallet className="h-6 w-6 text-white" />
+                  <Wallet className="h-6 w-6 text-black" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-darkblue dark:text-light">현재 보유 잔액</h2>
@@ -366,7 +489,7 @@ export function PaymentScreen() {
                 </div>
               </div>
               <Button
-                className="rounded-xl bg-yellow hover:from-yellow/90 hover:to-green/90 text-white font-semibold px-8 py-3 h-auto shadow-lg"
+                className="rounded-xl bg-yellow hover:bg-yellow/90 text-black font-semibold px-8 py-3 h-auto shadow-lg"
                 onClick={handleChargeStart}
               >
                 <Plus className="h-5 w-5 mr-2" />
@@ -387,7 +510,7 @@ export function PaymentScreen() {
               value="payment"
               className={`rounded-xl transition-all font-semibold ${
                 activeTab === "payment"
-                  ? "bg-yellow text-white shadow-md"
+                  ? "bg-yellow text-black shadow-md"
                   : "text-gray hover:text-darkblue dark:hover:text-light"
               }`}
             >
@@ -397,7 +520,7 @@ export function PaymentScreen() {
               value="history"
               className={`rounded-xl transition-all font-semibold ${
                 activeTab === "history"
-                  ? "bg-yellow text-white shadow-md"
+                  ? "bg-yellow text-black shadow-md"
                   : "text-gray hover:text-darkblue dark:hover:text-light"
               }`}
             >
@@ -455,35 +578,62 @@ export function PaymentScreen() {
               {loading ? (
                 <div className="text-center py-12">
                   <div className="w-12 h-12 bg-gray/10 rounded-full animate-pulse mx-auto mb-4"></div>
-                  <p className="text-gray">투자 내역을 불러오는 중...</p>
+                  <p className="text-gray">거래 내역을 불러오는 중...</p>
                 </div>
-              ) : investmentHistory.length > 0 ? (
-                investmentHistory.map((investment) => (
+              ) : getCombinedHistory().length > 0 ? (
+                getCombinedHistory().map((transaction) => (
                   <Card
-                    key={`${investment.id}-${investment.date}`}
+                    key={`${transaction.type}-${transaction.id}-${transaction.date}`}
                     className="rounded-2xl border-0 shadow-md bg-white dark:bg-darkblue/20 hover:shadow-lg transition-shadow"
                   >
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center">
-                            <ArrowRight className="h-6 w-6 text-blue-500 rotate-45" />
+                          <div
+                            className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                              transaction.type === "charge" ? "bg-green/10" : "bg-blue-50"
+                            }`}
+                          >
+                            {transaction.type === "charge" ? (
+                              <Plus className="h-6 w-6 text-green" />
+                            ) : (
+                              <ArrowRight className="h-6 w-6 text-blue-500 rotate-45" />
+                            )}
                           </div>
                           <div>
-                            <p className="font-semibold text-darkblue dark:text-light">투자</p>
-                            <p className="text-sm text-gray">{investment.webtoonTitle}</p>
-                            <p className="text-xs text-gray mt-1">{investment.date}</p>
-                            {investment.status === "completed" && investment.roi && (
-                              <Badge className="bg-green/10 text-green border-green/20 mt-2">
-                                수익률: +{investment.roi}%
-                              </Badge>
-                            )}
+                            <p className="font-semibold text-darkblue dark:text-light">
+                              {transaction.type === "charge" ? "충전" : "투자"}
+                            </p>
+                            <p className="text-sm text-gray">
+                              {transaction.type === "charge"
+                                ? (transaction as ChargeRecord).method
+                                : (transaction as InvestmentRecord).webtoonTitle}
+                            </p>
+                            <p className="text-xs text-gray mt-1">{transaction.date}</p>
+                            {transaction.type === "investment" &&
+                              (transaction as InvestmentRecord).status === "completed" &&
+                              (transaction as InvestmentRecord).roi && (
+                                <Badge className="bg-green/10 text-green border-green/20 mt-2">
+                                  수익률: +{(transaction as InvestmentRecord).roi}%
+                                </Badge>
+                              )}
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-lg text-blue-500">-{investment.amount.toLocaleString()}원</p>
+                          <p
+                            className={`font-bold text-lg ${
+                              transaction.type === "charge" ? "text-green" : "text-blue-500"
+                            }`}
+                          >
+                            {transaction.type === "charge" ? "+" : "-"}
+                            {transaction.amount.toLocaleString()}원
+                          </p>
                           <Badge variant="outline" className="mt-1">
-                            {investment.status === "completed" ? "완료" : "진행중"}
+                            {transaction.type === "charge"
+                              ? (transaction as ChargeRecord).status
+                              : (transaction as InvestmentRecord).status === "completed"
+                                ? "완료"
+                                : "진행중"}
                           </Badge>
                         </div>
                       </div>
@@ -495,7 +645,7 @@ export function PaymentScreen() {
                   <div className="w-16 h-16 bg-gray/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Wallet className="h-8 w-8 text-gray" />
                   </div>
-                  <p className="text-gray font-medium">투자 내역이 없습니다</p>
+                  <p className="text-gray font-medium">거래 내역이 없습니다</p>
                   <p className="text-sm text-gray/70 mt-1">첫 투자를 시작해보세요</p>
                 </div>
               )}
@@ -522,7 +672,8 @@ export function PaymentScreen() {
                 {paymentMethods.map((method) => (
                   <div
                     key={method.id}
-                    className="flex items-center space-x-3 p-4 rounded-xl border border-gray/10 hover:bg-gray/5 transition-colors"
+                    className="flex items-center space-x-3 p-4 rounded-xl border border-gray/10 hover:bg-gray/5 transition-colors cursor-pointer"
+                    onClick={() => setSelectedPaymentMethod(method.id)}
                   >
                     <RadioGroupItem value={method.id} id={`payment-${method.id}`} />
                     <div className="flex items-center gap-3 flex-1">
@@ -556,35 +707,69 @@ export function PaymentScreen() {
               </div>
 
               <div>
-                <Label
-                  htmlFor="chargeAmount"
-                  className="text-sm font-semibold text-darkblue dark:text-light block mb-3"
-                >
-                  충전 금액
-                </Label>
-                <Input
-                  type="number"
-                  id="chargeAmount"
-                  value={chargeAmount}
-                  onChange={(e) => setChargeAmount(e.target.value)}
-                  placeholder="충전할 금액을 입력하세요"
-                  className="rounded-xl border-gray/20 bg-gray/5 focus:bg-white h-14 text-lg text-center font-semibold"
-                />
-              </div>
+                <Label className="text-sm font-semibold text-darkblue dark:text-light block mb-3">충전 금액</Label>
+                <div className="p-6 bg-gradient-to-br from-yellow/10 to-yellow/5 rounded-2xl mb-6 border border-yellow/20">
+                  <p className="text-4xl font-bold text-center text-darkblue dark:text-light">
+                    {chargeAmount ? `${Number(chargeAmount).toLocaleString()}원` : "0원"}
+                  </p>
+                  <p className="text-sm text-center text-gray mt-2">
+                    최대 {MAX_CHARGE_AMOUNT.toLocaleString()}원까지 충전 가능
+                  </p>
+                </div>
 
-              <div>
-                <p className="text-sm font-semibold text-darkblue dark:text-light mb-3">빠른 선택</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {quickAmounts.map((amount) => (
+                {/* 빠른 선택 */}
+                <div className="mb-6">
+                  <p className="text-sm font-semibold text-darkblue dark:text-light mb-3">빠른 선택</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {quickAmounts.map((amount) => (
+                      <Button
+                        key={amount}
+                        variant="outline"
+                        className="rounded-xl border-gray/20 hover:bg-yellow/10 hover:border-yellow/30"
+                        onClick={() => setChargeAmount(amount.toString())}
+                      >
+                        {amount.toLocaleString()}원
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 숫자 패드 */}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                     <Button
-                      key={amount}
+                      key={num}
                       variant="outline"
-                      className="rounded-xl border-gray/20 hover:bg-yellow/10 hover:border-yellow/30"
-                      onClick={() => setChargeAmount(amount.toString())}
+                      className="h-14 text-xl font-semibold rounded-xl border-gray/20 hover:bg-yellow/10 transition-colors"
+                      onClick={() => setChargeAmount((prev) => prev + num.toString())}
                     >
-                      {amount.toLocaleString()}원
+                      {num}
                     </Button>
                   ))}
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  <Button
+                    variant="outline"
+                    className="h-14 text-lg font-semibold rounded-xl border-red/30 bg-red/5 hover:bg-red/10 text-red-600"
+                    onClick={() => setChargeAmount("")}
+                  >
+                    전체삭제
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-14 text-xl font-semibold rounded-xl border-gray/20 hover:bg-yellow/10"
+                    onClick={() => setChargeAmount((prev) => prev + "0")}
+                  >
+                    0
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-14 text-lg font-semibold rounded-xl border-red/30 bg-red/5 hover:bg-red/10 text-red-600"
+                    onClick={() => setChargeAmount((prev) => prev.slice(0, -1))}
+                  >
+                    ⌫
+                  </Button>
                 </div>
               </div>
             </div>
@@ -611,7 +796,7 @@ export function PaymentScreen() {
             </Button>
             <Button
               type="button"
-              className="flex-1 rounded-xl bg-yellow hover:from-yellow/90 hover:to-green/90 text-white h-12 font-semibold"
+              className="flex-1 rounded-xl bg-yellow hover:bg-yellow/90 text-black h-12 font-semibold"
               onClick={chargeStep === 1 ? handlePaymentMethodNext : handleAmountNext}
             >
               {chargeStep === 1 ? "다음" : "충전하기"}
@@ -632,7 +817,7 @@ export function PaymentScreen() {
             <div className="p-6 bg-yellow/5 rounded-2xl border border-yellow/10">
               <div className="flex items-center justify-center mb-4">
                 <div className="w-16 h-16 bg-yellow rounded-2xl flex items-center justify-center">
-                  <Wallet className="h-8 w-8 text-white" />
+                  <Wallet className="h-8 w-8 text-black" />
                 </div>
               </div>
               <div className="text-center">
@@ -655,6 +840,16 @@ export function PaymentScreen() {
               </div>
 
               <div className="flex justify-between items-center p-4 bg-gray/5 rounded-xl">
+                <span className="text-sm text-gray">현재 잔액</span>
+                <span className="font-semibold text-darkblue dark:text-light">{currentBalance.toLocaleString()}원</span>
+              </div>
+
+              <div className="flex justify-between items-center p-4 bg-yellow/5 rounded-xl border border-yellow/20">
+                <span className="text-sm text-gray">충전 금액</span>
+                <span className="font-semibold text-yellow">{Number.parseInt(chargeAmount).toLocaleString()}원</span>
+              </div>
+
+              <div className="flex justify-between items-center p-4 bg-green/5 rounded-xl border border-green/20">
                 <span className="text-sm text-gray">충전 후 잔액</span>
                 <span className="font-semibold text-green">
                   {(currentBalance + Number.parseInt(chargeAmount)).toLocaleString()}원
@@ -684,13 +879,106 @@ export function PaymentScreen() {
             </Button>
             <Button
               type="button"
-              className="flex-1 rounded-xl bg-yellow hover:from-yellow/90 hover:to-green/90 text-white h-12 font-semibold"
+              className="flex-1 rounded-xl bg-yellow hover:bg-yellow/90 text-black h-12 font-semibold"
               onClick={handleCharge}
             >
               <Check className="h-5 w-5 mr-2" />
               충전 확인
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 안내 모달 - 영수증 스타일 */}
+      <Dialog open={alertModal.isOpen} onOpenChange={(open) => setAlertModal((prev) => ({ ...prev, isOpen: open }))}>
+        <DialogContent className="sm:max-w-[400px] rounded-2xl bg-white dark:bg-darkblue border-0 shadow-2xl">
+          {alertModal.title === "충전 완료" ? (
+            // 충전 성공 영수증 디자인
+            <>
+              <DialogHeader className="pb-6 text-center">
+                <div className="w-20 h-20 bg-green/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="h-10 w-10 text-green" />
+                </div>
+                <DialogTitle className="text-2xl font-bold text-green">충전 완료!</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                {/* 영수증 스타일 정보 */}
+                <div className="bg-gray/5 rounded-xl p-4 border-2 border-dashed border-gray/20">
+                  <div className="text-center mb-4">
+                    <h3 className="font-bold text-darkblue dark:text-light mb-1">충전 영수증</h3>
+                    <p className="text-xs text-gray">{new Date().toLocaleString("ko-KR")}</p>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray">결제 수단</span>
+                      <span className="font-medium text-darkblue dark:text-light">
+                        {getSelectedPaymentMethodInfo()?.name}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray">충전 금액</span>
+                      <span className="font-bold text-green">
+                        +{Number.parseInt(chargeAmount || "0").toLocaleString()}원
+                      </span>
+                    </div>
+                    <div className="border-t border-gray/20 pt-2 mt-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray">현재 잔액</span>
+                        <span className="font-bold text-darkblue dark:text-light">
+                          {currentBalance.toLocaleString()}원
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-center mt-4 pt-3 border-t border-gray/20">
+                    <p className="text-xs text-gray">거래번호: {Date.now().toString().slice(-8)}</p>
+                    <p className="text-xs text-gray mt-1">안전한 결제가 완료되었습니다</p>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-darkblue dark:text-light">
+                    충전이 성공적으로 완료되었습니다!
+                  </p>
+                  <p className="text-sm text-gray mt-1">이제 웹툰에 투자해보세요</p>
+                </div>
+              </div>
+
+              <DialogFooter className="pt-6">
+                <Button
+                  type="button"
+                  className="w-full rounded-xl bg-green hover:bg-green/90 text-white h-12 font-semibold"
+                  onClick={() => setAlertModal({ isOpen: false, title: "", message: "" })}
+                >
+                  확인
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            // 기본 안내 모달
+            <>
+              <DialogHeader className="pb-4">
+                <DialogTitle className="text-xl font-bold text-darkblue dark:text-light">
+                  {alertModal.title}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <p className="text-gray text-center text-sm leading-relaxed">{alertModal.message}</p>
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  className="w-full rounded-xl bg-yellow hover:bg-yellow/90 text-black h-12 font-semibold"
+                  onClick={() => setAlertModal({ isOpen: false, title: "", message: "" })}
+                >
+                  확인
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

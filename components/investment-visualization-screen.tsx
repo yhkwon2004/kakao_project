@@ -10,6 +10,14 @@ import { getWebtoonById } from "@/data/webtoons"
 import { PieChart as RechartsPieChart, Cell, ResponsiveContainer, Tooltip, Pie } from "recharts"
 import Image from "next/image"
 
+// 금액 포맷팅 함수 수정 (파일 상단에)
+const formatCurrency = (amount: number): string => {
+  if (amount >= 1000000) {
+    return `${Math.floor(amount / 10000).toLocaleString()}만원`
+  }
+  return `${amount.toLocaleString()}원`
+}
+
 // 투자 데이터 타입
 interface Investment {
   id: string
@@ -121,7 +129,7 @@ export function InvestmentVisualizationScreen() {
       // 차트 데이터 생성
       const chartData = allInvestments.map((inv) => ({
         name: inv.title,
-        value: inv.amount,
+        value: inv.amount, // 원본 값 유지 (차트 계산용)
         color: inv.color,
       }))
 
@@ -159,9 +167,9 @@ export function InvestmentVisualizationScreen() {
       return (
         <div className="bg-white dark:bg-darkblue border border-gray/20 rounded-lg p-3 shadow-lg">
           <p className="font-medium text-darkblue dark:text-light">{data.name}</p>
-          <p className="text-sm text-gray">
-            ₩{data.value.toLocaleString()} ({percentage}%)
-          </p>
+          <span className="text-sm text-gray">
+            {formatCurrency(data.value)} ({percentage}%)
+          </span>
         </div>
       )
     }
@@ -222,7 +230,7 @@ export function InvestmentVisualizationScreen() {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
                       <p className="text-sm text-gray mb-1">총 투자액</p>
-                      <p className="text-xl font-bold text-profit">₩{totalInvestment.toLocaleString()}</p>
+                      <p className="text-xl font-bold text-profit">{formatCurrency(totalInvestment)}</p>
                     </div>
                   </div>
                 </div>
@@ -259,7 +267,7 @@ export function InvestmentVisualizationScreen() {
                         <p className="font-medium text-darkblue dark:text-light text-sm truncate">{investment.title}</p>
                         <div className="flex items-center justify-between mt-1">
                           <p className="text-sm font-semibold text-darkblue dark:text-light">
-                            ₩{investment.amount.toLocaleString()}
+                            {formatCurrency(investment.amount)}
                           </p>
                           <div className="flex items-center gap-2">
                             <div className="text-xs bg-profit/10 text-profit px-2 py-1 rounded-full">

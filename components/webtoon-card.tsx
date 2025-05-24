@@ -20,9 +20,37 @@ export function WebtoonCard({ webtoon, onClick }: WebtoonCardProps) {
   // 웹툰 데이터에서 필요한 정보 추출
   const { id, title, daysLeft, fundingPercentage, status, thumbnail } = webtoon
 
-  // 완료된 웹툰 여부 확인
-  // fundingPercentage가 100%이거나 status가 'completed'인 경우 완료된 웹툰으로 간주
-  const isCompleted = status === "completed" || fundingPercentage === 100
+  const [dynamicFundingPercentage, setDynamicFundingPercentage] = useState(fundingPercentage)
+  const [dynamicCurrentRaised, setDynamicCurrentRaised] = useState(webtoon.currentRaised)
+
+  // 동적 웹툰 데이터 업데이트 감지
+  useEffect(() => {
+    const handleWebtoonDataChange = () => {
+      const storedWebtoons = localStorage.getItem("webtoonsData")
+      if (storedWebtoons) {
+        const webtoonsData = JSON.parse(storedWebtoons)
+        if (webtoonsData[webtoon.id]) {
+          const updatedData = webtoonsData[webtoon.id]
+          setDynamicFundingPercentage(updatedData.progress || fundingPercentage)
+          setDynamicCurrentRaised(updatedData.currentRaised || webtoon.currentRaised)
+        }
+      }
+    }
+
+    // 초기 로드 시 업데이트된 데이터 확인
+    handleWebtoonDataChange()
+
+    window.addEventListener("webtoonDataChanged", handleWebtoonDataChange)
+    window.addEventListener("storage", handleWebtoonDataChange)
+
+    return () => {
+      window.removeEventListener("webtoonDataChanged", handleWebtoonDataChange)
+      window.removeEventListener("storage", handleWebtoonDataChange)
+    }
+  }, [webtoon.id, fundingPercentage, webtoon.currentRaised])
+
+  // 완료된 웹툰 여부 확인 - 동적 데이터 사용
+  const isCompleted = status === "completed" || dynamicFundingPercentage === 100
 
   // 클릭 애니메이션을 위한 상태
   const [isClicked, setIsClicked] = useState(false)
@@ -127,17 +155,17 @@ export function WebtoonCard({ webtoon, onClick }: WebtoonCardProps) {
           )}
 
           {/* 펀딩 진행률 표시 */}
-          {fundingPercentage !== undefined && (
+          {dynamicFundingPercentage !== undefined && (
             <div className="absolute bottom-0 left-0 right-0 bg-dark/80 p-2 backdrop-blur-sm">
               <div className="flex justify-between items-center text-xs mb-1">
-                <span className="text-light">{fundingPercentage}% 모집됨</span>
+                <span className="text-light">{Math.round(dynamicFundingPercentage)}% 모집됨</span>
               </div>
               <div className="h-1 bg-gray/50 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ease-out ${
                     isCompleted ? "bg-green" : "bg-yellow"
                   }`}
-                  style={{ width: `${fundingPercentage}%` }}
+                  style={{ width: `${Math.min(dynamicFundingPercentage, 100)}%` }}
                 ></div>
               </div>
             </div>

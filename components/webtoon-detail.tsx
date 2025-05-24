@@ -3,22 +3,22 @@
 import type React from "react"
 
 import { useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { ChevronLeft, Star, TrendingUp, Users, Calendar, DollarSign, Sparkles, Wallet } from "lucide-react"
+import { ChevronLeft, Sparkles, Star, TrendingUp, Wallet } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useToast } from "@/components/ui/use-toast"
 import Image from "next/image"
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Logo } from "@/components/logo"
 import { getWebtoonById } from "@/data/webtoons"
 import { getUserFromStorage } from "@/lib/auth"
-import { Input } from "@/components/ui/input"
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
+import { Card, CardContent } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
 
 // 투자자 증가 추이 데이터 타입
 interface InvestmentGrowthData {
@@ -46,10 +46,10 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   const [inputError, setInputError] = useState("")
   const [investmentGrowthData, setInvestmentGrowthData] = useState<InvestmentGrowthData[]>([])
   const [isInsufficientBalanceDialogOpen, setIsInsufficientBalanceDialogOpen] = useState(false)
+  const webtoonData = getWebtoonById(id)
 
   // 웹툰 상세 정보 데이터 부분을 수정합니다.
   // 이제 ID를 기반으로 웹툰 정보를 가져오고, 필요한 속성에 기본값을 제공합니다.
-  const webtoonData = getWebtoonById(id)
 
   // 웹툰 데이터가 없는 경우 기본값 설정
   const webtoon = {
@@ -71,6 +71,20 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     status: webtoonData?.status || "ongoing",
   }
 
+  // 진행률 계산 부분도 안전하게 수정
+  const progress = webtoon.goalAmount > 0 ? (webtoon.currentRaised / webtoon.goalAmount) * 100 : 0
+
+  const [dynamicProgress, setDynamicProgress] = useState(progress)
+  const [dynamicCurrentRaised, setDynamicCurrentRaised] = useState(webtoon.currentRaised)
+  const [dynamicTotalInvestors, setDynamicTotalInvestors] = useState(webtoon.totalInvestors)
+
+  // 초기 동적 상태 설정
+  useEffect(() => {
+    setDynamicProgress(progress)
+    setDynamicCurrentRaised(webtoon.currentRaised)
+    setDynamicTotalInvestors(webtoon.totalInvestors)
+  }, [progress, webtoon.currentRaised, webtoon.totalInvestors])
+
   // 투자 버튼 비활성화 조건 확인
   const isInvestmentDisabled = webtoon.isDramatized || webtoon.status === "completed" || hasInvested
 
@@ -82,12 +96,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     return ""
   }
 
-  // 진행률 계산 부분도 안전하게 수정
-  const progress = webtoon.goalAmount > 0 ? (webtoon.currentRaised / webtoon.goalAmount) * 100 : 0
-
   // 최소, 최대 투자 금액 설정
   const MIN_INVESTMENT = 10000
-  const MAX_INVESTMENT = 10000000
+  const MAX_INVESTMENT = 2000000000 // 20억원으로 변경
   const STEP_SIZE = 10000
 
   // 투자 금액 범위 배열 생성 (선택 버튼용)
@@ -152,6 +163,62 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   }, [webtoonData])
 
   useEffect(() => {
+    const handleStorageChange = () => {
+      const storedWebtoons = localStorage.getItem("webtoonsData")
+      if (storedWebtoons) {
+        const webtoonsData = JSON.parse(storedWebtoons)
+        if (webtoonsData[id]) {
+          const updatedData = webtoonsData[id]
+          const newCurrentRaised = updatedData.currentRaised || webtoon.currentRaised
+          const newProgress = webtoon.goalAmount > 0 ? (newCurrentRaised / webtoon.goalAmount) * 100 : 0
+          const newTotalInvestors = updatedData.totalInvestors || webtoon.totalInvestors
+
+          setDynamicCurrentRaised(newCurrentRaised)
+          setDynamicProgress(newProgress)
+          setDynamicTotalInvestors(newTotalInvestors)
+        }
+      }
+    }
+
+    // 초기 로드
+    handleStorageChange()
+
+    // 이벤트 리스너 등록
+    window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("webtoonDataChanged", handleStorageChange)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("webtoonDataChanged", handleStorageChange)
+    }
+  }, [id, webtoon.currentRaised, webtoon.goalAmount, webtoon.totalInvestors])
+
+  useEffect(() => {
+    // 로컬 스토리지에서 업데이트된 웹툰 데이터 로드
+    const storedWebtoons = localStorage.getItem("webtoonsData")
+    if (storedWebtoons) {
+      const webtoonsData = JSON.parse(storedWebtoons)
+      if (webtoonsData[id]) {
+        const updatedData = webtoonsData[id]
+        webtoon.currentRaised = updatedData.currentRaised || webtoon.currentRaised
+        webtoon.totalInvestors = updatedData.totalInvestors || webtoon.totalInvestors
+        webtoon.status = updatedData.status || webtoon.status
+      }
+    }
+
+    // 웹툰 데이터 변경 이벤트 리스너
+    const handleWebtoonDataChange = () => {
+      window.location.reload()
+    }
+
+    window.addEventListener("webtoonDataChanged", handleWebtoonDataChange)
+
+    return () => {
+      window.removeEventListener("webtoonDataChanged", handleWebtoonDataChange)
+    }
+  }, [id])
+
+  useEffect(() => {
     // 로컬 스토리지에서 투자 내역 확인
     const investmentsStr = localStorage.getItem("userInvestments")
     if (investmentsStr) {
@@ -212,28 +279,49 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
   // 투자 가능 여부 확인 (잔액 체크 추가)
   const canInvest = () => {
-    return investmentAmount <= userBalance && investmentAmount >= MIN_INVESTMENT && !isInvestmentDisabled
+    const remainingAmount = webtoon.goalAmount - webtoon.currentRaised
+    const maxInvestAmount = Math.min(investmentAmount, remainingAmount)
+    return maxInvestAmount > 0 && maxInvestAmount <= userBalance && !isInvestmentDisabled
   }
 
   const handleInvest = () => {
+    const remainingAmount = webtoon.goalAmount - webtoon.currentRaised
+
+    if (investmentAmount > userBalance) {
+      setIsInsufficientBalanceDialogOpen(true)
+      return
+    }
+
+    if (investmentAmount > remainingAmount) {
+      // 남은 모금액만큼만 투자하도록 조정
+      setInvestmentAmount(remainingAmount)
+      setKeypadInput(remainingAmount.toString())
+    }
+
     if (canInvest()) {
       openInvestModal()
-    } else if (investmentAmount > userBalance) {
-      toast({
-        title: "잔액 부족",
-        description: "투자 금액이 현재 잔액보다 많습니다.",
-        variant: "destructive",
-        duration: 500,
-      })
     }
   }
 
   const confirmInvestment = () => {
     setIsConfirmDialogOpen(false)
 
+    const remainingAmount = webtoon.goalAmount - webtoon.currentRaised
+    const actualInvestAmount = Math.min(investmentAmount, remainingAmount)
+
     // 투자 후 잔액 계산
-    const newBalance = userBalance - investmentAmount
+    const newBalance = userBalance - actualInvestAmount
     setUserBalance(newBalance)
+
+    // 웹툰 데이터 업데이트
+    const updatedCurrentRaised = webtoon.currentRaised + actualInvestAmount
+    const updatedProgress = (updatedCurrentRaised / webtoon.goalAmount) * 100
+    const isCompleted = updatedProgress >= 100
+
+    // 즉시 UI 상태 업데이트
+    setDynamicCurrentRaised(updatedCurrentRaised)
+    setDynamicProgress(updatedProgress)
+    setDynamicTotalInvestors((webtoon.totalInvestors || 0) + 1)
 
     // 사용자 정보 업데이트
     const user = getUserFromStorage()
@@ -242,22 +330,34 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       localStorage.setItem("currentUser", JSON.stringify(user))
     }
 
+    // 로컬 스토리지의 웹툰 데이터 업데이트
+    const storedWebtoons = localStorage.getItem("webtoonsData")
+    const webtoonsData = storedWebtoons ? JSON.parse(storedWebtoons) : {}
+
+    webtoonsData[id] = {
+      currentRaised: updatedCurrentRaised,
+      progress: updatedProgress,
+      status: isCompleted ? "completed" : "ongoing",
+      totalInvestors: (webtoon.totalInvestors || 0) + 1,
+    }
+
+    localStorage.setItem("webtoonsData", JSON.stringify(webtoonsData))
+
     // 현재 날짜 가져오기
-    const currentDate = new Date().toISOString().split("T")[0] // YYYY-MM-DD 형식
+    const currentDate = new Date().toISOString().split("T")[0]
 
     // 투자 내역 저장
     const investmentsStr = localStorage.getItem("userInvestments")
     const investments = investmentsStr ? JSON.parse(investmentsStr) : []
 
-    // 새 투자 정보 추가
     const newInvestment = {
       webtoonId: id,
       webtoonTitle: webtoon.title,
-      amount: investmentAmount,
-      date: currentDate, // 현재 날짜 추가
+      amount: actualInvestAmount,
+      date: currentDate,
       expectedROI: webtoon.expectedROI,
-      progress: webtoon.progress || 0,
-      status: webtoon.status === "completed" ? "완료" : "제작 중",
+      progress: updatedProgress,
+      status: isCompleted ? "완료됨" : "제작 중",
       slug: id,
       id: id,
     }
@@ -265,35 +365,43 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
     investments.push(newInvestment)
     localStorage.setItem("userInvestments", JSON.stringify(investments))
 
+    // 완료된 프로젝트인 경우 completedProjects에도 추가
+    if (isCompleted) {
+      const completedProjectsStr = localStorage.getItem("completedProjects")
+      const completedProjects = completedProjectsStr ? JSON.parse(completedProjectsStr) : []
+
+      const completedProject = {
+        id: id,
+        title: webtoon.title,
+        genre: webtoon.genre || "판타지, 로맨스",
+        investedAmount: actualInvestAmount,
+        returnAmount: Math.round(actualInvestAmount * (1 + expectedROIValue / 100)),
+        roi: expectedROIValue,
+        completionDate: currentDate,
+        investors: webtoonsData[id].totalInvestors,
+        hasFeedback: false,
+        thumbnail: webtoonData?.thumbnail || "/webtoon-scene.png",
+        slug: id,
+        feedback: "",
+        adaptationInterest: "",
+        investmentDate: currentDate,
+      }
+
+      completedProjects.push(completedProject)
+      localStorage.setItem("completedProjects", JSON.stringify(completedProjects))
+    }
+
     // 투자 상태 업데이트
     setHasInvested(true)
 
-    // 즐겨찾기에 있는 경우 투자 상태 업데이트
-    const storedFavorites = localStorage.getItem("favoriteWebtoons")
-    if (storedFavorites) {
-      const favorites = JSON.parse(storedFavorites)
-      const updatedFavorites = favorites.map((fav: any) => {
-        if (fav.slug === id) {
-          return { ...fav, invested: true }
-        }
-        return fav
-      })
-      localStorage.setItem("favoriteWebtoons", JSON.stringify(updatedFavorites))
-    }
-
-    // 마일리지 적립 (투자 금액 1,000원당 10 마일리지)
-    const mileageToAdd = Math.floor(investmentAmount / 1000) * 10
+    // 마일리지 적립
+    const mileageToAdd = Math.floor(actualInvestAmount / 1000) * 10
     if (mileageToAdd > 0) {
       const mileageDataStr = localStorage.getItem("userMileage")
       const mileageData = mileageDataStr
         ? JSON.parse(mileageDataStr)
-        : {
-            totalMileage: 0,
-            history: [],
-            lastAttendanceDate: null,
-          }
+        : { totalMileage: 0, history: [], lastAttendanceDate: null }
 
-      // 마일리지 업데이트
       const updatedMileageData = {
         ...mileageData,
         totalMileage: (mileageData.totalMileage || 0) + mileageToAdd,
@@ -302,36 +410,34 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             date: currentDate,
             amount: mileageToAdd,
             type: "적립",
-            reason: `웹툰 투자: ${webtoon.title} (${investmentAmount.toLocaleString()}원)`,
+            reason: `웹툰 투자: ${webtoon.title} (${actualInvestAmount.toLocaleString()}원)`,
           },
           ...(mileageData.history || []),
         ],
       }
 
-      // 로컬 스토리지에 저장
       localStorage.setItem("userMileage", JSON.stringify(updatedMileageData))
     }
 
-    // 자산 관리 페이지 데이터 업데이트를 위한 이벤트 발생
+    // 이벤트 발생
     window.dispatchEvent(new Event("storage"))
     window.dispatchEvent(new Event("userDataChanged"))
+    window.dispatchEvent(new Event("webtoonDataChanged"))
 
-    const expectedReturn = Math.round(
-      investmentAmount *
-        (1 +
-          (typeof webtoon.expectedROI === "string"
-            ? Number.parseFloat(webtoon.expectedROI.split("-")[0])
-            : webtoon.expectedROI) /
-            100),
-    )
+    const expectedReturn = Math.round(actualInvestAmount * (1 + expectedROIValue / 100))
 
     toast({
       title: "투자가 완료되었습니다",
-      description: `₩${investmentAmount.toLocaleString()} 투자 완료! 예상 수익: ₩${expectedReturn.toLocaleString()}${
+      description: `₩${actualInvestAmount.toLocaleString()} 투자 완료! 예상 수익: ₩${expectedReturn.toLocaleString()}${
         mileageToAdd > 0 ? ` (마일리지 ${mileageToAdd}P 적립)` : ""
-      }`,
-      duration: 500, // 0.5초 후 메시지 제거
+      }${isCompleted ? " 🎉 프로젝트가 완료되었습니다!" : ""}`,
+      duration: 500,
     })
+
+    // 페이지 새로고침으로 업데이트된 데이터 반영
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
   }
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -430,6 +536,8 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   // 투자 모달에서 확인 버튼 클릭 시 처리
   const confirmKeypadInput = () => {
     const amount = Number.parseInt(keypadInput, 10)
+    const remainingAmount = webtoon.goalAmount - webtoon.currentRaised
+
     if (amount < MIN_INVESTMENT) {
       toast({
         title: "최소 투자 금액 미달",
@@ -447,6 +555,17 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
         variant: "destructive",
         duration: 500,
       })
+      return
+    }
+
+    if (amount > remainingAmount) {
+      toast({
+        title: "모금 한도 초과",
+        description: `남은 모금액 ${remainingAmount.toLocaleString()}원까지만 투자 가능합니다.`,
+        variant: "destructive",
+        duration: 500,
+      })
+      setKeypadInput(remainingAmount.toString())
       return
     }
 
@@ -719,7 +838,6 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 cursor={{ fill: "rgba(0, 0, 0, 0.1)" }}
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
-                    const data = payload[0].payload
                     return (
                       <div className="bg-white dark:bg-darkblue border border-gray/20 rounded-lg p-3 shadow-lg">
                         <p className="text-sm font-medium text-darkblue dark:text-light mb-2">
@@ -800,7 +918,6 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </Avatar>
         </Button>
       </div>
-
       {/* 웹툰 이미지 */}
       <div className="relative h-80 w-full bg-light flex items-center justify-center">
         <Image
@@ -834,7 +951,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
         {/* 진행률 표시 */}
         <div className="absolute top-4 right-4 bg-darkblue/80 text-light text-xs font-medium px-3 py-1 rounded-full z-10">
-          {progress.toFixed(0)}% 모집됨
+          {dynamicProgress.toFixed(0)}% 모집됨
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 bg-dark/80 p-4">
@@ -845,7 +962,6 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       <p className="text-xs text-gray text-center mt-1 px-4">
         ※ 현재는 임시 이미지입니다. 추후 실제 이미지로 교체될 수 있습니다.
       </p>
-
       {/* 사용자 잔액 표시 */}
       <div className="p-4 pt-2">
         <div className="flex items-center justify-between bg-green/10 rounded-xl p-3">
@@ -856,7 +972,6 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           <span className="font-bold text-green">₩{userBalance.toLocaleString()}</span>
         </div>
       </div>
-
       {/* 웹툰 상세 정보 */}
       <div className="p-4 pt-0">
         {/* 주요 정보 카드 */}
@@ -867,7 +982,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
               <div>
                 <p className="text-sm text-gray">현재 모금액</p>
                 <p className="font-bold text-lg text-darkblue dark:text-light">
-                  ₩{typeof webtoon.currentRaised === "number" ? webtoon.currentRaised.toLocaleString() : "0"}
+                  ₩{typeof dynamicCurrentRaised === "number" ? dynamicCurrentRaised.toLocaleString() : "0"}
                 </p>
               </div>
               <div className="text-right">
@@ -878,35 +993,30 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
               </div>
             </div>
 
-            <Progress value={progress} className="h-2 mb-2 bg-gray/20" indicatorClassName="bg-yellow" />
+            <Progress
+              value={dynamicProgress}
+              className="h-3 mb-3 bg-gray/20 transition-all duration-1000 ease-out"
+              indicatorClassName="bg-gradient-to-r from-yellow to-green transition-all duration-1000"
+            />
 
-            <div className="flex justify-between items-center">
-              <p className="text-sm text-darkblue dark:text-light">{progress.toFixed(1)}% 완료</p>
+            <div className="flex justify-between items-center mb-3">
+              <p className="text-sm text-darkblue dark:text-light">{dynamicProgress.toFixed(1)}% 완료</p>
               <p className="text-sm font-medium text-green">예상 수익률: {webtoon.expectedROI}%</p>
             </div>
 
-            {/* 주요 지표 */}
-            <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-gray/10">
-              <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-yellow/20 flex items-center justify-center mb-1">
-                  <Calendar className="h-5 w-5 text-yellow" />
-                </div>
-                <p className="text-xs text-gray">남은 기간</p>
-                <p className="text-sm font-medium text-darkblue dark:text-light">{webtoon.daysLeft}일</p>
+            {/* 남은 투자금액 표시 */}
+            <div className="bg-gradient-to-r from-blue/10 to-purple/10 rounded-lg p-3 border border-blue/20">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-darkblue dark:text-light">남은 투자금액</span>
+                <span className="text-lg font-bold text-blue-600">
+                  ₩{Math.max(0, webtoon.goalAmount - dynamicCurrentRaised).toLocaleString()}
+                </span>
               </div>
-              <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-green/20 flex items-center justify-center mb-1">
-                  <Users className="h-5 w-5 text-green" />
+              <div className="mt-1">
+                <div className="flex justify-between text-xs text-gray">
+                  <span>목표까지</span>
+                  <span>{Math.max(0, 100 - dynamicProgress).toFixed(1)}% 남음</span>
                 </div>
-                <p className="text-xs text-gray">투자자 수</p>
-                <p className="text-sm font-medium text-darkblue dark:text-light">{webtoon.totalInvestors}명</p>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="w-10 h-10 rounded-full bg-darkblue/20 flex items-center justify-center mb-1">
-                  <DollarSign className="h-5 w-5 text-darkblue dark:text-light" />
-                </div>
-                <p className="text-xs text-gray">예상 수익률</p>
-                <p className="text-sm font-medium text-green">{webtoon.expectedROI}%</p>
               </div>
             </div>
           </CardContent>
@@ -1008,7 +1118,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             className={`flex-1 rounded-xl h-12 text-light ${
               !canInvest() ? "bg-gray hover:bg-gray/90" : "bg-green hover:bg-green/90"
             }`}
-            onClick={openInvestModal}
+            onClick={handleInvest}
             disabled={isInvestmentDisabled}
           >
             💰 투자하기
@@ -1026,7 +1136,6 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </Button>
         </div>
       </div>
-
       <Dialog open={isInvestModalOpen} onOpenChange={setIsInvestModalOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
           <DialogHeader>
@@ -1117,9 +1226,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
               <Button
                 variant="outline"
                 className="h-16 text-lg font-bold rounded-xl border-2 border-gray/20 text-darkblue dark:text-light hover:bg-blue/10 hover:border-blue/30 transition-all duration-200 shadow-sm"
-                onClick={() => setKeypadInput("100000")}
+                onClick={() => setKeypadInput("100000000")}
               >
-                10만원
+                1억원
               </Button>
               <Button
                 variant="outline"
@@ -1151,18 +1260,34 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setKeypadInput("2000000")}
+                onClick={() => setKeypadInput("10000000")}
                 className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
               >
-                200만원
+                1천만원
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setKeypadInput("10000000")}
+                onClick={() => setKeypadInput("100000000")}
                 className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
               >
-                1000만원
+                1억원
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setKeypadInput("500000000")}
+                className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
+              >
+                5억원
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setKeypadInput("1000000000")}
+                className="rounded-full flex-1 h-12 font-semibold border-2 border-gray/20 hover:bg-green/10 hover:border-green/30 transition-all duration-200"
+              >
+                10억원
               </Button>
             </div>
           </div>
@@ -1187,7 +1312,6 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* 잔액 부족 다이얼로그 */}
       <Dialog open={isInsufficientBalanceDialogOpen} onOpenChange={setIsInsufficientBalanceDialogOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
@@ -1230,34 +1354,74 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* 투자 확인 다이얼로그 */}
       <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
         <DialogContent className="sm:max-w-[425px] rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100]">
           <DialogHeader>
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">투자 확인</DialogTitle>
           </DialogHeader>
-          <div className="text-center py-4">
-            {/* 투자 확인 다이얼로그에서도 안전 검사 추가 */}
-            <span className="block text-sm text-gray">
-              입력하신 금액 {typeof investmentAmount === "number" ? investmentAmount.toLocaleString() : "0"}원을
-              투자하시겠습니까?
-            </span>
-            <span className="block text-sm text-gray mt-2">
-              예상 수익금은 {typeof expectedReturn === "number" ? expectedReturn.toLocaleString() : "0"}원입니다.
-            </span>
+          <div className="py-4">
+            <div className="text-center mb-6">
+              <p className="text-lg font-bold text-darkblue dark:text-light mb-2">{webtoon.title}</p>
+              <p className="text-sm text-gray">위 작품에 투자하시겠습니까?</p>
+            </div>
 
-            {/* 투자 전후 잔액 표시 */}
-            <div className="mt-4 p-3 bg-green/10 rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-darkblue dark:text-light">현재 잔액:</span>
-                <span className="font-bold text-darkblue dark:text-light">₩{userBalance.toLocaleString()}</span>
+            {/* 투자 정보 카드들 */}
+            <div className="space-y-3 mb-6">
+              {/* 투자 금액 */}
+              <div className="bg-gradient-to-r from-blue/10 to-blue/5 p-4 rounded-xl border border-blue/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-darkblue dark:text-light">투자 금액</span>
+                  </div>
+                  <span className="text-xl font-bold text-blue-600">
+                    {typeof investmentAmount === "number" ? investmentAmount.toLocaleString() : "0"}원
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-darkblue dark:text-light">투자 후 잔액:</span>
-                <span className="font-bold text-green">
-                  ₩{Math.max(0, userBalance - investmentAmount).toLocaleString()}
-                </span>
+
+              {/* 예상 수익금 */}
+              <div className="bg-gradient-to-r from-green/10 to-green/5 p-4 rounded-xl border border-green/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-darkblue dark:text-light">예상 수익금</span>
+                  </div>
+                  <span className="text-xl font-bold text-green-600">
+                    {typeof expectedReturn === "number" ? expectedReturn.toLocaleString() : "0"}원
+                  </span>
+                </div>
+                <div className="mt-2 text-right">
+                  <span className="text-xs text-green-600 font-medium">+{expectedROIValue}% 수익률</span>
+                </div>
+              </div>
+
+              {/* 잔액 정보 */}
+              <div className="bg-gradient-to-r from-yellow/10 to-yellow/5 p-4 rounded-xl border border-yellow/20">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-darkblue dark:text-light">현재 잔액</span>
+                    <span className="font-bold text-darkblue dark:text-light">{userBalance.toLocaleString()}원</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-darkblue dark:text-light">투자 후 잔액</span>
+                    <span className="font-bold text-yellow-600">
+                      {Math.max(0, userBalance - investmentAmount).toLocaleString()}원
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 투자 요약 */}
+            <div className="bg-gradient-to-r from-purple/10 to-purple/5 p-4 rounded-xl border border-purple/20">
+              <div className="text-center">
+                <p className="text-sm text-gray mb-2">투자 완료 시 예상 총 자산</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {(Math.max(0, userBalance - investmentAmount) + expectedReturn).toLocaleString()}원
+                </p>
+                <p className="text-xs text-purple-600 mt-1">(잔액 + 예상 수익금)</p>
               </div>
             </div>
           </div>
