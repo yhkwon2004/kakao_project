@@ -52,13 +52,60 @@ export function CompletedProjectsScreen() {
 
   // 컴포넌트 마운트 시 빈 배열로 초기화 (이메일 로그인 사용자는 초기 데이터 없음)
   useEffect(() => {
-    const storedProjects = localStorage.getItem("completedProjects")
-    if (storedProjects) {
-      setCompletedProjects(JSON.parse(storedProjects))
-    } else {
-      // 이메일 로그인 사용자는 빈 상태로 시작
-      setCompletedProjects([])
-      localStorage.setItem("completedProjects", JSON.stringify([]))
+    // 완료된 프로젝트 로드
+    const loadCompletedProjects = () => {
+      const storedProjects = localStorage.getItem("completedProjects")
+      const existingCompleted = storedProjects ? JSON.parse(storedProjects) : []
+
+      // 투자 내역에서 100% 완료된 프로젝트 찾기
+      const investmentsStr = localStorage.getItem("userInvestments")
+      if (investmentsStr) {
+        const investments = JSON.parse(investmentsStr)
+        const newlyCompleted = investments.filter(
+          (inv: any) => inv.progress >= 100 && !existingCompleted.some((comp: any) => comp.id === inv.webtoonId),
+        )
+
+        // 새로 완료된 프로젝트들을 completedProjects에 추가
+        const updatedCompleted = [
+          ...existingCompleted,
+          ...newlyCompleted.map((inv: any) => ({
+            id: inv.webtoonId,
+            title: inv.webtoonTitle || inv.title,
+            slug: inv.slug || inv.webtoonId,
+            genre: "판타지, 로맨스", // 기본값
+            thumbnail: inv.webtoonThumbnail || inv.thumbnail || "/placeholder.svg",
+            investedAmount: inv.amount,
+            returnAmount: Math.round(inv.amount * 1.15), // 15% 수익률 가정
+            roi: 15,
+            investmentDate: inv.date,
+            completionDate: new Date().toISOString().split("T")[0],
+            hasFeedback: false,
+          })),
+        ]
+
+        if (newlyCompleted.length > 0) {
+          localStorage.setItem("completedProjects", JSON.stringify(updatedCompleted))
+        }
+
+        setCompletedProjects(updatedCompleted)
+      } else {
+        setCompletedProjects(existingCompleted)
+      }
+    }
+
+    loadCompletedProjects()
+
+    // storage 이벤트 리스너 추가
+    const handleStorageChange = () => {
+      loadCompletedProjects()
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("userDataChanged", handleStorageChange)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("userDataChanged", handleStorageChange)
     }
   }, [])
 

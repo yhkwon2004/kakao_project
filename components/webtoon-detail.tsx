@@ -253,13 +253,15 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
     // 웹툰 데이터 업데이트
     const updatedCurrentRaised = dynamicCurrentRaised + actualInvestAmount
-    const updatedTotalInvestors = dynamicTotalInvestors + 1
     const updatedProgress = (updatedCurrentRaised / webtoon.goalAmount) * 100
     const isCompleted = updatedProgress >= 100
 
     // 즉시 UI 상태 업데이트
     setDynamicCurrentRaised(updatedCurrentRaised)
     setDynamicProgress(updatedProgress)
+    // 기존 투자자인지 확인 (추가 투자는 카운트하지 않음)
+    const isNewInvestor = !hasInvested
+    const updatedTotalInvestors = isNewInvestor ? dynamicTotalInvestors + 1 : dynamicTotalInvestors
     setDynamicTotalInvestors(updatedTotalInvestors)
 
     // 웹툰 진행 상황 저장 (다른 페이지에서도 반영되도록)
@@ -440,6 +442,16 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       ? Number.parseFloat(webtoon.expectedROI.split("-")[0] || "15")
       : webtoon.expectedROI || 15
   const expectedReturn = Math.round(investmentAmount * (1 + expectedROIValue / 100))
+
+  // 투자자 증가 그래프 데이터를 동적으로 생성
+  const generateInvestorGrowthData = () => {
+    const baseData = [45, 67, 89, 112, 134, 156]
+    const currentInvestors = dynamicTotalInvestors
+    return [...baseData, currentInvestors]
+  }
+
+  const investorGrowthData = generateInvestorGrowthData()
+  const maxInvestors = Math.max(...investorGrowthData)
 
   return (
     <div className="flex flex-col pb-32 bg-light dark:bg-dark">
@@ -739,7 +751,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   </div>
 
                   {/* 선형 그래프 */}
-                  <div className="relative h-48 bg-gradient-to-t from-blue/5 to-transparent rounded-lg p-4 border border-blue/10">
+                  <div className="relative h-48 bg-gradient-to-t from-blue/5 to-transparent rounded-lg p-4 border border-blue/10 overflow-hidden">
                     <svg className="w-full h-full" viewBox="0 0 300 160" preserveAspectRatio="none">
                       {/* 그리드 라인 */}
                       <defs>
@@ -753,39 +765,46 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                       <polyline
                         fill="none"
                         stroke="#3B82F6"
-                        strokeWidth="3"
+                        strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        points="0,140 50,120 100,100 150,85 200,70 250,50 300,30"
+                        points={investorGrowthData
+                          .map(
+                            (value, index) =>
+                              `${(index / (investorGrowthData.length - 1)) * 300},${160 - (value / maxInvestors) * 130}`,
+                          )
+                          .join(" ")}
                       />
 
                       {/* 데이터 포인트 */}
-                      {[
-                        { x: 0, y: 140, value: 45 },
-                        { x: 50, y: 120, value: 67 },
-                        { x: 100, y: 100, value: 89 },
-                        { x: 150, y: 85, value: 112 },
-                        { x: 200, y: 70, value: 134 },
-                        { x: 250, y: 50, value: 156 },
-                        { x: 300, y: 30, value: dynamicTotalInvestors },
-                      ].map((point, index) => (
-                        <g key={index}>
-                          <circle cx={point.x} cy={point.y} r="4" fill="#3B82F6" stroke="white" strokeWidth="2" />
-                          <text
-                            x={point.x}
-                            y={point.y - 10}
-                            textAnchor="middle"
-                            className="text-xs fill-blue-600 font-medium"
-                          >
-                            {point.value}
-                          </text>
-                        </g>
-                      ))}
+                      {investorGrowthData.map((value, index) => {
+                        const x = (index / (investorGrowthData.length - 1)) * 300
+                        const y = 160 - (value / maxInvestors) * 130
+                        return (
+                          <g key={index}>
+                            <circle cx={x} cy={y} r="3" fill="#3B82F6" stroke="white" strokeWidth="2" />
+                            <text
+                              x={x}
+                              y={y - 8}
+                              textAnchor="middle"
+                              className="text-xs fill-blue-600 font-medium"
+                              style={{ fontSize: "10px" }}
+                            >
+                              {value}
+                            </text>
+                          </g>
+                        )
+                      })}
 
                       {/* 영역 채우기 */}
                       <polygon
                         fill="url(#gradient)"
-                        points="0,140 50,120 100,100 150,85 200,70 250,50 300,30 300,160 0,160"
+                        points={`${investorGrowthData
+                          .map(
+                            (value, index) =>
+                              `${(index / (investorGrowthData.length - 1)) * 300},${160 - (value / maxInvestors) * 130}`,
+                          )
+                          .join(" ")} 300,160 0,160`}
                         opacity="0.2"
                       />
 
@@ -797,41 +816,41 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                       </defs>
                     </svg>
 
-                    {/* X축 라벨 */}
-                    <div className="flex justify-between mt-2 text-xs text-gray">
-                      <span>6개월전</span>
-                      <span>5개월전</span>
-                      <span>4개월전</span>
-                      <span>3개월전</span>
-                      <span>2개월전</span>
-                      <span>1개월전</span>
-                      <span>현재</span>
+                    {/* X축 라벨 - 모바일 최적화 */}
+                    <div className="flex justify-between mt-2 text-xs text-gray px-1">
+                      <span className="text-[10px] sm:text-xs">6개월전</span>
+                      <span className="text-[10px] sm:text-xs">5개월전</span>
+                      <span className="text-[10px] sm:text-xs">4개월전</span>
+                      <span className="text-[10px] sm:text-xs">3개월전</span>
+                      <span className="text-[10px] sm:text-xs">2개월전</span>
+                      <span className="text-[10px] sm:text-xs">1개월전</span>
+                      <span className="text-[10px] sm:text-xs">현재</span>
                     </div>
                   </div>
 
-                  {/* 투자자 통계 */}
-                  <div className="grid grid-cols-2 gap-4 mt-6">
-                    <div className="bg-gradient-to-br from-blue/10 to-blue/5 p-4 rounded-xl border border-blue/20">
+                  {/* 투자자 통계 - 모바일 최적화 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-6">
+                    <div className="bg-gradient-to-br from-blue/10 to-blue/5 p-3 sm:p-4 rounded-xl border border-blue/20">
                       <div className="flex items-center mb-2">
-                        <div className="bg-blue/20 p-1.5 rounded-lg mr-2">
-                          <Users className="h-4 w-4 text-blue-600" />
+                        <div className="bg-blue/20 p-1 sm:p-1.5 rounded-lg mr-2">
+                          <Users className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
                         </div>
                         <span className="text-xs font-medium text-gray">총 투자자</span>
                       </div>
-                      <p className="text-2xl font-bold text-blue-600">{dynamicTotalInvestors}명</p>
+                      <p className="text-lg sm:text-2xl font-bold text-blue-600">{dynamicTotalInvestors}명</p>
                       <p className="text-xs text-green-600 mt-1">
                         +{Math.floor(dynamicTotalInvestors * 0.15)}명 (이번 달)
                       </p>
                     </div>
 
-                    <div className="bg-gradient-to-br from-green/10 to-green/5 p-4 rounded-xl border border-green/20">
+                    <div className="bg-gradient-to-br from-green/10 to-green/5 p-3 sm:p-4 rounded-xl border border-green/20">
                       <div className="flex items-center mb-2">
-                        <div className="bg-green/20 p-1.5 rounded-lg mr-2">
-                          <BarChart3 className="h-4 w-4 text-green-600" />
+                        <div className="bg-green/20 p-1 sm:p-1.5 rounded-lg mr-2">
+                          <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
                         </div>
                         <span className="text-xs font-medium text-gray">증가율</span>
                       </div>
-                      <p className="text-2xl font-bold text-green-600">+247%</p>
+                      <p className="text-lg sm:text-2xl font-bold text-green-600">+247%</p>
                       <p className="text-xs text-green-600 mt-1">지난 6개월 대비</p>
                     </div>
                   </div>
