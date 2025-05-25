@@ -885,6 +885,20 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </TabsContent>
         </Tabs>
 
+        {/* 고정 하단 버튼 */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-dark/95 backdrop-blur-sm border-t border-gray/10 shadow-2xl z-50">
+          <div className="flex gap-3 p-4">
+            <Button
+              className={`flex-1 rounded-xl h-14 font-semibold shadow-lg transition-all duration-200 ${
+                dynamicProgress >= 100
+                  ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+                  : hasInvested
+                    ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 text-white"
+                    : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transform hover:scale-105 text-white"
+              }`}
+              onClick={dynamicProgress >= 100 ? undefined : handleInvest}
+              disabled={dynamicProgress >= 100}
+            >
               <div className="flex items-center justify-center">
                 {dynamicProgress >= 100 ? (
                   <>
