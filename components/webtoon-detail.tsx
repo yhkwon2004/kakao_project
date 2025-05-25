@@ -1032,8 +1032,6 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
             <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">
               투자 금액 입력
             </DialogTitle>
-            <DialogDescription className="text-center text-sm text-gray">
-              투자하실 금액을 입력해주세요
             </DialogDescription>
           </DialogHeader>
 
@@ -1140,8 +1138,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   onClick={() => setKeypadInput("0")}
                 >
                   <div className="flex flex-col items-center">
-                    <span className="text-xs">전체</span>
-                    <span className="text-xs">삭제</span>
+                    <span className="text-xs">C</span>
                   </div>
                 </Button>
 
