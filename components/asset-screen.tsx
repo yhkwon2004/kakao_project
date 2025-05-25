@@ -261,7 +261,7 @@ export function AssetScreen() {
                         <div className="flex items-center space-x-2 mb-2">
                           <span className="text-xs text-gray">투자금액</span>
                           <span className="text-sm font-medium text-darkblue dark:text-light">
-                            ₩{investment.amount.toLocaleString()}
+                            {investment.amount.toLocaleString()}원
                           </span>
                         </div>
                         <div className="flex items-center space-x-2">
