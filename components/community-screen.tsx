@@ -286,13 +286,13 @@ export function CommunityScreen() {
   const getTagColor = (tag: string) => {
     switch (tag) {
       case "제작 업데이트":
-        return "bg-blue-100 text-blue-700 border-blue-200"
+        return "bg-[#5F859F]/10 text-[#5F859F] border-[#5F859F]/20"
       case "투자 분석":
-        return "bg-green-100 text-green-700 border-green-200"
+        return "bg-[#4F8F78]/10 text-[#4F8F78] border-[#4F8F78]/20"
       case "캐스팅 소식":
-        return "bg-purple-100 text-purple-700 border-purple-200"
+        return "bg-[#706FB9]/10 text-[#706FB9] border-[#706FB9]/20"
       default:
-        return "bg-gray-100 text-gray-700 border-gray-200"
+        return "bg-[#989898]/10 text-[#989898] border-[#989898]/20"
     }
   }
 
@@ -300,24 +300,24 @@ export function CommunityScreen() {
   const renderPostCard = (post: Post) => (
     <Card
       key={post.id}
-      className="rounded-xl border border-gray/10 bg-white dark:bg-darkblue/20 hover:shadow-lg hover:border-yellow/30 transition-all duration-300 cursor-pointer group"
+      className="rounded-xl border border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F]/20 hover:shadow-lg hover:border-[#F9DF52]/30 transition-all duration-300 cursor-pointer group"
       onClick={() => handleReadPost(post)}
     >
       <CardHeader className="p-6 pb-4">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 ring-2 ring-yellow/20">
+            <Avatar className="h-10 w-10 ring-2 ring-[#F9DF52]/20">
               <AvatarImage
                 src={post.author === currentUser && profileImage ? profileImage : "/placeholder.svg"}
                 alt={post.author}
               />
-              <AvatarFallback className="bg-gradient-to-br from-yellow/20 to-green/20 text-darkblue dark:text-light font-semibold">
+              <AvatarFallback className="bg-gradient-to-br from-[#F9DF52]/20 to-[#4F8F78]/20 text-[#323233] dark:text-[#F5D949] font-semibold">
                 {post.authorInitial}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold text-darkblue dark:text-light">{post.author}</p>
-              <div className="flex items-center gap-2 text-xs text-gray">
+              <p className="font-semibold text-[#323233] dark:text-[#F5D949]">{post.author}</p>
+              <div className="flex items-center gap-2 text-xs text-[#989898]">
                 <Clock className="h-3 w-3" />
                 <span>{post.time}</span>
                 <span>•</span>
@@ -334,15 +334,18 @@ export function CommunityScreen() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-full hover:bg-gray/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-8 w-8 rounded-full hover:bg-[#989898]/10 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <MoreVertical className="h-4 w-4 text-gray" />
+                    <MoreVertical className="h-4 w-4 text-[#989898]" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="rounded-xl">
+                <DropdownMenuContent
+                  align="end"
+                  className="rounded-xl bg-[#F9F9F9] dark:bg-[#3F3F3F] border-[#C2BDAD] dark:border-[#454858]"
+                >
                   <DropdownMenuItem
-                    className="text-red-500 cursor-pointer rounded-lg"
+                    className="text-[#D16561] cursor-pointer rounded-lg hover:bg-[#D16561]/10"
                     onClick={(e) => {
                       e.stopPropagation()
                       setSelectedPost(post)
@@ -360,32 +363,32 @@ export function CommunityScreen() {
       </CardHeader>
 
       <CardContent className="px-6 pb-4">
-        <h3 className="font-bold text-lg mb-3 text-darkblue dark:text-light group-hover:text-yellow transition-colors line-clamp-2">
+        <h3 className="font-bold text-lg mb-3 text-[#323233] dark:text-[#F5D949] group-hover:text-[#F9DF52] transition-colors line-clamp-2">
           {post.title}
         </h3>
-        <p className="text-sm text-darkblue/70 dark:text-light/70 line-clamp-3 leading-relaxed">{post.content}</p>
+        <p className="text-sm text-[#323233]/70 dark:text-[#F5D949]/70 line-clamp-3 leading-relaxed">{post.content}</p>
       </CardContent>
 
-      <CardFooter className="px-6 py-4 bg-gray/5 dark:bg-darkblue/10 border-t border-gray/5">
+      <CardFooter className="px-6 py-4 bg-[#E5E4DC]/5 dark:bg-[#383B4B]/10 border-t border-[#C2BDAD]/5 dark:border-[#454858]/5">
         <div className="flex justify-between items-center w-full">
           <Button
             variant="ghost"
             size="sm"
             className={`rounded-full transition-all duration-300 ${
               post.liked
-                ? "bg-red-50 text-red-500 hover:bg-red-100 border border-red-200"
-                : "text-gray hover:text-red-500 hover:bg-red-50"
+                ? "bg-[#D16561]/10 text-[#D16561] hover:bg-[#D16561]/20 border border-[#D16561]/20"
+                : "text-[#989898] hover:text-[#D16561] hover:bg-[#D16561]/10"
             }`}
             onClick={(e) => handleLike(post.id, e)}
           >
-            <ThumbsUp className={`h-4 w-4 mr-2 transition-all ${post.liked ? "fill-red-500" : ""}`} />
+            <ThumbsUp className={`h-4 w-4 mr-2 transition-all ${post.liked ? "fill-[#D16561]" : ""}`} />
             <span className="font-medium">{post.likes}</span>
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
-            className="text-gray hover:text-darkblue dark:hover:text-light rounded-full"
+            className="text-[#989898] hover:text-[#323233] dark:hover:text-[#F5D949] rounded-full"
           >
             <MessageCircle className="h-4 w-4 mr-2" />
             <span className="font-medium">{post.comments.length}</span>
@@ -395,51 +398,10 @@ export function CommunityScreen() {
     </Card>
   )
 
-  // Comment rendering function
-  const renderComments = (comments: Comment[]) => {
-    if (comments.length === 0) {
-      return (
-        <div className="text-center py-8 text-gray">
-          <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">아직 댓글이 없습니다.</p>
-          <p className="text-xs mt-1">첫 댓글을 작성해보세요!</p>
-        </div>
-      )
-    }
-
-    return (
-      <div className="space-y-4 mt-6">
-        {comments.map((comment) => (
-          <div
-            key={comment.id}
-            className="flex gap-3 p-4 bg-gray/5 dark:bg-darkblue/10 rounded-xl border border-gray/10"
-          >
-            <Avatar className="h-8 w-8 flex-shrink-0">
-              <AvatarImage
-                src={comment.author === currentUser && profileImage ? profileImage : "/placeholder.svg"}
-                alt={comment.author}
-              />
-              <AvatarFallback className="bg-gradient-to-br from-yellow/20 to-green/20 text-darkblue dark:text-light text-xs font-semibold">
-                {comment.authorInitial}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="flex justify-between items-center mb-2">
-                <p className="font-semibold text-sm text-darkblue dark:text-light">{comment.author}</p>
-                <p className="text-xs text-gray">{comment.time}</p>
-              </div>
-              <p className="text-sm text-darkblue/80 dark:text-light/80 leading-relaxed">{comment.content}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
   return (
-    <div className="flex flex-col pb-20 bg-gray/5 dark:bg-dark min-h-screen">
+    <div className="flex flex-col pb-20 bg-[#E5E4DC]/5 dark:bg-[#323233] min-h-screen">
       {/* Header */}
-      <div className="bg-white dark:bg-darkblue border-b border-gray/10 sticky top-0 z-40">
+      <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#C2BDAD] dark:border-[#454858] sticky top-0 z-40">
         <div className="flex justify-between items-center p-4">
           <div className="flex items-center gap-3">
             <Logo size="md" showSubtitle={false} />
@@ -448,16 +410,16 @@ export function CommunityScreen() {
             <Button
               variant="outline"
               size="sm"
-              className="rounded-full border-green text-green hover:bg-green/10 font-medium"
+              className="rounded-full border-[#4F8F78] text-[#4F8F78] hover:bg-[#4F8F78]/10 font-medium"
               onClick={() => router.push("/community/write")}
             >
               <PenSquare className="h-4 w-4 mr-2" />
               글쓰기
             </Button>
             <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.push("/mypage")}>
-              <Avatar className="h-9 w-9 ring-2 ring-yellow/20">
+              <Avatar className="h-9 w-9 ring-2 ring-[#F9DF52]/20">
                 <AvatarImage src={profileImage || "/placeholder.svg"} alt={currentUser} />
-                <AvatarFallback className="bg-gradient-to-br from-yellow/20 to-green/20 text-darkblue dark:text-light font-semibold">
+                <AvatarFallback className="bg-gradient-to-br from-[#F9DF52]/20 to-[#4F8F78]/20 text-[#323233] dark:text-[#F5D949] font-semibold">
                   {currentUser.charAt(0)}
                 </AvatarFallback>
               </Avatar>
@@ -469,18 +431,18 @@ export function CommunityScreen() {
         <div className="px-4 pb-4">
           <div className="flex gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#989898]" />
               <Input
                 placeholder="게시물 검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 rounded-full border-gray/20 bg-gray/5 focus:bg-white transition-colors"
+                className="pl-10 rounded-full border-[#C2BDAD] dark:border-[#454858] bg-[#E5E4DC]/5 dark:bg-[#383B4B]/20 focus:bg-[#F9F9F9] dark:focus:bg-[#3F3F3F] transition-colors text-[#323233] dark:text-[#F5D949] focus:border-[#5F859F]"
               />
             </div>
             <Button
               variant="outline"
               size="icon"
-              className="rounded-full border-gray/20"
+              className="rounded-full border-[#C2BDAD] dark:border-[#454858] text-[#989898] hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
               onClick={() => setIsFilterOpen(true)}
             >
               <Filter className="h-4 w-4" />
@@ -490,16 +452,16 @@ export function CommunityScreen() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white dark:bg-darkblue border-b border-gray/10 sticky top-[120px] z-30">
+      <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#C2BDAD] dark:border-[#454858] sticky top-[120px] z-30">
         <div className="p-4">
           <Tabs defaultValue="all" onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-5 bg-gray/10 dark:bg-darkblue/30 p-1 rounded-full w-full">
+            <TabsList className="grid grid-cols-5 bg-[#E5E4DC]/10 dark:bg-[#383B4B]/30 p-1 rounded-full w-full">
               <TabsTrigger
                 value="all"
                 className={`rounded-full transition-all font-medium ${
                   activeTab === "all"
-                    ? "bg-white dark:bg-darkblue text-darkblue dark:text-light shadow-sm"
-                    : "text-gray hover:text-darkblue dark:hover:text-light"
+                    ? "bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949] shadow-sm"
+                    : "text-[#989898] hover:text-[#323233] dark:hover:text-[#F5D949]"
                 }`}
               >
                 전체
@@ -508,8 +470,8 @@ export function CommunityScreen() {
                 value="my"
                 className={`rounded-full transition-all font-medium ${
                   activeTab === "my"
-                    ? "bg-white dark:bg-darkblue text-darkblue dark:text-light shadow-sm"
-                    : "text-gray hover:text-darkblue dark:hover:text-light"
+                    ? "bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949] shadow-sm"
+                    : "text-[#989898] hover:text-[#323233] dark:hover:text-[#F5D949]"
                 }`}
               >
                 내 글
@@ -518,8 +480,8 @@ export function CommunityScreen() {
                 value="updates"
                 className={`rounded-full transition-all font-medium ${
                   activeTab === "updates"
-                    ? "bg-white dark:bg-darkblue text-darkblue dark:text-light shadow-sm"
-                    : "text-gray hover:text-darkblue dark:hover:text-light"
+                    ? "bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949] shadow-sm"
+                    : "text-[#989898] hover:text-[#323233] dark:hover:text-[#F5D949]"
                 }`}
               >
                 업데이트
@@ -528,8 +490,8 @@ export function CommunityScreen() {
                 value="analysis"
                 className={`rounded-full transition-all font-medium ${
                   activeTab === "analysis"
-                    ? "bg-white dark:bg-darkblue text-darkblue dark:text-light shadow-sm"
-                    : "text-gray hover:text-darkblue dark:hover:text-light"
+                    ? "bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949] shadow-sm"
+                    : "text-[#989898] hover:text-[#323233] dark:hover:text-[#F5D949]"
                 }`}
               >
                 분석
@@ -538,8 +500,8 @@ export function CommunityScreen() {
                 value="news"
                 className={`rounded-full transition-all font-medium ${
                   activeTab === "news"
-                    ? "bg-white dark:bg-darkblue text-darkblue dark:text-light shadow-sm"
-                    : "text-gray hover:text-darkblue dark:hover:text-light"
+                    ? "bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949] shadow-sm"
+                    : "text-[#989898] hover:text-[#323233] dark:hover:text-[#F5D949]"
                 }`}
               >
                 소식
@@ -557,9 +519,9 @@ export function CommunityScreen() {
               getFilteredPosts().map(renderPostCard)
             ) : (
               <div className="text-center py-12">
-                <Users className="h-16 w-16 mx-auto mb-4 text-gray/30" />
-                <p className="text-gray text-lg font-medium">검색 결과가 없습니다</p>
-                <p className="text-gray/70 text-sm mt-1">다른 키워드로 검색해보세요</p>
+                <Users className="h-16 w-16 mx-auto mb-4 text-[#989898]/30" />
+                <p className="text-[#989898] text-lg font-medium">검색 결과가 없습니다</p>
+                <p className="text-[#989898]/70 text-sm mt-1">다른 키워드로 검색해보세요</p>
               </div>
             )}
           </TabsContent>
@@ -569,12 +531,12 @@ export function CommunityScreen() {
               getFilteredPosts().map(renderPostCard)
             ) : (
               <div className="text-center py-12">
-                <PenSquare className="h-16 w-16 mx-auto mb-4 text-gray/30" />
-                <p className="text-gray text-lg font-medium">작성한 게시물이 없습니다</p>
-                <p className="text-gray/70 text-sm mt-1 mb-4">첫 번째 게시물을 작성해보세요</p>
+                <PenSquare className="h-16 w-16 mx-auto mb-4 text-[#989898]/30" />
+                <p className="text-[#989898] text-lg font-medium">작성한 게시물이 없습니다</p>
+                <p className="text-[#989898]/70 text-sm mt-1 mb-4">첫 번째 게시물을 작성해보세요</p>
                 <Button
                   variant="outline"
-                  className="rounded-full border-green text-green hover:bg-green/10"
+                  className="rounded-full border-[#4F8F78] text-[#4F8F78] hover:bg-[#4F8F78]/10"
                   onClick={() => router.push("/community/write")}
                 >
                   <PenSquare className="h-4 w-4 mr-2" />첫 게시물 작성하기
@@ -599,14 +561,16 @@ export function CommunityScreen() {
 
       {/* Delete confirmation dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="w-[90vw] max-w-[350px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
+        <DialogContent className="w-[90vw] max-w-[350px] rounded-2xl bg-[#F9F9F9] dark:bg-[#3F3F3F] border border-[#C2BDAD] dark:border-[#454858]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-darkblue dark:text-light">게시물 삭제</DialogTitle>
-            <DialogDescription>이 게시물을 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</DialogDescription>
+            <DialogTitle className="text-xl font-bold text-[#323233] dark:text-[#F5D949]">게시물 삭제</DialogTitle>
+            <DialogDescription className="text-[#989898]">
+              이 게시물을 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="py-6 flex items-center justify-center">
-            <div className="bg-red-50 dark:bg-red-900/10 p-6 rounded-xl flex items-center gap-4 text-red-500">
+            <div className="bg-[#D16561]/10 dark:bg-[#D16561]/10 p-6 rounded-xl flex items-center gap-4 text-[#D16561]">
               <AlertTriangle className="h-8 w-8" />
               <div>
                 <p className="font-semibold">삭제 확인</p>
@@ -619,14 +583,14 @@ export function CommunityScreen() {
             <Button
               type="button"
               variant="outline"
-              className="flex-1 rounded-xl border-gray/20 text-gray h-12"
+              className="flex-1 rounded-xl border-[#C2BDAD] dark:border-[#454858] text-[#989898] h-12"
               onClick={() => setIsDeleteDialogOpen(false)}
             >
               취소
             </Button>
             <Button
               type="button"
-              className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 text-white h-12 font-semibold"
+              className="flex-1 rounded-xl bg-[#D16561] hover:bg-[#DD8369] text-[#F9F9F9] h-12 font-semibold"
               onClick={handleDeletePost}
             >
               삭제하기
@@ -637,17 +601,17 @@ export function CommunityScreen() {
 
       {/* Filter Dialog */}
       <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-        <DialogContent className="w-[90vw] max-w-[280px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
+        <DialogContent className="w-[90vw] max-w-[280px] rounded-2xl bg-[#F9F9F9] dark:bg-[#3F3F3F] border border-[#C2BDAD] dark:border-[#454858]">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-darkblue dark:text-light">정렬 옵션</DialogTitle>
-            <DialogDescription>게시물을 어떻게 정렬하시겠습니까?</DialogDescription>
+            <DialogTitle className="text-lg font-bold text-[#323233] dark:text-[#F5D949]">정렬 옵션</DialogTitle>
+            <DialogDescription className="text-[#989898]">게시물을 어떻게 정렬하시겠습니까?</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 py-4">
             <Button
               variant={sortBy === "latest" ? "default" : "ghost"}
               className={`w-full justify-start rounded-xl ${
-                sortBy === "latest" ? "bg-yellow text-dark" : "text-darkblue dark:text-light"
+                sortBy === "latest" ? "bg-[#F9DF52] text-[#323233]" : "text-[#323233] dark:text-[#F5D949]"
               }`}
               onClick={() => {
                 setSortBy("latest")
@@ -661,7 +625,7 @@ export function CommunityScreen() {
             <Button
               variant={sortBy === "views" ? "default" : "ghost"}
               className={`w-full justify-start rounded-xl ${
-                sortBy === "views" ? "bg-yellow text-dark" : "text-darkblue dark:text-light"
+                sortBy === "views" ? "bg-[#F9DF52] text-[#323233]" : "text-[#323233] dark:text-[#F5D949]"
               }`}
               onClick={() => {
                 setSortBy("views")
@@ -675,7 +639,7 @@ export function CommunityScreen() {
             <Button
               variant={sortBy === "likes" ? "default" : "ghost"}
               className={`w-full justify-start rounded-xl ${
-                sortBy === "likes" ? "bg-yellow text-dark" : "text-darkblue dark:text-light"
+                sortBy === "likes" ? "bg-[#F9DF52] text-[#323233]" : "text-[#323233] dark:text-[#F5D949]"
               }`}
               onClick={() => {
                 setSortBy("likes")

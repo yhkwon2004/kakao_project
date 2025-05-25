@@ -4,6 +4,7 @@ import { Noto_Sans_KR } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { ThemeInitializer } from "@/components/theme-initializer"
 
 const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
@@ -25,6 +26,7 @@ export default function RootLayout({
     <html lang="ko">
       <body className={notoSansKR.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <ThemeInitializer />
           {children}
           <Toaster />
         </ThemeProvider>

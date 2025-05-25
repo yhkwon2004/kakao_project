@@ -70,10 +70,15 @@ export function WebtoonListScreen() {
   const filteredWebtoons = getFilteredWebtoons()
 
   return (
-    <div className="flex flex-col pb-20 bg-light dark:bg-dark">
+    <div className="flex flex-col pb-20 bg-[#FAFAFA] dark:bg-[#323233]">
       {/* 헤더 */}
-      <div className="flex items-center p-4 border-b border-gray/10">
-        <Button variant="ghost" size="icon" className="mr-2" onClick={() => router.back()}>
+      <div className="flex items-center p-4 border-b border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F]">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="mr-2 text-[#323233] dark:text-[#F5D949] hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
+          onClick={() => router.back()}
+        >
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <Logo size="sm" showSubtitle={false} />
@@ -83,10 +88,10 @@ export function WebtoonListScreen() {
       <div className="p-4">
         <div className="flex gap-2 mb-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#989898]" />
             <Input
               placeholder="웹툰 검색"
-              className="pl-9 rounded-xl border-gray/20"
+              className="pl-9 rounded-xl border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949] focus:border-[#5F859F]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -94,22 +99,22 @@ export function WebtoonListScreen() {
           <Button
             variant="outline"
             size="icon"
-            className="rounded-xl border-gray/20"
+            className="rounded-xl border-[#C2BDAD] dark:border-[#454858] text-[#989898] hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
             onClick={() => setShowFilters(!showFilters)}
           >
-            <Filter className="h-4 w-4 text-gray" />
+            <Filter className="h-4 w-4" />
           </Button>
         </div>
 
         {showFilters && (
-          <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-light dark:bg-darkblue/20 rounded-xl border border-gray/10">
+          <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-[#E5E4DC] dark:bg-[#383B4B]/20 rounded-xl border border-[#C2BDAD] dark:border-[#454858]">
             <div>
-              <label className="text-xs text-gray mb-1 block">카테고리</label>
+              <label className="text-xs text-[#989898] mb-1 block">카테고리</label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="rounded-lg border-gray/20 h-9">
+                <SelectTrigger className="rounded-lg border-[#C2BDAD] dark:border-[#454858] h-9 bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949]">
                   <SelectValue placeholder="모든 카테고리" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-[#C2BDAD] dark:border-[#454858]">
                   <SelectItem value="all">모든 카테고리</SelectItem>
                   <SelectItem value="판타지">판타지</SelectItem>
                   <SelectItem value="로맨스">로맨스</SelectItem>
@@ -119,12 +124,12 @@ export function WebtoonListScreen() {
             </div>
 
             <div>
-              <label className="text-xs text-gray mb-1 block">진행률</label>
+              <label className="text-xs text-[#989898] mb-1 block">진행률</label>
               <Select value={progressFilter} onValueChange={setProgressFilter}>
-                <SelectTrigger className="rounded-lg border-gray/20 h-9">
+                <SelectTrigger className="rounded-lg border-[#C2BDAD] dark:border-[#454858] h-9 bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949]">
                   <SelectValue placeholder="모든 진행률" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-[#C2BDAD] dark:border-[#454858]">
                   <SelectItem value="all">모든 진행률</SelectItem>
                   <SelectItem value="high">높음 (70% 이상)</SelectItem>
                   <SelectItem value="medium">중간 (40-70%)</SelectItem>
@@ -134,12 +139,12 @@ export function WebtoonListScreen() {
             </div>
 
             <div>
-              <label className="text-xs text-gray mb-1 block">남은 시간</label>
+              <label className="text-xs text-[#989898] mb-1 block">남은 시간</label>
               <Select value={timeFilter} onValueChange={setTimeFilter}>
-                <SelectTrigger className="rounded-lg border-gray/20 h-9">
+                <SelectTrigger className="rounded-lg border-[#C2BDAD] dark:border-[#454858] h-9 bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949]">
                   <SelectValue placeholder="모든 기간" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-[#C2BDAD] dark:border-[#454858]">
                   <SelectItem value="all">모든 기간</SelectItem>
                   <SelectItem value="urgent">긴급 (3일 이하)</SelectItem>
                   <SelectItem value="soon">곧 마감 (4-7일)</SelectItem>
@@ -149,12 +154,12 @@ export function WebtoonListScreen() {
             </div>
 
             <div>
-              <label className="text-xs text-gray mb-1 block">상태</label>
+              <label className="text-xs text-[#989898] mb-1 block">상태</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="rounded-lg border-gray/20 h-9">
+                <SelectTrigger className="rounded-lg border-[#C2BDAD] dark:border-[#454858] h-9 bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949]">
                   <SelectValue placeholder="모든 상태" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-[#C2BDAD] dark:border-[#454858]">
                   <SelectItem value="all">모든 상태</SelectItem>
                   <SelectItem value="ongoing">진행중</SelectItem>
                   <SelectItem value="completed">완료됨</SelectItem>
@@ -167,7 +172,9 @@ export function WebtoonListScreen() {
 
       {/* 웹툰 목록 */}
       <div className="p-4">
-        <h2 className="text-lg font-bold mb-4 text-darkblue dark:text-light">전체 웹툰 ({filteredWebtoons.length})</h2>
+        <h2 className="text-lg font-bold mb-4 text-[#323233] dark:text-[#F5D949]">
+          전체 웹툰 ({filteredWebtoons.length})
+        </h2>
 
         {filteredWebtoons.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -176,8 +183,8 @@ export function WebtoonListScreen() {
             ))}
           </div>
         ) : (
-          <div className="flex items-center justify-center h-32 bg-light dark:bg-darkblue/20 rounded-xl">
-            <p className="text-gray">검색 결과가 없습니다.</p>
+          <div className="flex items-center justify-center h-32 bg-[#E5E4DC] dark:bg-[#383B4B]/20 rounded-xl">
+            <p className="text-[#989898]">검색 결과가 없습니다.</p>
           </div>
         )}
       </div>

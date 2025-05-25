@@ -1,51 +1,44 @@
 "use client"
+
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { ChevronLeft, PenSquare } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { ChevronLeft, Send, Tag, X, Plus } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { useToast } from "@/components/ui/use-toast"
-import { getUserFromStorage } from "@/lib/auth"
-
-interface Post {
-  id: string
-  author: string
-  authorInitial: string
-  title: string
-  content: string
-  likes: number
-  comments: any[]
-  time: string
-  tag: string
-  liked?: boolean
-  views?: number
-}
 
 export function CommunityWriteScreen() {
   const router = useRouter()
   const { toast } = useToast()
 
-  const [newPostTitle, setNewPostTitle] = useState("")
-  const [newPostContent, setNewPostContent] = useState("")
-  const [newPostTag, setNewPostTag] = useState("제작 업데이트")
-  const [currentUser, setCurrentUser] = useState("권용현")
+  const [title, setTitle] = useState("")
+  const [content, setContent] = useState("")
+  const [tags, setTags] = useState<string[]>([])
+  const [newTag, setNewTag] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    const user = getUserFromStorage()
-    if (user && user.name) {
-      setCurrentUser(user.name)
+  const addTag = () => {
+    if (newTag.trim() && !tags.includes(newTag.trim()) && tags.length < 5) {
+      setTags([...tags, newTag.trim()])
+      setNewTag("")
     }
-  }, [])
+  }
 
-  const handleSubmitPost = async () => {
-    if (!newPostTitle.trim() || !newPostContent.trim()) {
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter((tag) => tag !== tagToRemove))
+  }
+
+  const handleSubmit = async () => {
+    if (!title.trim() || !content.trim()) {
       toast({
         title: "입력 오류",
         description: "제목과 내용을 모두 입력해주세요.",
-        duration: 3000,
+        variant: "destructive",
       })
       return
     }
@@ -53,46 +46,35 @@ export function CommunityWriteScreen() {
     setIsSubmitting(true)
 
     try {
-      // 기존 게시물 목록 가져오기
-      const storedPosts = localStorage.getItem("communityPosts")
-      const posts = storedPosts ? JSON.parse(storedPosts) : []
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
-      // 새 게시물 생성
-      const newPost: Post = {
+      const newPost = {
         id: Date.now().toString(),
-        author: currentUser,
-        authorInitial: currentUser.charAt(0),
-        title: newPostTitle,
-        content: newPostContent,
+        title: title.trim(),
+        content: content.trim(),
+        tags: tags,
+        author: "사용자",
+        date: new Date().toISOString().split("T")[0],
         likes: 0,
-        comments: [],
-        time: "방금 전",
-        tag: newPostTag,
-        liked: false,
-        views: 0,
+        comments: 0,
       }
 
-      // 게시물 목록 업데이트
-      const updatedPosts = [newPost, ...posts]
-      localStorage.setItem("communityPosts", JSON.stringify(updatedPosts))
-
-      // 이벤트 발생
-      window.dispatchEvent(new Event("storage"))
+      // Save to localStorage (in real app, this would be an API call)
+      const existingPosts = JSON.parse(localStorage.getItem("communityPosts") || "[]")
+      localStorage.setItem("communityPosts", JSON.stringify([newPost, ...existingPosts]))
 
       toast({
-        title: "게시물 작성 완료",
-        description: "게시물이 성공적으로 등록되었습니다.",
-        duration: 2000,
+        title: "게시글 작성 완료",
+        description: "게시글이 성공적으로 작성되었습니다.",
       })
 
-      // 커뮤니티 메인으로 이동
       router.push("/community")
     } catch (error) {
       toast({
-        title: "오류 발생",
-        description: "게시물 작성 중 오류가 발생했습니다.",
+        title: "작성 실패",
+        description: "게시글 작성 중 오류가 발생했습니다.",
         variant: "destructive",
-        duration: 3000,
       })
     } finally {
       setIsSubmitting(false)
@@ -100,91 +82,154 @@ export function CommunityWriteScreen() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray/5 dark:bg-dark">
-      {/* 헤더 */}
-      <div className="bg-white dark:bg-darkblue border-b border-gray/10 sticky top-0 z-40">
-        <div className="flex justify-between items-center p-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}>
-              <ChevronLeft className="h-5 w-5" />
+    <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#323233]">
+      {/* Header */}
+      <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#BCBCBC] dark:border-[#454858] sticky top-0 z-10">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+              className="mr-3 hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
+            >
+              <ChevronLeft className="h-5 w-5 text-[#323233] dark:text-[#F5D949]" />
             </Button>
-            <Logo size="md" showSubtitle={false} />
+            <Logo size="sm" showSubtitle={false} />
           </div>
+          <h1 className="text-lg font-bold text-[#323233] dark:text-[#F5D949]">글쓰기</h1>
           <Button
-            className="rounded-full bg-gradient-to-r from-green to-green/90 hover:from-green/90 hover:to-green/80 text-white font-semibold px-6"
-            onClick={handleSubmitPost}
-            disabled={isSubmitting || !newPostTitle.trim() || !newPostContent.trim()}
+            onClick={handleSubmit}
+            disabled={isSubmitting || !title.trim() || !content.trim()}
+            className="bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233] font-semibold disabled:opacity-50"
           >
-            {isSubmitting ? "게시 중..." : "게시하기"}
+            {isSubmitting ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#323233]" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
 
-      {/* 컨텐츠 */}
-      <div className="flex-1 p-4">
-        <div className="bg-white dark:bg-darkblue rounded-2xl border border-gray/20 shadow-lg">
-          <div className="p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-green/20 p-3 rounded-full">
-                <PenSquare className="h-6 w-6 text-green" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-darkblue dark:text-light">새 게시물 작성</h1>
-                <p className="text-gray text-sm">투자 인사이트와 정보를 커뮤니티와 공유해보세요</p>
-              </div>
+      <div className="p-4 max-w-2xl mx-auto space-y-6">
+        {/* Title Input */}
+        <Card className="border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F] shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-[#323233] dark:text-[#F5D949] text-lg">제목</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="게시글 제목을 입력하세요..."
+              className="bg-[#FAFAFA] dark:bg-[#383B4B] border-[#BCBCBC] dark:border-[#454858] text-[#323233] dark:text-[#F5D949] text-lg font-medium placeholder:text-[#989898] focus:border-[#F9DF52] focus:ring-[#F9DF52]"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Content Input */}
+        <Card className="border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F] shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-[#323233] dark:text-[#F5D949] text-lg">내용</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="게시글 내용을 입력하세요..."
+              rows={12}
+              className="bg-[#FAFAFA] dark:bg-[#383B4B] border-[#BCBCBC] dark:border-[#454858] text-[#323233] dark:text-[#F5D949] placeholder:text-[#989898] focus:border-[#F9DF52] focus:ring-[#F9DF52] resize-none"
+            />
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-xs text-[#989898]">{content.length}/1000자</span>
+              <span className="text-xs text-[#989898]">마크다운 문법을 지원합니다</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tags Section */}
+        <Card className="border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F] shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-[#323233] dark:text-[#F5D949] text-lg">
+              <Tag className="h-5 w-5 text-[#5F859F]" />
+              태그 (선택사항)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Add Tag Input */}
+            <div className="flex gap-2">
+              <Input
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && addTag()}
+                placeholder="태그를 입력하세요..."
+                className="bg-[#FAFAFA] dark:bg-[#383B4B] border-[#BCBCBC] dark:border-[#454858] text-[#323233] dark:text-[#F5D949] placeholder:text-[#989898] focus:border-[#F9DF52] focus:ring-[#F9DF52]"
+                disabled={tags.length >= 5}
+              />
+              <Button
+                onClick={addTag}
+                disabled={!newTag.trim() || tags.includes(newTag.trim()) || tags.length >= 5}
+                className="bg-[#5F859F] hover:bg-[#58678C] text-white shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
             </div>
 
-            <div className="space-y-6">
-              {/* 카테고리 선택 */}
-              <div>
-                <label htmlFor="post-tag" className="text-sm font-semibold text-darkblue dark:text-light block mb-3">
-                  카테고리
-                </label>
-                <select
-                  id="post-tag"
-                  value={newPostTag}
-                  onChange={(e) => setNewPostTag(e.target.value)}
-                  className="w-full rounded-xl border border-gray/20 bg-gray/5 focus:bg-white p-4 text-darkblue dark:text-light h-14 text-base"
-                >
-                  <option value="제작 업데이트">📺 제작 업데이트</option>
-                  <option value="투자 분석">📊 투자 분석</option>
-                  <option value="캐스팅 소식">🎭 캐스팅 소식</option>
-                </select>
+            {/* Current Tags */}
+            {tags.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-[#3F4458] dark:text-[#F5C882] text-sm">추가된 태그 ({tags.length}/5)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag, index) => (
+                    <Badge
+                      key={index}
+                      variant="secondary"
+                      className="bg-[#F9DF52]/20 text-[#323233] dark:text-[#F5D949] border border-[#F9DF52]/30 hover:bg-[#F9DF52]/30 transition-colors"
+                    >
+                      #{tag}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeTag(tag)}
+                        className="h-4 w-4 ml-1 p-0 hover:bg-[#D16561]/20 text-[#D16561]"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
               </div>
+            )}
 
-              {/* 제목 입력 */}
-              <div>
-                <label htmlFor="post-title" className="text-sm font-semibold text-darkblue dark:text-light block mb-3">
-                  제목
-                </label>
-                <Input
-                  id="post-title"
-                  value={newPostTitle}
-                  onChange={(e) => setNewPostTitle(e.target.value)}
-                  placeholder="게시물 제목을 입력하세요"
-                  className="rounded-xl border-gray/20 bg-gray/5 focus:bg-white h-14 text-base"
-                />
-              </div>
+            <p className="text-xs text-[#989898]">
+              태그는 최대 5개까지 추가할 수 있습니다. 태그를 통해 다른 사용자들이 게시글을 쉽게 찾을 수 있습니다.
+            </p>
+          </CardContent>
+        </Card>
 
-              {/* 내용 입력 */}
-              <div>
-                <label
-                  htmlFor="post-content"
-                  className="text-sm font-semibold text-darkblue dark:text-light block mb-3"
-                >
-                  내용
-                </label>
-                <Textarea
-                  id="post-content"
-                  value={newPostContent}
-                  onChange={(e) => setNewPostContent(e.target.value)}
-                  placeholder="게시물 내용을 입력하세요..."
-                  className="rounded-xl min-h-[300px] border-gray/20 bg-gray/5 focus:bg-white resize-none text-base leading-relaxed"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Submit Button */}
+        <Card className="border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F] shadow-lg">
+          <CardContent className="pt-6">
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || !title.trim() || !content.trim()}
+              className="w-full h-12 bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233] font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#323233]" />
+                  게시 중...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Send className="h-5 w-5" />
+                  게시글 작성
+                </div>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

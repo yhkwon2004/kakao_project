@@ -3,7 +3,7 @@
 import { useRouter, useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ChevronLeft, Wallet, TrendingUp, Target, CheckCircle, ArrowRight, Shield, Award, Zap } from "lucide-react"
+import { ChevronLeft, Wallet, Target, CheckCircle, ArrowRight, Shield, Award, Zap } from "lucide-react"
 import { useState, useEffect } from "react"
 import { Logo } from "@/components/logo"
 import { getWebtoonById } from "@/data/webtoons"
@@ -38,6 +38,7 @@ export default function InvestPage() {
     isAdditionalInvestment?: boolean
   } | null>(null)
   const [isInsufficientBalanceModalOpen, setIsInsufficientBalanceModalOpen] = useState(false)
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
 
   const webtoonData = getWebtoonById(webtoonId)
   const [dynamicProgress, setDynamicProgress] = useState(0)
@@ -120,16 +121,27 @@ export default function InvestPage() {
       return
     }
 
+    let newAmount: string
     if (investmentAmount === "0") {
-      setInvestmentAmount(value)
+      newAmount = value
     } else {
-      setInvestmentAmount((prev) => prev + value)
+      newAmount = investmentAmount + value
     }
-    setInputError("")
+
+    // 잔액 초과 시 자동으로 최대 잔액으로 조정
+    const numericAmount = Number(newAmount)
+    if (numericAmount > userBalance) {
+      setInvestmentAmount(userBalance.toString())
+      setInputError(`최대 투자 가능 금액은 ${formatKoreanCurrency(userBalance)}입니다.`)
+      setTimeout(() => setInputError(""), 3000) // 3초 후 에러 메시지 제거
+    } else {
+      setInvestmentAmount(newAmount)
+      setInputError("")
+    }
   }
 
   // 빠른 선택 금액
-  const quickAmounts = [10000, 50000, 100000, 500000]
+  const quickAmounts = [10000, 50000, 100000, userBalance]
 
   // 투자 실행
   const handleInvest = () => {
@@ -155,6 +167,14 @@ export default function InvestPage() {
       setInputError("남은 투자 금액을 초과했습니다.")
       return
     }
+
+    // 투자 확인 모달 열기
+    setIsConfirmModalOpen(true)
+  }
+
+  // 실제 투자 실행 함수
+  const executeInvestment = () => {
+    const amount = Number(investmentAmount)
 
     // 투자 처리
     const newBalance = userBalance - amount
@@ -277,7 +297,8 @@ export default function InvestPage() {
       isAdditionalInvestment: hasInvested,
     })
 
-    // 성공 모달 열기
+    // 확인 모달 닫고 성공 모달 열기
+    setIsConfirmModalOpen(false)
     setIsSuccessModalOpen(true)
 
     // 토스트 메시지
@@ -385,7 +406,7 @@ export default function InvestPage() {
               </div>
               <p
                 className={`text-3xl font-bold tracking-tight mb-1 ${
-                  Number(investmentAmount) > userBalance ? "text-red-500" : "text-darkblue dark:text-light"
+                  Number(investmentAmount) > userBalance ? "text-red-500" : "text-darkblue dark:text-[#F5D949]"
                 }`}
               >
                 {investmentAmount === "0" ? "0원" : formatKoreanCurrency(Number(investmentAmount))}
@@ -394,7 +415,7 @@ export default function InvestPage() {
             </div>
 
             {/* 키패드 영역 */}
-            <div className="flex-1 grid grid-rows-[auto_1fr] gap-3 min-h-0">
+            <div className="flex-1 grid grid-rows-[auto_1fr_auto] gap-3 min-h-0">
               {/* 빠른 선택 */}
               <div className="shrink-0">
                 <div className="grid grid-cols-4 gap-2">
@@ -408,7 +429,7 @@ export default function InvestPage() {
                       }}
                       className="h-10 text-xs font-semibold border border-gray/20 hover:bg-blue/10 hover:border-blue/30 transition-all duration-200 rounded-lg"
                     >
-                      {formatKoreanCurrency(amount)}
+                      {index === quickAmounts.length - 1 ? "전액" : formatKoreanCurrency(amount)}
                     </Button>
                   ))}
                 </div>
@@ -455,22 +476,6 @@ export default function InvestPage() {
 
             {/* 예상 수익 & 투자 버튼 */}
             <div className="shrink-0 space-y-3">
-              {/* 예상 수익 */}
-              {currentAmount >= MIN_INVESTMENT && (
-                <div className="bg-gradient-to-r from-green/10 to-emerald/10 p-3 rounded-xl border border-green/20">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-700">예상 수익</span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-green-600">+{formatKoreanCurrency(profitAmount)}</p>
-                      <p className="text-xs text-green-600">+{expectedROIValue}% 수익률</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* 투자 버튼 */}
               <Button
                 onClick={handleInvest}
@@ -498,7 +503,7 @@ export default function InvestPage() {
         <DialogContent className="sm:max-w-[400px] rounded-2xl bg-white dark:bg-darkblue border-0 shadow-2xl">
           <DialogHeader className="text-center pb-4">
             <div className="mx-auto w-16 h-16 bg-gradient-to-r from-green-400 to-green-600 rounded-full flex items-center justify-center mb-3 shadow-lg">
-              <CheckCircle className="h-10 w-10 text-white" />
+              <CheckCircle className="h-10 w-10 text-white drop-shadow-sm" />
             </div>
             <DialogTitle className="text-xl font-bold text-darkblue dark:text-light">🎉 투자 완료!</DialogTitle>
             <DialogDescription className="text-gray-600 dark:text-gray-300">
@@ -584,7 +589,7 @@ export default function InvestPage() {
         <DialogContent className="sm:max-w-[400px] rounded-2xl bg-white dark:bg-darkblue border-0 shadow-2xl">
           <DialogHeader className="text-center pb-4">
             <div className="mx-auto w-16 h-16 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-3 shadow-lg">
-              <Wallet className="h-10 w-10 text-white" />
+              <Wallet className="h-10 w-10 text-white drop-shadow-sm" />
             </div>
             <DialogTitle className="text-xl font-bold text-darkblue dark:text-light">💰 잔액 부족</DialogTitle>
             <DialogDescription className="text-gray-600 dark:text-gray-300">
@@ -630,6 +635,88 @@ export default function InvestPage() {
             </Button>
             <Button
               onClick={() => setIsInsufficientBalanceModalOpen(false)}
+              variant="outline"
+              className="w-full h-11 border-2 border-gray/30 text-gray-600 hover:bg-gray/10 font-semibold rounded-xl transition-all duration-200"
+            >
+              취소
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 투자 확인 모달 */}
+      <Dialog open={isConfirmModalOpen} onOpenChange={setIsConfirmModalOpen}>
+        <DialogContent className="sm:max-w-[400px] rounded-2xl bg-white dark:bg-darkblue border-0 shadow-2xl">
+          <DialogHeader className="text-center pb-4">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-blue-400 to-purple-600 rounded-full flex items-center justify-center mb-3 shadow-lg">
+              <Target className="h-10 w-10 text-white drop-shadow-sm" />
+            </div>
+            <DialogTitle className="text-xl font-bold text-darkblue dark:text-light">💰 투자 확인</DialogTitle>
+            <DialogDescription className="text-gray-600 dark:text-gray-300">투자하시겠습니까?</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 mb-4">
+            {/* 웹툰 정보 */}
+            <div className="bg-gradient-to-r from-blue/10 to-blue/5 p-3 rounded-xl border border-blue/20">
+              <div className="flex items-center gap-3">
+                <Image
+                  src={webtoon.thumbnail || "/placeholder.svg"}
+                  alt={webtoon.title}
+                  width={40}
+                  height={40}
+                  className="rounded-lg object-cover"
+                />
+                <div>
+                  <p className="font-semibold text-darkblue dark:text-light">{webtoon.title}</p>
+                  <p className="text-xs text-gray">예상 수익률 +{expectedROIValue}%</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 투자 금액 */}
+            <div className="bg-gradient-to-r from-green/10 to-green/5 p-3 rounded-xl border border-green/20">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-darkblue dark:text-light">투자 금액</span>
+                <span className="text-lg font-bold text-green-600">
+                  {formatKoreanCurrency(Number(investmentAmount))}
+                </span>
+              </div>
+            </div>
+
+            {/* 예상 수익 */}
+            <div className="bg-gradient-to-r from-emerald/10 to-emerald/5 p-3 rounded-xl border border-emerald/20">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-darkblue dark:text-light">예상 수익금</span>
+                <span className="text-lg font-bold text-emerald-600">{formatKoreanCurrency(expectedReturn)}</span>
+              </div>
+              <div className="text-right mt-1">
+                <span className="text-xs text-emerald-600 font-medium">
+                  +{formatKoreanCurrency(profitAmount)} (+{expectedROIValue}%)
+                </span>
+              </div>
+            </div>
+
+            {/* 투자 후 잔액 */}
+            <div className="bg-gradient-to-r from-orange/10 to-orange/5 p-3 rounded-xl border border-orange/20">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-darkblue dark:text-light">투자 후 잔액</span>
+                <span className="text-lg font-bold text-orange-600">
+                  {formatKoreanCurrency(userBalance - Number(investmentAmount))}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col gap-2">
+            <Button
+              onClick={executeInvestment}
+              className="w-full h-11 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200"
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              투자하기
+            </Button>
+            <Button
+              onClick={() => setIsConfirmModalOpen(false)}
               variant="outline"
               className="w-full h-11 border-2 border-gray/30 text-gray-600 hover:bg-gray/10 font-semibold rounded-xl transition-all duration-200"
             >

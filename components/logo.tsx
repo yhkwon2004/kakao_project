@@ -1,44 +1,28 @@
-"use client"
-
 import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { cn } from "@/lib/utils"
 
 interface LogoProps {
-  className?: string
   size?: "sm" | "md" | "lg"
   showSubtitle?: boolean
+  className?: string
 }
 
-export function Logo({ className, size = "sm", showSubtitle = false }: LogoProps) {
-  const router = useRouter()
-
-  const handleLogoClick = () => {
-    router.push("/home")
+export function Logo({ size = "md", showSubtitle = true, className = "" }: LogoProps) {
+  const sizeClasses = {
+    sm: "h-8",
+    md: "h-10",
+    lg: "h-12",
   }
 
-  // 로고 고정 이미지
-  const logoSrc = "/images/logo_bar.png"
-
-  // 로고 크기 고정 (size와 관계없이 동일)
-  const width = 140
-  const height = 40
-
   return (
-    <div
-      className={cn("flex items-center cursor-pointer", className)}
-      onClick={handleLogoClick}
-      style={{ minWidth: `${width}px` }}
-    >
+    <div className={`flex items-center ${className}`}>
       <Image
-        src={logoSrc}
-        alt="Kakao FANance 로고"
-        width={width}
-        height={height}
-        className="object-contain"
+        src="/images/logo_bar-removebg-preview.png"
+        alt="Kakao FANance"
+        width={size === "sm" ? 120 : size === "md" ? 150 : 180}
+        height={size === "sm" ? 32 : size === "md" ? 40 : 48}
+        className={`${sizeClasses[size]} w-auto object-contain`}
         priority
       />
-      {showSubtitle && <span className="ml-2 text-xs text-gray">웹툰 투자 플랫폼</span>}
     </div>
   )
 }

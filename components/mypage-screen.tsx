@@ -17,6 +17,7 @@ import {
   Sun,
   Moon,
   Calendar,
+  Plus,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { getUserFromStorage, clearUserFromStorage, updateUserProfile, saveUserToStorage } from "@/lib/auth"
@@ -308,29 +309,34 @@ export function MyPageScreen() {
 
       {/* Profile section */}
       <div className="p-4">
-        <Card className="rounded-xl overflow-hidden border-gray/20 bg-light dark:bg-darkblue/30 transition-colors duration-300">
-          <CardHeader className="p-6 bg-gradient-to-r from-green/10 to-yellow/10 transition-colors duration-300">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16 border-2 border-light relative">
-                <AvatarFallback>
-                  <User className="h-8 w-8" />
-                </AvatarFallback>
-                {profileImage && !profileImage.startsWith("blob:") && (
-                  <AvatarImage
-                    src={profileImage || "/placeholder.svg"}
-                    alt={userName}
-                    onError={() => {
-                      // Clear invalid profile image from storage
-                      const user = getUserFromStorage()
-                      if (user) {
-                        user.profileImage = undefined
-                        saveUserToStorage(user)
-                        setProfileImage(null)
-                      }
-                    }}
-                  />
-                )}
-              </Avatar>
+        <Card className="rounded-2xl overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-gray-50 dark:from-darkblue/40 dark:to-darkblue/20 transition-colors duration-300">
+          <CardHeader className="p-6 bg-gradient-to-r from-green/5 via-yellow/5 to-green/5 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-green/10 to-yellow/10 opacity-50"></div>
+            <div className="relative flex items-center gap-4">
+              <div className="relative">
+                <Avatar className="h-20 w-20 border-4 border-white dark:border-darkblue shadow-lg">
+                  <AvatarFallback className="bg-gradient-to-br from-green to-yellow text-white text-xl">
+                    <User className="h-10 w-10" />
+                  </AvatarFallback>
+                  {profileImage && !profileImage.startsWith("blob:") && (
+                    <AvatarImage
+                      src={profileImage || "/placeholder.svg"}
+                      alt={userName}
+                      onError={() => {
+                        const user = getUserFromStorage()
+                        if (user) {
+                          user.profileImage = undefined
+                          saveUserToStorage(user)
+                          setProfileImage(null)
+                        }
+                      }}
+                    />
+                  )}
+                </Avatar>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green rounded-full border-2 border-white dark:border-darkblue flex items-center justify-center">
+                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                </div>
+              </div>
               <Button
                 variant="ghost"
                 className="flex items-center justify-between w-full p-0 h-auto hover:bg-green/5 dark:hover:bg-green/10 rounded-lg transition-colors"
@@ -346,18 +352,23 @@ export function MyPageScreen() {
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="flex justify-between items-center">
+          <CardContent className="p-6 relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green/5 to-yellow/5 rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="relative flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray transition-colors duration-300">잔액</p>
-                <p className="text-2xl font-bold text-green transition-colors duration-300">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-green rounded-full animate-pulse"></div>
+                  <p className="text-sm text-gray transition-colors duration-300">현재 잔액</p>
+                </div>
+                <p className="text-3xl font-bold bg-gradient-to-r from-green to-green/80 bg-clip-text text-transparent">
                   {points.toLocaleString()}원
                 </p>
               </div>
               <Button
-                className="rounded-xl bg-green hover:bg-green/90 text-light"
+                className="rounded-2xl bg-gradient-to-r from-green to-green/90 hover:from-green/90 hover:to-green text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 onClick={() => router.push("/mypage/payment")}
               >
+                <Plus className="h-4 w-4 mr-2" />
                 충전하기
               </Button>
             </div>
@@ -367,17 +378,22 @@ export function MyPageScreen() {
 
       {/* 마일리지 및 출석 체크 섹션 (새로 추가) */}
       <div className="p-4 pt-0">
-        <Card className="rounded-xl mb-4 border-gray/20 bg-light dark:bg-darkblue/30 transition-colors duration-300">
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
-                <Gift className="h-5 w-5 text-yellow" />
-                <h3 className="font-medium text-darkblue dark:text-light transition-colors duration-300">마일리지</h3>
+        <Card className="rounded-2xl mb-4 border-0 shadow-lg bg-gradient-to-br from-yellow/5 to-orange/5 dark:from-yellow/10 dark:to-orange/10 transition-colors duration-300">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-yellow to-orange rounded-2xl flex items-center justify-center shadow-lg">
+                  <Gift className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-darkblue dark:text-light transition-colors duration-300">마일리지</h3>
+                  <p className="text-xs text-gray">포인트 적립 시스템</p>
+                </div>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-full border-green text-green hover:bg-green/10"
+                className="rounded-full border-yellow/30 text-yellow hover:bg-yellow/10 hover:border-yellow/50 transition-all duration-300"
                 onClick={() => router.push("/mypage/mileage")}
               >
                 자세히 보기
@@ -411,34 +427,36 @@ export function MyPageScreen() {
       {/* Theme setting */}
       <div className="p-4 pt-0">
         <Card
-          className={`rounded-xl mb-4 border-gray/20 bg-light dark:bg-darkblue/30 transition-colors duration-300 cursor-pointer hover:bg-green/5 dark:hover:bg-green/10 ${isChangingTheme ? "scale-[1.02]" : ""}`}
+          className={`rounded-2xl mb-4 border-0 shadow-lg bg-gradient-to-br from-purple/5 to-blue/5 dark:from-purple/10 dark:to-blue/10 transition-all duration-300 cursor-pointer hover:shadow-xl hover:scale-[1.02] ${isChangingTheme ? "scale-[1.02]" : ""}`}
           onClick={() => {
             if (!isChangingTheme) {
               toggleTheme()
             }
           }}
         >
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                {isDarkMode ? (
-                  <Moon className="h-5 w-5 text-yellow transition-transform duration-300" />
-                ) : (
-                  <Sun className="h-5 w-5 text-yellow transition-transform duration-300" />
-                )}
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple to-blue rounded-2xl flex items-center justify-center shadow-lg">
+                  {isDarkMode ? (
+                    <Moon className="h-6 w-6 text-white transition-transform duration-300" />
+                  ) : (
+                    <Sun className="h-6 w-6 text-white transition-transform duration-300" />
+                  )}
+                </div>
                 <div>
-                  <span className="font-medium text-darkblue dark:text-light transition-colors duration-300">
+                  <span className="font-bold text-darkblue dark:text-light transition-colors duration-300">
                     🎨 테마 설정
                   </span>
-                  <p className="text-xs text-gray mt-1 transition-colors duration-300">
-                    현재 테마: {isDarkMode ? "다크 모드" : "라이트 모드"}
+                  <p className="text-sm text-gray mt-1 transition-colors duration-300">
+                    현재: {isDarkMode ? "다크 모드" : "라이트 모드"}
                   </p>
                 </div>
               </div>
               <div
-                className={`p-2 rounded-full bg-green/10 text-green transition-all duration-300 ${isChangingTheme ? "rotate-180" : ""}`}
+                className={`p-3 rounded-2xl bg-gradient-to-br from-purple/10 to-blue/10 transition-all duration-300 ${isChangingTheme ? "rotate-180" : ""}`}
               >
-                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                {isDarkMode ? <Sun className="h-5 w-5 text-purple" /> : <Moon className="h-5 w-5 text-blue-600" />}
               </div>
             </div>
           </CardContent>
@@ -447,25 +465,27 @@ export function MyPageScreen() {
 
       {/* Menu section */}
       <div className="p-4 pt-0">
-        <Card className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/30 transition-colors duration-300">
+        <Card className="rounded-2xl border-0 shadow-lg bg-white dark:bg-darkblue/30 transition-colors duration-300">
           <CardContent className="p-0">
-            <ul className="divide-y divide-gray/10">
-              {menuItems.map((item) => (
+            <ul className="divide-y divide-gray/5">
+              {menuItems.map((item, index) => (
                 <li key={item.id}>
                   <button
-                    className="flex items-center justify-between w-full p-4 text-left hover:bg-light dark:hover:bg-darkblue/50 transition-colors duration-300"
+                    className="flex items-center justify-between w-full p-6 text-left hover:bg-gradient-to-r hover:from-gray/5 hover:to-transparent dark:hover:from-darkblue/50 dark:hover:to-transparent transition-all duration-300 group"
                     onClick={() => router.push(item.href)}
                   >
-                    <div className="flex items-center gap-3">
-                      <item.icon className="h-5 w-5 text-gray transition-colors duration-300" />
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-gray/10 to-gray/5 dark:from-gray/20 dark:to-gray/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <item.icon className="h-6 w-6 text-gray group-hover:text-darkblue dark:group-hover:text-light transition-colors duration-300" />
+                      </div>
                       <div>
-                        <span className="font-medium text-darkblue dark:text-light transition-colors duration-300">
+                        <span className="font-bold text-darkblue dark:text-light transition-colors duration-300 group-hover:text-green">
                           {item.label}
                         </span>
-                        <p className="text-xs text-gray mt-1 transition-colors duration-300">{item.description}</p>
+                        <p className="text-sm text-gray mt-1 transition-colors duration-300">{item.description}</p>
                       </div>
                     </div>
-                    <ChevronRight className="h-5 w-5 text-gray flex-shrink-0 transition-colors duration-300" />
+                    <ChevronRight className="h-5 w-5 text-gray flex-shrink-0 transition-all duration-300 group-hover:text-green group-hover:translate-x-1" />
                   </button>
                 </li>
               ))}

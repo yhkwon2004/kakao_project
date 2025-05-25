@@ -1,183 +1,221 @@
 "use client"
 
-import type React from "react"
-
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { ChevronLeft, ChevronRight, Heart, X, DollarSign } from "lucide-react"
-import { useState, useEffect } from "react"
-import { useToast } from "@/components/ui/use-toast"
-import { Badge } from "@/components/ui/badge"
+import { ChevronLeft, Heart, Star, TrendingUp, Calendar } from "lucide-react"
+import { Logo } from "@/components/logo"
+import { getWebtoonById } from "@/data/webtoons"
+import { formatKoreanCurrency } from "@/lib/format-currency"
+import Image from "next/image"
 
 export function FavoritesScreen() {
   const router = useRouter()
-  const { toast } = useToast()
+  const [favoriteWebtoons, setFavoriteWebtoons] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // 관심 웹툰 데이터를 useState로 변경
-  const [favoriteWebtoons, setFavoriteWebtoons] = useState([])
-
-  // 로컬 스토리지에서 즐겨찾기 데이터 불러오기
   useEffect(() => {
-    const storedFavorites = localStorage.getItem("favoriteWebtoons")
-    if (storedFavorites) {
-      setFavoriteWebtoons(JSON.parse(storedFavorites))
+    loadFavorites()
+
+    // Listen for favorite updates
+    const handleStorageChange = () => {
+      loadFavorites()
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("favoritesUpdated", handleStorageChange)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("favoritesUpdated", handleStorageChange)
     }
   }, [])
 
-  // 즐겨찾기 데이터를 로컬 스토리지에 저장하는 함수
-  const saveFavoritesToStorage = (favorites: any[]) => {
-    localStorage.setItem("favoriteWebtoons", JSON.stringify(favorites))
-  }
-
-  // 알림 토글 핸들러 함수 추가
-  const handleNotificationToggle = (webtoonId: string, event: React.MouseEvent) => {
-    // 이벤트 전파 중지 (카드 클릭 이벤트 방지)
-    event.stopPropagation()
-
-    setFavoriteWebtoons(
-      favoriteWebtoons.map((webtoon) => {
-        if (webtoon.id === webtoonId) {
-          const newState = !webtoon.notification
-          // 토스트 메시지 표시
-          toast({
-            title: newState ? "알림 활성화" : "알림 비활성화",
-            description: `${webtoon.title}의 알림이 ${newState ? "활성화" : "비활성화"}되었습니다.`,
-            duration: 300, // 0.3초로 변경
-          })
-          return { ...webtoon, notification: newState }
-        }
-        return webtoon
-      }),
-    )
-    // 변경된 즐겨찾기 데이터 저장
-    const updatedFavorites = favoriteWebtoons.map((webtoon) => {
-      if (webtoon.id === webtoonId) {
-        return { ...webtoon, notification: !webtoon.notification }
+  const loadFavorites = () => {
+    try {
+      const favoritesStr = localStorage.getItem("userFavorites")
+      if (favoritesStr) {
+        const favoriteIds = JSON.parse(favoritesStr)
+        const webtoons = favoriteIds.map((id: string) => getWebtoonById(id)).filter(Boolean)
+        setFavoriteWebtoons(webtoons)
+      } else {
+        setFavoriteWebtoons([])
       }
-      return webtoon
-    })
-    saveFavoritesToStorage(updatedFavorites)
-  }
-
-  // 웹툰 상세 페이지로 이동하는 함수
-  const navigateToWebtoonDetail = (webtoonId: string) => {
-    // 웹툰 ID로 해당 웹툰 찾기
-    const webtoon = favoriteWebtoons.find((w) => w.id === webtoonId)
-    if (webtoon) {
-      // 웹툰의 slug를 사용하여 상세 페이지로 이동
-      router.push(`/webtoon/${webtoon.slug}`)
+    } catch (error) {
+      console.error("Error loading favorites:", error)
+      setFavoriteWebtoons([])
+    } finally {
+      setLoading(false)
     }
   }
 
-  // 즐겨찾기 제거 함수
-  const removeFavorite = (webtoonId: string, event: React.MouseEvent) => {
-    // 이벤트 전파 중지
-    event.stopPropagation()
+  const removeFavorite = (webtoonId: string) => {
+    try {
+      const favoritesStr = localStorage.getItem("userFavorites")
+      if (favoritesStr) {
+        const favorites = JSON.parse(favoritesStr)
+        const updatedFavorites = favorites.filter((id: string) => id !== webtoonId)
+        localStorage.setItem("userFavorites", JSON.stringify(updatedFavorites))
 
-    // 제거할 웹툰 정보 찾기
-    const webtoonToRemove = favoriteWebtoons.find((w) => w.id === webtoonId)
-
-    // 즐겨찾기에서 제거
-    const updatedFavorites = favoriteWebtoons.filter((webtoon) => webtoon.id !== webtoonId)
-    setFavoriteWebtoons(updatedFavorites)
-    saveFavoritesToStorage(updatedFavorites)
-
-    // 토스트 메시지 표시
-    if (webtoonToRemove) {
-      toast({
-        title: "즐겨찾기 제거",
-        description: `${webtoonToRemove.title}이(가) 즐겨찾기에서 제거되었습니다.`,
-        duration: 300, // 0.3초로 변경
-      })
+        // Dispatch event to notify other components
+        window.dispatchEvent(new Event("favoritesUpdated"))
+        loadFavorites()
+      }
+    } catch (error) {
+      console.error("Error removing favorite:", error)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#323233] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F9DF52] mx-auto mb-4"></div>
+          <p className="text-[#989898]">로딩 중...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="flex flex-col pb-20">
-      {/* 헤더 */}
-      <div className="flex items-center p-4 border-b">
-        <Button variant="ghost" size="icon" className="mr-2" onClick={() => router.back()}>
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-lg font-bold">관심 웹툰</h1>
+    <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#323233]">
+      {/* Header */}
+      <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#BCBCBC] dark:border-[#454858] sticky top-0 z-10">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.back()}
+              className="mr-3 hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
+            >
+              <ChevronLeft className="h-5 w-5 text-[#323233] dark:text-[#F5D949]" />
+            </Button>
+            <Logo size="sm" showSubtitle={false} />
+          </div>
+          <h1 className="text-lg font-bold text-[#323233] dark:text-[#F5D949]">관심 웹툰</h1>
+          <div className="w-8" />
+        </div>
       </div>
 
-      {/* 관심 웹툰 목록 */}
       <div className="p-4">
-        {favoriteWebtoons.length > 0 ? (
-          <div className="space-y-4">
-            {favoriteWebtoons.map((webtoon) => (
-              <Card key={webtoon.id} className="rounded-xl overflow-hidden hover:shadow-md transition-shadow">
-                <CardContent className="p-4 cursor-pointer" onClick={() => router.push(`/webtoon/${webtoon.slug}`)}>
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold hover:text-[#FF8A00] transition-colors">{webtoon.title}</h3>
-                        <Heart className="h-4 w-4 fill-[#FF8A00] text-[#FF8A00]" />
-                      </div>
-                      <p className="text-xs text-[#8E8E93] mb-2">{webtoon.genre}</p>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-xs px-2 py-1 rounded-full ${
-                            webtoon.status === "투자 중"
-                              ? "bg-[#FF8A00]/20 text-[#FF8A00]"
-                              : webtoon.status === "투자 가능"
-                                ? "bg-[#FFCC00]/20 text-[#FFCC00]"
-                                : "bg-[#8E8E93]/20 text-[#8E8E93]"
-                          }`}
-                        >
-                          {webtoon.status}
-                        </span>
-
-                        {/* 투자 상태 표시 */}
-                        {webtoon.invested && (
-                          <Badge className="bg-green text-white">
-                            <DollarSign className="h-3 w-3 mr-1" />
-                            투자완료
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-[#8E8E93]">알림</span>
-                        <Switch
-                          checked={webtoon.notification}
-                          onCheckedChange={(e) => {}}
-                          onClick={(e) => handleNotificationToggle(webtoon.id, e)}
-                          className="cursor-pointer"
-                        />
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full hover:bg-red-100"
-                        onClick={(e) => removeFavorite(webtoon.id, e)}
-                      >
-                        <X className="h-4 w-4 text-red-500" />
-                      </Button>
-                      <ChevronRight
-                        className="h-5 w-5 text-[#8E8E93] cursor-pointer"
-                        onClick={() => navigateToWebtoonDetail(webtoon.id)}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-64 text-center">
-            <p className="text-gray-500 mb-4">관심 웹툰이 없습니다.</p>
+        {favoriteWebtoons.length === 0 ? (
+          // Empty state
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
+            <div className="w-24 h-24 bg-[#E5E4DC] dark:bg-[#454858] rounded-full flex items-center justify-center mb-6">
+              <Heart className="h-12 w-12 text-[#989898]" />
+            </div>
+            <h2 className="text-xl font-bold text-[#323233] dark:text-[#F5D949] mb-2">관심 웹툰이 없습니다</h2>
+            <p className="text-[#989898] mb-6 max-w-sm">
+              You have no favorite webtoons yet. Start adding from the main list!
+            </p>
             <Button
-              variant="outline"
-              className="rounded-xl border-green text-green hover:bg-green/10"
               onClick={() => router.push("/webtoons")}
+              className="bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233] font-semibold px-6 py-2"
             >
               웹툰 둘러보기
             </Button>
+          </div>
+        ) : (
+          // Favorites list
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-[#323233] dark:text-[#F5D949]">
+                관심 웹툰 ({favoriteWebtoons.length})
+              </h2>
+            </div>
+
+            <div className="grid gap-4">
+              {favoriteWebtoons.map((webtoon) => (
+                <Card
+                  key={webtoon.id}
+                  className="border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F] shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer"
+                  onClick={() => router.push(`/webtoon/${webtoon.id}`)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex gap-4">
+                      {/* Thumbnail */}
+                      <div className="relative shrink-0">
+                        <Image
+                          src={webtoon.thumbnail || "/placeholder.svg"}
+                          alt={webtoon.title}
+                          width={80}
+                          height={80}
+                          className="rounded-lg object-cover shadow-md"
+                        />
+                        <div className="absolute -top-2 -right-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              removeFavorite(webtoon.id)
+                            }}
+                            className="h-8 w-8 bg-[#D16561] hover:bg-[#DD8369] text-white rounded-full shadow-lg"
+                          >
+                            <Heart className="h-4 w-4 fill-current" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-[#323233] dark:text-[#F5D949] mb-1 truncate">{webtoon.title}</h3>
+
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {webtoon.genre
+                            ?.split(",")
+                            .slice(0, 2)
+                            .map((genre: string, index: number) => (
+                              <span
+                                key={index}
+                                className="bg-[#5F859F]/10 text-[#5F859F] text-xs font-medium px-2 py-0.5 rounded-full"
+                              >
+                                {genre.trim()}
+                              </span>
+                            ))}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs text-[#989898] mb-2">
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3 w-3 text-[#F9DF52]" />
+                            <span>평점 {webtoon.rating || "4.5"}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3 text-[#4F8F78]" />
+                            <span>+{webtoon.expectedROI || 15}%</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>{webtoon.daysLeft || 0}일 남음</span>
+                          </div>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="space-y-1">
+                          <div className="h-2 bg-[#E5E4DC] dark:bg-[#454858] rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-[#F9DF52] to-[#4F8F78] transition-all duration-300"
+                              style={{
+                                width: `${Math.min(
+                                  ((webtoon.currentRaised || 0) / (webtoon.goalAmount || 1)) * 100,
+                                  100,
+                                )}%`,
+                              }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-[#989898]">
+                            <span>{formatKoreanCurrency(webtoon.currentRaised || 0)}</span>
+                            <span>{formatKoreanCurrency(webtoon.goalAmount || 0)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>

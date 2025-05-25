@@ -32,18 +32,18 @@ interface Investment {
   color?: string
 }
 
-// 차트 색상 팔레트
+// 차트 색상 팔레트 - 지정된 색상만 사용
 const CHART_COLORS = [
-  "#10B981", // green
-  "#F59E0B", // yellow
-  "#3B82F6", // blue
-  "#EF4444", // red
-  "#8B5CF6", // purple
-  "#F97316", // orange
-  "#06B6D4", // cyan
-  "#84CC16", // lime
-  "#EC4899", // pink
-  "#6B7280", // gray
+  "#4F8F78", // green
+  "#F9DF52", // yellow
+  "#5F859F", // blue
+  "#D16561", // red
+  "#706FB9", // purple
+  "#DD8369", // orange
+  "#6CB9B1", // cyan
+  "#848954", // lime
+  "#DF9F8F", // pink
+  "#989898", // gray
 ]
 
 export function InvestmentVisualizationScreen() {
@@ -171,9 +171,9 @@ export function InvestmentVisualizationScreen() {
       const data = payload[0]
       const percentage = ((data.value / totalInvestment) * 100).toFixed(1)
       return (
-        <div className="bg-white dark:bg-darkblue border border-gray/20 rounded-lg p-3 shadow-lg">
-          <p className="font-medium text-darkblue dark:text-light">{data.name}</p>
-          <span className="text-sm text-gray">
+        <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border border-[#C2BDAD] dark:border-[#454858] rounded-lg p-3 shadow-lg">
+          <p className="font-medium text-[#323233] dark:text-[#F5D949]">{data.name}</p>
+          <span className="text-sm text-[#989898]">
             {formatCurrency(data.value)} ({percentage}%)
           </span>
         </div>
@@ -183,29 +183,33 @@ export function InvestmentVisualizationScreen() {
   }
 
   return (
-    <div className="flex flex-col pb-20 bg-light dark:bg-dark">
+    <div className="flex flex-col pb-20 bg-[#FAFAFA] dark:bg-[#323233]">
       {/* 헤더 */}
-      <div className="flex items-center p-4 border-b border-gray/10">
-        <Button variant="ghost" size="icon" className="mr-2" onClick={() => router.back()}>
+      <div className="flex items-center p-4 border-b border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F]">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="mr-2 text-[#323233] dark:text-[#F5D949] hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
+          onClick={() => router.back()}
+        >
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <div className="flex items-center gap-2">
-          <PieChart className="h-5 w-5 text-profit" />
           <Logo size="sm" showSubtitle={false} />
         </div>
       </div>
 
       {/* 제목 */}
       <div className="p-4">
-        <h1 className="text-2xl font-bold text-darkblue dark:text-light mb-2">투자 분포</h1>
-        <p className="text-gray">포트폴리오별 투자 비중을 확인하세요</p>
+        <h1 className="text-2xl font-bold text-[#323233] dark:text-[#F5D949] mb-2">투자 분포</h1>
+        <p className="text-[#989898]">포트폴리오별 투자 비중을 확인하세요</p>
       </div>
 
       {/* 투자 분포 차트와 목록 */}
       <div className="p-4">
-        <Card className="rounded-xl border-gray/20 bg-light dark:bg-darkblue/30">
+        <Card className="rounded-xl border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F]/30">
           <CardHeader className="p-4">
-            <h2 className="font-bold text-darkblue dark:text-light">투자 포트폴리오</h2>
+            <h2 className="font-bold text-[#323233] dark:text-[#F5D949]">투자 포트폴리오</h2>
           </CardHeader>
           <CardContent className="p-4">
             {investments.length > 0 ? (
@@ -235,20 +239,20 @@ export function InvestmentVisualizationScreen() {
                   {/* 중앙 총 투자액 표시 */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <p className="text-sm text-gray mb-1">총 투자액</p>
-                      <p className="text-xl font-bold text-profit">{formatCurrency(totalInvestment)}</p>
+                      <p className="text-sm text-[#989898] mb-1">총 투자액</p>
+                      <p className="text-xl font-bold text-[#4F8F78]">{formatCurrency(totalInvestment)}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* 투자 목록 (하단) */}
                 <div className="space-y-3">
-                  <h3 className="font-medium text-darkblue dark:text-light mb-3">투자 목록</h3>
+                  <h3 className="font-medium text-[#323233] dark:text-[#F5D949] mb-3">투자 목록</h3>
 
                   {displayedInvestments.map((investment) => (
                     <div
                       key={investment.id}
-                      className="flex items-center gap-3 p-3 bg-light dark:bg-darkblue/20 rounded-lg border border-gray/10 cursor-pointer hover:shadow-sm transition-shadow"
+                      className="flex items-center gap-3 p-3 bg-[#E5E4DC] dark:bg-[#383B4B]/20 rounded-lg border border-[#C2BDAD] dark:border-[#454858] cursor-pointer hover:shadow-sm transition-shadow"
                       onClick={() => router.push(`/webtoon/${investment.slug || investment.id}`)}
                     >
                       {/* 색상 인디케이터 */}
@@ -258,7 +262,7 @@ export function InvestmentVisualizationScreen() {
                       />
 
                       {/* 썸네일 */}
-                      <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0 bg-gray/10">
+                      <div className="w-12 h-12 rounded-md overflow-hidden flex-shrink-0 bg-[#C2BDAD]/10">
                         <Image
                           src={investment.thumbnail || "/placeholder.svg"}
                           alt={investment.title}
@@ -270,13 +274,15 @@ export function InvestmentVisualizationScreen() {
 
                       {/* 투자 정보 */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-darkblue dark:text-light text-sm truncate">{investment.title}</p>
+                        <p className="font-medium text-[#323233] dark:text-[#F5D949] text-sm truncate">
+                          {investment.title}
+                        </p>
                         <div className="flex items-center justify-between mt-1">
-                          <p className="text-sm font-semibold text-darkblue dark:text-light">
+                          <p className="text-sm font-semibold text-[#323233] dark:text-[#F5D949]">
                             {formatCurrency(investment.amount)}
                           </p>
                           <div className="flex items-center gap-2">
-                            <div className="text-xs bg-profit/10 text-profit px-2 py-1 rounded-full">
+                            <div className="text-xs bg-[#4F8F78]/10 text-[#4F8F78] px-2 py-1 rounded-full">
                               {((investment.amount / totalInvestment) * 100).toFixed(1)}%
                             </div>
                           </div>
@@ -290,7 +296,7 @@ export function InvestmentVisualizationScreen() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full mt-2 text-gray hover:text-darkblue dark:hover:text-light"
+                      className="w-full mt-2 text-[#989898] hover:text-[#323233] dark:hover:text-[#F5D949]"
                       onClick={() => setShowAllInvestments(!showAllInvestments)}
                     >
                       {showAllInvestments ? (
@@ -309,13 +315,13 @@ export function InvestmentVisualizationScreen() {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-12 text-gray">
+              <div className="text-center py-12 text-[#989898]">
                 <PieChart className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p className="text-lg font-medium mb-2">투자 내역이 없습니다</p>
                 <p className="text-sm">첫 번째 투자를 시작해보세요</p>
                 <Button
                   variant="outline"
-                  className="mt-4 rounded-xl border-green text-green hover:bg-green/10"
+                  className="mt-4 rounded-xl border-[#4F8F78] text-[#4F8F78] hover:bg-[#4F8F78]/10"
                   onClick={() => router.push("/webtoons")}
                 >
                   웹툰 둘러보기
