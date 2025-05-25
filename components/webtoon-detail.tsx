@@ -885,7 +885,8 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </TabsContent>
         </Tabs>
 
-        <div className="mt-6 px-4 pb-32">
+{/* 투자 버튼을 화면 하단(하단바 위)에 고정 */}
+<div className="fixed left-0 right-0 bottom-20 z-60 px-4">
   <div className="flex gap-3">
     <Button
       className={`flex-1 rounded-xl h-14 font-semibold shadow-lg transition-all duration-200 ${
