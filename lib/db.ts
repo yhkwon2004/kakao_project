@@ -306,7 +306,11 @@ export const removeFavorite = async (userId: string, webtoonId: string) => {
 // Investments related functions
 export const getInvestments = async (userId: string) => {
   const supabase = getSupabase()
-  const { data, error } = await supabase.from("investments").select("*").eq("user_id", userId)
+  const { data, error } = await supabase
+    .from("investments")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
 
   if (error) {
     console.error("Error fetching investments:", error)
@@ -366,6 +370,7 @@ export const addInvestment = async (userId: string, webtoonId: string, amount: n
       .update({
         amount: existingInvestment.amount + amount,
         created_at: new Date().toISOString(), // Update timestamp to latest investment
+        status: "in_progress",
       })
       .eq("user_id", userId)
       .eq("webtoon_id", webtoonId)
@@ -378,9 +383,15 @@ export const addInvestment = async (userId: string, webtoonId: string, amount: n
     }
   } else {
     // Add new investment
-    const { error: investError } = await supabase
-      .from("investments")
-      .insert([{ user_id: userId, webtoon_id: webtoonId, amount }])
+    const { error: investError } = await supabase.from("investments").insert([
+      {
+        user_id: userId,
+        webtoon_id: webtoonId,
+        amount,
+        status: "in_progress",
+        created_at: new Date().toISOString(),
+      },
+    ])
 
     if (investError) {
       console.error("Error adding investment:", investError)

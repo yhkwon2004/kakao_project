@@ -22,13 +22,23 @@ import {
   Zap,
   Shield,
   DollarSign,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { getWebtoonById } from "@/data/webtoons"
-import { getUserFromStorage } from "@/lib/auth"
+import { getUserFromStorage, saveUserToStorage } from "@/lib/auth"
 import { useToast } from "@/components/ui/use-toast"
 import { formatKoreanCurrency } from "@/lib/format-currency"
 import Image from "next/image"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog"
 
 interface WebtoonDetailProps {
   id: string
@@ -44,6 +54,8 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   const [dynamicTotalInvestors, setDynamicTotalInvestors] = useState(0)
   const [hasInvested, setHasInvested] = useState(false)
   const [userInvestmentAmount, setUserInvestmentAmount] = useState(0)
+  const [userInvestmentDate, setUserInvestmentDate] = useState<string | null>(null)
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false)
 
   const webtoonData = getWebtoonById(id)
 
@@ -92,15 +104,115 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       if (userInvestment) {
         setHasInvested(true)
         setUserInvestmentAmount(userInvestment.amount || 0)
+        setUserInvestmentDate(userInvestment.date || userInvestment.investmentTime || null)
       } else {
         setHasInvested(false)
         setUserInvestmentAmount(0)
+        setUserInvestmentDate(null)
       }
     } else {
       setHasInvested(false)
       setUserInvestmentAmount(0)
+      setUserInvestmentDate(null)
     }
   }, [id, webtoon?.goalAmount, webtoon?.currentRaised, webtoon?.totalInvestors])
+
+  // 24시간 이내 투자인지 확인
+  const canRefund = () => {
+    if (!hasInvested || !userInvestmentDate) return false
+    const investmentDate = new Date(userInvestmentDate)
+    const now = new Date()
+    const hoursDiff = (now.getTime() - investmentDate.getTime()) / (1000 * 60 * 60)
+    return hoursDiff < 24
+  }
+
+  // 환불 처리
+  const handleRefund = async () => {
+    if (!hasInvested || !userInvestmentDate) return
+
+    try {
+      // 사용자 잔액 업데이트
+      const user = getUserFromStorage()
+      if (user) {
+        user.balance = (user.balance || 0) + userInvestmentAmount
+        saveUserToStorage(user)
+        setUserBalance(user.balance)
+      }
+
+      // 투자 내역에서 제거
+      const investmentsStr = localStorage.getItem("userInvestments")
+      if (investmentsStr) {
+        const investments = JSON.parse(investmentsStr)
+        const updatedInvestments = investments.filter((inv: any) => inv.id !== id && inv.webtoonId !== id)
+        localStorage.setItem("userInvestments", JSON.stringify(updatedInvestments))
+      }
+
+      // 웹툰 진행 상황 업데이트 (투자 금액 차감)
+      const progressData = localStorage.getItem(`webtoon_progress_${id}`)
+      if (progressData) {
+        const data = JSON.parse(progressData)
+        const newCurrentRaised = Math.max(0, data.currentRaised - userInvestmentAmount)
+        const newTotalInvestors = Math.max(0, data.totalInvestors - 1)
+
+        const updatedProgressData = {
+          currentRaised: newCurrentRaised,
+          totalInvestors: newTotalInvestors,
+          lastUpdated: new Date().toISOString(),
+        }
+        localStorage.setItem(`webtoon_progress_${id}`, JSON.stringify(updatedProgressData))
+
+        // 상태 업데이트
+        setDynamicCurrentRaised(newCurrentRaised)
+        setDynamicTotalInvestors(newTotalInvestors)
+        setDynamicProgress((newCurrentRaised / webtoon.goalAmount) * 100)
+      }
+
+      // 환불 내역 추가 (결제 내역에 표시용)
+      const refundRecord = {
+        id: `refund_${Date.now()}`,
+        amount: userInvestmentAmount,
+        method: "투자 취소",
+        status: "pending",
+        date: new Date().toISOString().split("T")[0],
+        fee: 0,
+        type: "refund",
+        webtoonTitle: webtoon.title,
+        webtoonId: id,
+      }
+
+      const chargeHistoryStr = localStorage.getItem("chargeHistory")
+      const chargeHistory = chargeHistoryStr ? JSON.parse(chargeHistoryStr) : []
+      const updatedChargeHistory = [refundRecord, ...chargeHistory]
+      localStorage.setItem("chargeHistory", JSON.stringify(updatedChargeHistory))
+
+      // 투자 상태 초기화
+      setHasInvested(false)
+      setUserInvestmentAmount(0)
+      setUserInvestmentDate(null)
+
+      // 이벤트 발생
+      window.dispatchEvent(new Event("userDataChanged"))
+      window.dispatchEvent(new Event("investmentUpdate"))
+      window.dispatchEvent(
+        new CustomEvent("webtoonProgressUpdate", {
+          detail: { webtoonId: id },
+        }),
+      )
+
+      toast({
+        title: "환불 신청 완료",
+        description: `${webtoon.title} 투자가 취소되었습니다. ${userInvestmentAmount.toLocaleString()}원이 환불 처리됩니다.`,
+      })
+
+      setIsRefundModalOpen(false)
+    } catch (error) {
+      toast({
+        title: "환불 실패",
+        description: "환불 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      })
+    }
+  }
 
   if (!webtoon) {
     return (
@@ -184,6 +296,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
   const remainingAmount = Math.max(0, webtoon.goalAmount - dynamicCurrentRaised)
   const isCompleted = dynamicProgress >= 100
+  const canRefundInvestment = canRefund()
 
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAFA] dark:bg-[#323233]">
@@ -311,7 +424,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                     <TrendingUp className="h-4 w-4 text-[#4F8F78]" />
                     <span className="text-sm font-medium text-[#989898]">예상 수익률</span>
                   </div>
-                  <p className="text-xl font-bold text-[#4F8F78]">+{webtoon.expectedROI}%</p>
+                  <p className="text-xl font-bold text-[#4F8F78]">
+                    +{webtoon.expectedROI.toString().replace("%", "")}%
+                  </p>
                 </div>
 
                 <div className="bg-[#E5E4DC] dark:bg-[#383B4B] p-4 rounded-xl">
@@ -345,6 +460,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   <div className="flex items-center gap-2 mb-2">
                     <Star className="h-4 w-4 text-[#F9DF52]" />
                     <span className="text-sm font-medium text-[#323233] dark:text-[#F5D949]">내 투자 현황</span>
+                    {canRefundInvestment && (
+                      <Badge className="bg-orange-100 text-orange-600 text-xs">24시간 내 환불 가능</Badge>
+                    )}
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[#989898]">투자 금액</span>
@@ -358,6 +476,22 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                       {formatKoreanCurrency(Math.round(userInvestmentAmount * (1 + Number(webtoon.expectedROI) / 100)))}
                     </span>
                   </div>
+                  {userInvestmentDate && (
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-[#989898]">투자일</span>
+                      <span className="text-sm text-[#989898]">{userInvestmentDate}</span>
+                    </div>
+                  )}
+                  {canRefundInvestment && (
+                    <Button
+                      onClick={() => setIsRefundModalOpen(true)}
+                      variant="outline"
+                      className="w-full mt-3 border-orange-300 text-orange-600 hover:bg-orange-50"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      투자 환불하기
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -549,6 +683,60 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </Button>
         </div>
       </div>
+
+      {/* 환불 확인 모달 */}
+      <Dialog open={isRefundModalOpen} onOpenChange={setIsRefundModalOpen}>
+        <DialogContent className="sm:max-w-[400px] rounded-2xl bg-white dark:bg-darkblue border-0 shadow-2xl">
+          <DialogHeader className="text-center pb-4">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-3 shadow-lg">
+              <AlertTriangle className="h-10 w-10 text-white drop-shadow-sm" />
+            </div>
+            <DialogTitle className="text-xl font-bold text-darkblue dark:text-light">투자 환불</DialogTitle>
+            <DialogDescription className="text-gray-600 dark:text-gray-300">
+              정말로 이 투자를 환불하시겠습니까?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 mb-4">
+            <div className="bg-gradient-to-r from-blue/10 to-blue/5 p-3 rounded-xl border border-blue/20">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-darkblue dark:text-light">웹툰</span>
+                <span className="text-lg font-bold text-blue-600">{webtoon.title}</span>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-red/10 to-red/5 p-3 rounded-xl border border-red/20">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-darkblue dark:text-light">환불 금액</span>
+                <span className="text-lg font-bold text-red-600">₩{userInvestmentAmount.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-yellow/10 to-yellow/5 p-3 rounded-xl border border-yellow/20">
+              <div className="text-center">
+                <p className="text-sm text-yellow-600 font-medium">환불 처리까지 1-2일 소요될 수 있습니다.</p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col gap-2">
+            <Button
+              onClick={handleRefund}
+              className="w-full h-11 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              환불 신청하기
+            </Button>
+            <Button
+              onClick={() => setIsRefundModalOpen(false)}
+              variant="outline"
+              className="w-full h-11 border-2 border-gray/30 text-gray-600 hover:bg-gray/10 font-semibold rounded-xl transition-all duration-200"
+            >
+              계속 투자하기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -10,6 +10,8 @@ import { ChevronLeft, TrendingUp, Calendar, Target, CheckCircle, Clock, Zap } fr
 import { Logo } from "@/components/logo"
 import { formatKoreanCurrency } from "@/lib/format-currency"
 import { getWebtoonById } from "@/data/webtoons"
+import { getUserFromStorage, isGuestAccount } from "@/lib/auth"
+import { getInvestments } from "@/lib/db"
 
 interface Investment {
   id: string
@@ -28,78 +30,115 @@ export function InvestmentListScreen() {
   const [investments, setInvestments] = useState<Investment[]>([])
 
   useEffect(() => {
-    const loadInvestments = () => {
-      // 투자 내역 로드
-      const investmentsStr = localStorage.getItem("userInvestments")
-      let userInvestments: Investment[] = []
-
-      if (investmentsStr) {
-        userInvestments = JSON.parse(investmentsStr)
-      } else {
-        // 기본 투자 데이터 설정
-        userInvestments = [
-          {
-            id: "bad-secretary",
-            title: "나쁜 비서",
-            thumbnail: "/webtoons/나쁜-비서.png",
-            amount: 300000,
-            expectedROI: 15,
-            status: "완료",
-            date: "2024-01-15",
-            progress: 100,
-          },
-          {
-            id: "blood-sword-family-hunting-dog",
-            title: "철혈검가 사냥개의 회귀",
-            thumbnail: "/images/철혈검가-사냥개의-회귀.png",
-            amount: 500000,
-            expectedROI: 20,
-            status: "완료",
-            date: "2024-01-10",
-            progress: 100,
-          },
-          {
-            id: "princess-imprinting-traitor",
-            title: "황녀, 반역자를 각인시키다",
-            thumbnail: "/placeholder.svg?height=80&width=80&query=princess fantasy webtoon",
-            amount: 250000,
-            expectedROI: 18,
-            status: "진행중",
-            date: "2024-02-01",
-            progress: 65,
-          },
-          {
-            id: "becoming-family-head-this-life",
-            title: "이번 생은 가주가 되겠습니다",
-            thumbnail: "/webtoons/이번생은-가주가-되겠습니다.png",
-            amount: 400000,
-            expectedROI: 22,
-            status: "진행중",
-            date: "2024-02-05",
-            progress: 72,
-          },
-        ]
-        localStorage.setItem("userInvestments", JSON.stringify(userInvestments))
+    const loadInvestments = async () => {
+      const user = getUserFromStorage()
+      if (!user) {
+        setInvestments([])
+        return
       }
 
-      // 웹툰 데이터와 병합하여 썸네일과 제목 업데이트
-      userInvestments = userInvestments.map((investment) => {
-        const webtoonData = getWebtoonById(investment.id)
-        return {
-          ...investment,
-          title: webtoonData?.title || investment.title,
-          thumbnail: webtoonData?.thumbnail || investment.thumbnail,
-          // 누락된 필드들 보완
-          expectedROI: investment.expectedROI || webtoonData?.expectedROI || 15,
-          status: investment.status || "진행중",
-          progress: investment.progress || 0,
+      try {
+        // DB에서 투자 내역 로드
+        const dbInvestments = await getInvestments(user.id || user.email)
+
+        if (dbInvestments && dbInvestments.length > 0) {
+          // DB 데이터를 Investment 형태로 변환
+          const formattedInvestments = dbInvestments.map((inv: any) => ({
+            id: inv.webtoon_id,
+            title: getWebtoonById(inv.webtoon_id)?.title || "알 수 없는 웹툰",
+            thumbnail: getWebtoonById(inv.webtoon_id)?.thumbnail || "/placeholder.svg",
+            amount: inv.amount,
+            expectedROI: inv.roi || getWebtoonById(inv.webtoon_id)?.expectedROI || 15,
+            status: inv.status === "completed" ? "완료" : "진행중",
+            date: new Date(inv.created_at).toISOString().split("T")[0],
+            progress: inv.status === "completed" ? 100 : 75,
+          }))
+
+          // 최신순으로 정렬
+          formattedInvestments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          setInvestments(formattedInvestments)
+          return
         }
-      })
 
-      // 최신순으로 정렬 (날짜 기준 내림차순)
-      userInvestments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        // localStorage에서 투자 내역 로드 (fallback)
+        const investmentsStr = localStorage.getItem("userInvestments")
+        let userInvestments: Investment[] = []
 
-      setInvestments(userInvestments)
+        if (investmentsStr) {
+          userInvestments = JSON.parse(investmentsStr)
+        } else {
+          // 게스트 계정인 경우에만 기본 투자 데이터 설정
+          if (isGuestAccount(user.email)) {
+            userInvestments = [
+              {
+                id: "bad-secretary",
+                title: "나쁜 비서",
+                thumbnail: "/webtoons/나쁜-비서.png",
+                amount: 300000,
+                expectedROI: 25,
+                status: "완료",
+                date: "2024-01-15",
+                progress: 100,
+              },
+              {
+                id: "blood-sword-family-hunting-dog",
+                title: "철혈검가 사냥개의 회귀",
+                thumbnail: "/images/철혈검가-사냥개의-회귀.png",
+                amount: 500000,
+                expectedROI: 30,
+                status: "완료",
+                date: "2024-01-10",
+                progress: 100,
+              },
+              {
+                id: "princess-imprinting-traitor",
+                title: "황녀, 반역자를 각인시키다",
+                thumbnail: "/placeholder.svg?height=80&width=80&query=princess fantasy webtoon",
+                amount: 250000,
+                expectedROI: 18,
+                status: "진행중",
+                date: "2024-02-01",
+                progress: 65,
+              },
+              {
+                id: "becoming-family-head-this-life",
+                title: "이번 생은 가주가 되겠습니다",
+                thumbnail: "/webtoons/이번생은-가주가-되겠습니다.png",
+                amount: 400000,
+                expectedROI: 22,
+                status: "진행중",
+                date: "2024-02-05",
+                progress: 72,
+              },
+            ]
+            localStorage.setItem("userInvestments", JSON.stringify(userInvestments))
+          } else {
+            // 일반 유저는 빈 배열로 시작
+            userInvestments = []
+          }
+        }
+
+        // 웹툰 데이터와 병합하여 썸네일과 제목 업데이트
+        userInvestments = userInvestments.map((investment) => {
+          const webtoonData = getWebtoonById(investment.id)
+          return {
+            ...investment,
+            title: webtoonData?.title || investment.title,
+            thumbnail: webtoonData?.thumbnail || investment.thumbnail,
+            expectedROI: investment.expectedROI || webtoonData?.expectedROI || 15,
+            status: investment.status || "진행중",
+            progress: investment.progress || 0,
+          }
+        })
+
+        // 최신순으로 정렬 (날짜 기준 내림차순)
+        userInvestments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+        setInvestments(userInvestments)
+      } catch (error) {
+        console.error("Error loading investments:", error)
+        setInvestments([])
+      }
     }
 
     loadInvestments()
@@ -124,6 +163,7 @@ export function InvestmentListScreen() {
     window.addEventListener("storage", handleStorageChange)
     window.addEventListener("focus", handleFocus)
     window.addEventListener("investmentUpdate", handleInvestmentUpdate)
+    window.addEventListener("userDataChanged", handleFocus)
     window.addEventListener("userDataChanged", handleFocus)
 
     return () => {

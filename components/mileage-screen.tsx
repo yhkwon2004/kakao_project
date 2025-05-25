@@ -57,7 +57,7 @@ export function MileageScreen() {
       return
     }
 
-    const earnedMileage = 100
+    const earnedMileage = 5
     const newRecord: MileageRecord = {
       id: Date.now().toString(),
       type: "earned",
@@ -96,10 +96,10 @@ export function MileageScreen() {
   }
 
   const mileageRewards = [
-    { points: 1000, reward: "웹툰 아트북", icon: "📚", available: totalMileage >= 1000 },
-    { points: 2000, reward: "캐릭터 피규어", icon: "🎭", available: totalMileage >= 2000 },
-    { points: 3000, reward: "한정판 굿즈", icon: "🎁", available: totalMileage >= 3000 },
-    { points: 5000, reward: "작가 사인회 티켓", icon: "✍️", available: totalMileage >= 5000 },
+    { points: 5000, reward: "웹툰 아트북", icon: "📚", available: totalMileage >= 5000 },
+    { points: 15000, reward: "캐릭터 피규어", icon: "🎭", available: totalMileage >= 15000 },
+    { points: 30000, reward: "작가 사인회 티켓", icon: "✍️", available: totalMileage >= 30000 },
+    { points: 50000, reward: "OTT 이용권 (1개월)", icon: "📺", available: totalMileage >= 50000 },
   ]
 
   return (
@@ -191,7 +191,7 @@ export function MileageScreen() {
                 {canAttendToday() ? (
                   <>
                     <Zap className="h-4 w-4 mr-2" />
-                    출석 체크 (+100P)
+                    출석 체크 (+5P)
                   </>
                 ) : (
                   <>
@@ -291,7 +291,7 @@ export function MileageScreen() {
                   적립
                 </TabsTrigger>
                 <TabsTrigger value="used" className="rounded-lg text-[#3F3F3F] dark:text-[#F9DF52]">
-                  사용
+                  상점 교환
                 </TabsTrigger>
               </TabsList>
 

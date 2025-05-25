@@ -134,6 +134,11 @@ export default function InvestPage() {
       setInvestmentAmount(userBalance.toString())
       setInputError(`최대 투자 가능 금액은 ${formatKoreanCurrency(userBalance)}입니다.`)
       setTimeout(() => setInputError(""), 3000) // 3초 후 에러 메시지 제거
+    } else if (numericAmount > remainingAmount) {
+      // 남은 투자금액 초과 시 자동으로 남은 투자금액으로 조정
+      setInvestmentAmount(remainingAmount.toString())
+      setInputError(`남은 투자 가능 금액은 ${formatKoreanCurrency(remainingAmount)}입니다.`)
+      setTimeout(() => setInputError(""), 3000) // 3초 후 에러 메시지 제거
     } else {
       setInvestmentAmount(newAmount)
       setInputError("")

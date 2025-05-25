@@ -108,7 +108,7 @@ export function FavoritesScreen() {
             </div>
             <h2 className="text-xl font-bold text-[#323233] dark:text-[#F5D949] mb-2">관심 웹툰이 없습니다</h2>
             <p className="text-[#989898] mb-6 max-w-sm">
-              You have no favorite webtoons yet. Start adding from the main list!
+              아직 관심 웹툰이 없습니다. 메인 목록에서 관심 웹툰을 추가해보세요!
             </p>
             <Button
               onClick={() => router.push("/webtoons")}

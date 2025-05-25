@@ -17,6 +17,7 @@ import {
   Smartphone,
   Building,
   TrendingDown,
+  TrendingUp,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { getUserFromStorage, saveUserToStorage } from "@/lib/auth"
@@ -30,15 +31,17 @@ interface PaymentMethod {
   isDefault: boolean
 }
 
-interface ChargeRecord {
+interface TransactionRecord {
   id: string
   amount: number
   method: string
   status: "completed" | "pending" | "failed"
   date: string
   fee: number
-  type?: "charge" | "refund"
+  type: "charge" | "refund" | "investment"
   webtoonTitle?: string
+  webtoonId?: string
+  description?: string
 }
 
 export function PaymentScreen() {
@@ -48,9 +51,25 @@ export function PaymentScreen() {
   const [selectedMethod, setSelectedMethod] = useState("")
   const [userBalance, setUserBalance] = useState(0)
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
-  const [chargeHistory, setChargeHistory] = useState<ChargeRecord[]>([])
+  const [transactionHistory, setTransactionHistory] = useState<TransactionRecord[]>([])
   const [isCharging, setIsCharging] = useState(false)
   const [totalInvested, setTotalInvested] = useState(0)
+
+  // 투자 내역을 거래 내역으로 변환하는 함수
+  const convertInvestmentsToTransactions = (investments: any[]): TransactionRecord[] => {
+    return investments.map((investment) => ({
+      id: `investment_${investment.id || investment.webtoonId}_${Date.now()}`,
+      amount: investment.amount,
+      method: "투자",
+      status: "completed" as const,
+      date: investment.date || investment.investmentTime || new Date().toISOString().split("T")[0],
+      fee: 0,
+      type: "investment" as const,
+      webtoonTitle: investment.title,
+      webtoonId: investment.id || investment.webtoonId,
+      description: `${investment.title} 투자`,
+    }))
+  }
 
   useEffect(() => {
     const user = getUserFromStorage()
@@ -60,10 +79,12 @@ export function PaymentScreen() {
 
     // 총 투자 금액 계산
     const investmentsStr = localStorage.getItem("userInvestments")
+    let investmentTransactions: TransactionRecord[] = []
     if (investmentsStr) {
       const investments = JSON.parse(investmentsStr)
       const total = investments.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0)
       setTotalInvested(total)
+      investmentTransactions = convertInvestmentsToTransactions(investments)
     }
 
     const savedMethods = localStorage.getItem("paymentMethods")
@@ -90,11 +111,13 @@ export function PaymentScreen() {
       localStorage.setItem("paymentMethods", JSON.stringify(defaultMethods))
     }
 
+    // 기존 충전/환불 내역 로드
     const savedHistory = localStorage.getItem("chargeHistory")
+    let chargeRefundTransactions: TransactionRecord[] = []
     if (savedHistory) {
-      setChargeHistory(JSON.parse(savedHistory))
+      chargeRefundTransactions = JSON.parse(savedHistory)
     } else {
-      const defaultHistory: ChargeRecord[] = [
+      const defaultHistory: TransactionRecord[] = [
         {
           id: "1",
           amount: 100000,
@@ -103,6 +126,7 @@ export function PaymentScreen() {
           date: "2024-01-15",
           fee: 0,
           type: "charge",
+          description: "100,000원 충전",
         },
         {
           id: "2",
@@ -112,28 +136,50 @@ export function PaymentScreen() {
           date: "2024-01-10",
           fee: 500,
           type: "charge",
+          description: "50,000원 충전",
         },
       ]
-      setChargeHistory(defaultHistory)
+      chargeRefundTransactions = defaultHistory
       localStorage.setItem("chargeHistory", JSON.stringify(defaultHistory))
     }
+
+    // 모든 거래 내역 합치기 (최신순 정렬)
+    const allTransactions = [...chargeRefundTransactions, ...investmentTransactions].sort((a, b) => {
+      const dateA = new Date(a.date)
+      const dateB = new Date(b.date)
+      return dateB.getTime() - dateA.getTime()
+    })
+
+    setTransactionHistory(allTransactions)
   }, [])
 
   // 투자 데이터 변경 감지
   useEffect(() => {
     const handleInvestmentUpdate = () => {
       const investmentsStr = localStorage.getItem("userInvestments")
+      let investmentTransactions: TransactionRecord[] = []
       if (investmentsStr) {
         const investments = JSON.parse(investmentsStr)
         const total = investments.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0)
         setTotalInvested(total)
+        investmentTransactions = convertInvestmentsToTransactions(investments)
       }
 
-      // 충전 내역 다시 로드 (환불 내역 포함)
+      // 충전/환불 내역 다시 로드
       const savedHistory = localStorage.getItem("chargeHistory")
+      let chargeRefundTransactions: TransactionRecord[] = []
       if (savedHistory) {
-        setChargeHistory(JSON.parse(savedHistory))
+        chargeRefundTransactions = JSON.parse(savedHistory)
       }
+
+      // 모든 거래 내역 합치기 (최신순 정렬)
+      const allTransactions = [...chargeRefundTransactions, ...investmentTransactions].sort((a, b) => {
+        const dateA = new Date(a.date)
+        const dateB = new Date(b.date)
+        return dateB.getTime() - dateA.getTime()
+      })
+
+      setTransactionHistory(allTransactions)
     }
 
     window.addEventListener("investmentUpdate", handleInvestmentUpdate)
@@ -183,7 +229,7 @@ export function PaymentScreen() {
         saveUserToStorage(user)
       }
 
-      const newRecord: ChargeRecord = {
+      const newRecord: TransactionRecord = {
         id: Date.now().toString(),
         amount,
         method: selectedMethod,
@@ -191,11 +237,18 @@ export function PaymentScreen() {
         date: new Date().toISOString().split("T")[0],
         fee: amount >= 50000 ? 0 : 500,
         type: "charge",
+        description: `${amount.toLocaleString()}원 충전`,
       }
 
-      const updatedHistory = [newRecord, ...chargeHistory]
-      setChargeHistory(updatedHistory)
-      localStorage.setItem("chargeHistory", JSON.stringify(updatedHistory))
+      // 충전 내역에 추가
+      const savedHistory = localStorage.getItem("chargeHistory")
+      const chargeHistory = savedHistory ? JSON.parse(savedHistory) : []
+      const updatedChargeHistory = [newRecord, ...chargeHistory]
+      localStorage.setItem("chargeHistory", JSON.stringify(updatedChargeHistory))
+
+      // 전체 거래 내역 업데이트
+      const updatedTransactions = [newRecord, ...transactionHistory]
+      setTransactionHistory(updatedTransactions)
 
       setUserBalance(newBalance)
       setChargeAmount("")
@@ -237,7 +290,7 @@ export function PaymentScreen() {
     }
   }
 
-  const getStatusIcon = (status: string, type?: string) => {
+  const getStatusIcon = (status: string, type: string) => {
     if (type === "refund") {
       switch (status) {
         case "completed":
@@ -249,6 +302,10 @@ export function PaymentScreen() {
         default:
           return <TrendingDown className="h-4 w-4 text-[#F9DF52]" />
       }
+    }
+
+    if (type === "investment") {
+      return <TrendingUp className="h-4 w-4 text-[#5F859F]" />
     }
 
     switch (status) {
@@ -263,7 +320,7 @@ export function PaymentScreen() {
     }
   }
 
-  const getStatusText = (status: string, type?: string) => {
+  const getStatusText = (status: string, type: string) => {
     if (type === "refund") {
       switch (status) {
         case "completed":
@@ -275,6 +332,10 @@ export function PaymentScreen() {
         default:
           return "환불처리중"
       }
+    }
+
+    if (type === "investment") {
+      return "투자완료"
     }
 
     switch (status) {
@@ -289,11 +350,32 @@ export function PaymentScreen() {
     }
   }
 
-  const getRecordTitle = (record: ChargeRecord) => {
+  const getRecordTitle = (record: TransactionRecord) => {
     if (record.type === "refund") {
       return `${record.webtoonTitle || "웹툰"} 투자 취소`
     }
-    return `${formatCurrency(record.amount)} 충전`
+    if (record.type === "investment") {
+      return `${record.webtoonTitle || "웹툰"} 투자`
+    }
+    return record.description || `${formatCurrency(record.amount)} 충전`
+  }
+
+  const getAmountDisplay = (record: TransactionRecord) => {
+    const prefix = record.type === "refund" ? "+" : record.type === "investment" ? "-" : ""
+    return `${prefix}${formatCurrency(record.amount)}`
+  }
+
+  const getAmountColor = (record: TransactionRecord) => {
+    switch (record.type) {
+      case "refund":
+        return "text-[#4F8F78]"
+      case "investment":
+        return "text-[#5F859F]"
+      case "charge":
+        return "text-[#4F8F78]"
+      default:
+        return "text-[#989898]"
+    }
   }
 
   return (
@@ -438,12 +520,15 @@ export function PaymentScreen() {
           </CardHeader>
           <CardContent className="p-4">
             <Tabs defaultValue="all">
-              <TabsList className="grid grid-cols-4 mb-4 bg-[#E5E4DC] dark:bg-[#454858] p-1 rounded-xl">
+              <TabsList className="grid grid-cols-5 mb-4 bg-[#E5E4DC] dark:bg-[#454858] p-1 rounded-xl">
                 <TabsTrigger value="all" className="rounded-lg text-[#3F3F3F] dark:text-[#F9DF52] text-xs">
                   전체
                 </TabsTrigger>
                 <TabsTrigger value="charge" className="rounded-lg text-[#3F3F3F] dark:text-[#F9DF52] text-xs">
                   충전
+                </TabsTrigger>
+                <TabsTrigger value="investment" className="rounded-lg text-[#3F3F3F] dark:text-[#F9DF52] text-xs">
+                  투자
                 </TabsTrigger>
                 <TabsTrigger value="refund" className="rounded-lg text-[#3F3F3F] dark:text-[#F9DF52] text-xs">
                   환불
@@ -454,14 +539,16 @@ export function PaymentScreen() {
               </TabsList>
 
               <TabsContent value="all" className="space-y-3">
-                {chargeHistory.length > 0 ? (
-                  chargeHistory.slice(0, 10).map((record) => (
+                {transactionHistory.length > 0 ? (
+                  transactionHistory.slice(0, 15).map((record) => (
                     <div
                       key={record.id}
                       className={`flex items-center justify-between p-3 rounded-xl ${
                         record.type === "refund"
                           ? "bg-[#F9DF52]/10 dark:bg-[#F9DF52]/20"
-                          : "bg-[#E5E4DC]/30 dark:bg-[#454858]/30"
+                          : record.type === "investment"
+                            ? "bg-[#5F859F]/10 dark:bg-[#5F859F]/20"
+                            : "bg-[#E5E4DC]/30 dark:bg-[#454858]/30"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -473,22 +560,12 @@ export function PaymentScreen() {
                           <p className="text-xs text-[#989898]">
                             {record.method} • {record.date}
                             {record.type === "refund" && " • 투자취소"}
+                            {record.type === "investment" && " • 투자"}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p
-                          className={`text-sm font-medium ${
-                            record.type === "refund"
-                              ? "text-[#F9DF52]"
-                              : record.status === "completed"
-                                ? "text-[#4F8F78]"
-                                : "text-[#989898]"
-                          }`}
-                        >
-                          {record.type === "refund" ? "+" : ""}
-                          {formatCurrency(record.amount)}
-                        </p>
+                        <p className={`text-sm font-medium ${getAmountColor(record)}`}>{getAmountDisplay(record)}</p>
                         <p className="text-xs text-[#989898]">{getStatusText(record.status, record.type)}</p>
                         {record.fee > 0 && (
                           <p className="text-xs text-[#989898]">수수료 {formatCurrency(record.fee)}</p>
@@ -505,8 +582,8 @@ export function PaymentScreen() {
               </TabsContent>
 
               <TabsContent value="charge" className="space-y-3">
-                {chargeHistory
-                  .filter((record) => record.type !== "refund")
+                {transactionHistory
+                  .filter((record) => record.type === "charge")
                   .slice(0, 10)
                   .map((record) => (
                     <div key={record.id} className="flex items-center justify-between p-3 bg-[#4F8F78]/5 rounded-xl">
@@ -514,7 +591,7 @@ export function PaymentScreen() {
                         <CheckCircle className="h-4 w-4 text-[#4F8F78]" />
                         <div>
                           <p className="font-medium text-sm text-[#3F3F3F] dark:text-[#F9DF52]">
-                            {formatCurrency(record.amount)} 충전
+                            {getRecordTitle(record)}
                           </p>
                           <p className="text-xs text-[#989898]">
                             {record.method} • {record.date}
@@ -522,7 +599,8 @@ export function PaymentScreen() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-[#4F8F78]">완료</p>
+                        <p className="text-sm font-medium text-[#4F8F78]">{formatCurrency(record.amount)}</p>
+                        <p className="text-xs text-[#989898]">완료</p>
                         {record.fee > 0 && (
                           <p className="text-xs text-[#989898]">수수료 {formatCurrency(record.fee)}</p>
                         )}
@@ -531,9 +609,39 @@ export function PaymentScreen() {
                   ))}
               </TabsContent>
 
+              <TabsContent value="investment" className="space-y-3">
+                {transactionHistory.filter((record) => record.type === "investment").length > 0 ? (
+                  transactionHistory
+                    .filter((record) => record.type === "investment")
+                    .slice(0, 10)
+                    .map((record) => (
+                      <div key={record.id} className="flex items-center justify-between p-3 bg-[#5F859F]/5 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <TrendingUp className="h-4 w-4 text-[#5F859F]" />
+                          <div>
+                            <p className="font-medium text-sm text-[#3F3F3F] dark:text-[#F9DF52]">
+                              {record.webtoonTitle || "웹툰"} 투자
+                            </p>
+                            <p className="text-xs text-[#989898]">투자 • {record.date}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-[#5F859F]">-{formatCurrency(record.amount)}</p>
+                          <p className="text-xs text-[#989898]">투자완료</p>
+                        </div>
+                      </div>
+                    ))
+                ) : (
+                  <div className="text-center py-8">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-3 text-[#989898]/50" />
+                    <p className="text-[#989898]">투자 내역이 없습니다</p>
+                  </div>
+                )}
+              </TabsContent>
+
               <TabsContent value="refund" className="space-y-3">
-                {chargeHistory.filter((record) => record.type === "refund").length > 0 ? (
-                  chargeHistory
+                {transactionHistory.filter((record) => record.type === "refund").length > 0 ? (
+                  transactionHistory
                     .filter((record) => record.type === "refund")
                     .slice(0, 10)
                     .map((record) => (
@@ -562,8 +670,8 @@ export function PaymentScreen() {
               </TabsContent>
 
               <TabsContent value="pending" className="space-y-3">
-                {chargeHistory.filter((record) => record.status === "pending").length > 0 ? (
-                  chargeHistory
+                {transactionHistory.filter((record) => record.status === "pending").length > 0 ? (
+                  transactionHistory
                     .filter((record) => record.status === "pending")
                     .slice(0, 10)
                     .map((record) => (
@@ -577,14 +685,12 @@ export function PaymentScreen() {
                             <p className="text-xs text-[#989898]">
                               {record.method} • {record.date}
                               {record.type === "refund" && " • 투자취소"}
+                              {record.type === "investment" && " • 투자"}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-medium text-[#F9DF52]">
-                            {record.type === "refund" ? "+" : ""}
-                            {formatCurrency(record.amount)}
-                          </p>
+                          <p className="text-sm font-medium text-[#F9DF52]">{getAmountDisplay(record)}</p>
                           <p className="text-xs text-[#989898]">처리중</p>
                         </div>
                       </div>
