@@ -6,43 +6,42 @@ import Image from "next/image"
 
 export function SplashScreen() {
   const router = useRouter()
-  const [logoOpacity, setLogoOpacity] = useState(0)
-  const [screenOpacity, setScreenOpacity] = useState(1)
+  const [logoVisible, setLogoVisible] = useState(false)
+  const [screenHidden, setScreenHidden] = useState(false)
 
-useEffect(() => {
-  // 0.5초 후 페이드인
-  const fadeInTimer = setTimeout(() => {
-    setLogoOpacity(1)
-  }, 500)
+  useEffect(() => {
+    // 로고 페이드인
+    const fadeInTimer = setTimeout(() => {
+      setLogoVisible(true)
+    }, 500)
 
-  // 12.5초 후 로고 페이드아웃
-  const fadeOutTimer = setTimeout(() => {
-    setLogoOpacity(0)
-  }, 12500)
+    // 12초 후 페이드아웃 시작
+    const fadeOutTimer = setTimeout(() => {
+      setLogoVisible(false)
+    }, 12500)
 
-  // 13.5초 후 전체 화면 페이드아웃
-  const screenFadeOutTimer = setTimeout(() => {
-    setScreenOpacity(0)
-  }, 13500)
+    // 13.5초 후 전체 화면 사라지기
+    const screenFadeOutTimer = setTimeout(() => {
+      setScreenHidden(true)
+    }, 13500)
 
-  // 14초 후 로그인 페이지로 이동
-  const navigationTimer = setTimeout(() => {
-    router.push("/login")
-  }, 14000)
+    // 14초 후 페이지 이동
+    const navigationTimer = setTimeout(() => {
+      router.push("/login")
+    }, 14000)
 
-  return () => {
-    clearTimeout(fadeInTimer)
-    clearTimeout(fadeOutTimer)
-    clearTimeout(screenFadeOutTimer)
-    clearTimeout(navigationTimer)
-  }
-}, [router])
-
+    return () => {
+      clearTimeout(fadeInTimer)
+      clearTimeout(fadeOutTimer)
+      clearTimeout(screenFadeOutTimer)
+      clearTimeout(navigationTimer)
+    }
+  }, [router])
 
   return (
     <div
       className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-8 transition-opacity duration-1000 ease-in-out"
-      style={{ opacity: screenOpacity }}
+      style={{ opacity: screenHidden ? 0 : 1 }}
     >
       <div className="flex flex-col items-center justify-center">
         <div className="mb-8">
@@ -50,14 +49,14 @@ useEffect(() => {
             <div
               className="w-full h-full bg-white rounded-3xl shadow-xl overflow-hidden flex items-center justify-center p-6 transition-all duration-1000 ease-in-out"
               style={{
-                opacity: logoOpacity,
-                transform: `scale(${logoOpacity * 0.1 + 0.9})`,
+                opacity: logoVisible ? 1 : 0,
+                transform: `scale(${logoVisible ? 1 : 0.9})`,
               }}
             >
               <div className="relative w-48 h-48">
                 <Image
                   src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/KakaoTalk_20250523_161505275_03.jpg-AdX1SWFiQwrIJf2sHFFRkFTZTZYPCQ.jpeg"
-                  alt="The ARTINVSET - Kakao FANance Logo"
+                  alt="Kakao FANance Logo"
                   fill
                   className="object-contain scale-110"
                   style={{
@@ -71,8 +70,8 @@ useEffect(() => {
             <div
               className="absolute -top-3 -right-3 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg transition-all duration-1000 ease-in-out"
               style={{
-                opacity: logoOpacity,
-                transform: `scale(${logoOpacity * 0.2 + 0.8})`,
+                opacity: logoVisible ? 1 : 0,
+                transform: `scale(${logoVisible ? 1 : 0.8})`,
               }}
             >
               <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -89,8 +88,8 @@ useEffect(() => {
         <div
           className="transition-all duration-1000 ease-in-out text-center"
           style={{
-            opacity: logoOpacity,
-            transform: `translateY(${(1 - logoOpacity) * 20}px)`,
+            opacity: logoVisible ? 1 : 0,
+            transform: `translateY(${logoVisible ? 0 : 20}px)`,
           }}
         >
           <h1 className="text-4xl font-bold text-gray-900 mb-3 tracking-tight">Kakao FANance</h1>
@@ -103,8 +102,8 @@ useEffect(() => {
         <div
           className="transition-all duration-1000 ease-in-out"
           style={{
-            opacity: logoOpacity,
-            transform: `translateY(${(1 - logoOpacity) * 10}px)`,
+            opacity: logoVisible ? 1 : 0,
+            transform: `translateY(${logoVisible ? 0 : 10}px)`,
           }}
         >
           <div className="flex justify-center mb-4">
