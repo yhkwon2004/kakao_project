@@ -885,51 +885,48 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
           </TabsContent>
         </Tabs>
 
-        {/* 고정 하단 버튼 */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-dark/95 backdrop-blur-sm border-t border-gray/10 shadow-2xl z-50">
-          <div className="flex gap-3 p-4">
-            <Button
-              className={`flex-1 rounded-xl h-14 font-semibold shadow-lg transition-all duration-200 ${
-                dynamicProgress >= 100
-                  ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-                  : hasInvested
-                    ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 text-white"
-                    : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transform hover:scale-105 text-white"
-              }`}
-              onClick={dynamicProgress >= 100 ? undefined : handleInvest}
-              disabled={dynamicProgress >= 100}
-            >
-              <div className="flex items-center justify-center">
-                {dynamicProgress >= 100 ? (
-                  <>
-                    <CheckCircle className="h-5 w-5 mr-2" />
-                    모집 완료
-                  </>
-                ) : hasInvested ? (
-                  <>
-                    <Plus className="h-5 w-5 mr-2" />
-                    추가 투자
-                  </>
-                ) : (
-                  <>
-                    <Wallet className="h-5 w-5 mr-2" />
-                    투자하기
-                  </>
-                )}
-              </div>
-            </Button>
-            <Button
-              variant="outline"
-              className={`rounded-xl w-14 h-14 border-2 transition-all duration-200 ${
-                isFavorite
-                  ? "bg-yellow/10 border-yellow text-yellow hover:bg-yellow/20 shadow-lg"
-                  : "border-gray-300 text-gray-500 hover:bg-gray-50 dark:hover:bg-darkblue/30"
-              }`}
-              onClick={handleFavorite}
-            >
-              <Star className={`h-6 w-6 ${isFavorite ? "fill-yellow" : ""}`} />
-            </Button>
-          </div>
+        <div className="mt-6 px-4 pb-32">
+  <div className="flex gap-3">
+    <Button
+      className={`flex-1 rounded-xl h-14 font-semibold shadow-lg transition-all duration-200 ${
+        dynamicProgress >= 100
+          ? "bg-gray-400 text-gray-600 cursor-not-allowed"
+          : hasInvested
+            ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 text-white"
+            : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transform hover:scale-105 text-white"
+      }`}
+      onClick={dynamicProgress >= 100 ? undefined : handleInvest}
+      disabled={dynamicProgress >= 100}
+    >
+      <div className="flex items-center justify-center">
+        {dynamicProgress >= 100 ? (
+          <>
+            <CheckCircle className="h-5 w-5 mr-2" /> 모집 완료
+          </>
+        ) : hasInvested ? (
+          <>
+            <Plus className="h-5 w-5 mr-2" /> 추가 투자
+          </>
+        ) : (
+          <>
+            <Wallet className="h-5 w-5 mr-2" /> 투자하기
+          </>
+        )}
+      </div>
+    </Button>
+    <Button
+      variant="outline"
+      className={`rounded-xl w-14 h-14 border-2 transition-all duration-200 ${
+        isFavorite
+          ? "bg-yellow/10 border-yellow text-yellow hover:bg-yellow/20 shadow-lg"
+          : "border-gray-300 text-gray-500 hover:bg-gray-50 dark:hover:bg-darkblue/30"
+      }`}
+      onClick={handleFavorite}
+    >
+      <Star className={`h-6 w-6 ${isFavorite ? "fill-yellow" : ""}`} />
+    </Button>
+  </div>
+</div>
 
           {/* 상태 메시지 */}
           {(getStatusMessage() || dynamicProgress >= 100) && (
