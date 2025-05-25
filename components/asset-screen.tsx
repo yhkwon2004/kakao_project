@@ -149,7 +149,7 @@ export function AssetScreen() {
                 <div>
                   <p className="text-gray text-xs font-medium">총 수익</p>
                   <p className={`text-lg font-bold ${profitLoss >= 0 ? "text-green-600" : "text-red-500"}`}>
-                    {profitLoss >= 0 ? "+" : ""}{profitLoss.toLocaleString()}원
+                    {profitLoss >= 0 ? " " : ""}{profitLoss.toLocaleString()}원
                   </p>
                 </div>
                 <div className={`p-2 rounded-full ${profitLoss >= 0 ? "bg-green/10" : "bg-red/10"}`}>
@@ -169,7 +169,7 @@ export function AssetScreen() {
                 <div>
                   <p className="text-gray text-xs font-medium">수익률</p>
                   <p className={`text-lg font-bold ${profitRate >= 0 ? "text-green-600" : "text-red-500"}`}>
-                    {profitRate >= 0 ? "+" : ""}
+                    {profitRate >= 0 ? " " : ""}
                     {profitRate.toFixed(1)}%
                   </p>
                 </div>
