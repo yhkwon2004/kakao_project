@@ -13,22 +13,22 @@ export function SplashScreen() {
     // 페이드인 애니메이션 (0 -> 1)
     const fadeInTimer = setTimeout(() => {
       setLogoOpacity(1)
-    }, 500)
+    }, 1000)
 
     // 페이드아웃 애니메이션 (1 -> 0) - 더 늦게 시작
     const fadeOutTimer = setTimeout(() => {
       setLogoOpacity(0)
-    }, 4000)
+    }, 8000)
 
     // 전체 화면 페이드아웃 (부드러운 전환을 위해)
     const screenFadeOutTimer = setTimeout(() => {
       setScreenOpacity(0)
-    }, 4500)
+    }, 9000)
 
     // 페이지 이동 - 화면이 완전히 사라진 후
     const navigationTimer = setTimeout(() => {
       router.push("/home")
-    }, 5500)
+    }, 11000)
 
     return () => {
       clearTimeout(fadeInTimer)
