@@ -109,7 +109,7 @@ export function AssetScreen() {
         </div>
         <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.push("/mypage")}>
           <Avatar className="h-8 w-8 bg-light border border-gray/20">
-            <AvatarFallback className="text-darkblue">권</AvatarFallback>
+            <AvatarFallback className="text-darkblue"> </AvatarFallback>
           </Avatar>
         </Button>
       </div>
@@ -121,7 +121,7 @@ export function AssetScreen() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-blue-100 text-sm font-medium">총 자산</p>
-                <p className="text-3xl font-bold">₩{totalAssets.toLocaleString()}</p>
+                <p className="text-3xl font-bold">{totalAssets.toLocaleString()}원</p>
               </div>
               <div className="bg-white/20 p-3 rounded-full">
                 <Wallet className="h-6 w-6" />
@@ -131,11 +131,11 @@ export function AssetScreen() {
             <div className="grid grid-cols-2 gap-4 mt-6">
               <div className="bg-white/10 rounded-xl p-3">
                 <p className="text-blue-100 text-xs font-medium">현금</p>
-                <p className="text-lg font-bold">₩{userBalance.toLocaleString()}</p>
+                <p className="text-lg font-bold">{userBalance.toLocaleString()}원</p>
               </div>
               <div className="bg-white/10 rounded-xl p-3">
                 <p className="text-blue-100 text-xs font-medium">투자자산</p>
-                <p className="text-lg font-bold">₩{totalReturn.toLocaleString()}</p>
+                <p className="text-lg font-bold">{totalReturn.toLocaleString()}원</p>
               </div>
             </div>
           </CardContent>
@@ -149,7 +149,7 @@ export function AssetScreen() {
                 <div>
                   <p className="text-gray text-xs font-medium">총 수익</p>
                   <p className={`text-lg font-bold ${profitLoss >= 0 ? "text-green-600" : "text-red-500"}`}>
-                    {profitLoss >= 0 ? "+" : ""}₩{profitLoss.toLocaleString()}
+                    {profitLoss >= 0 ? "+" : ""}{profitLoss.toLocaleString()}원
                   </p>
                 </div>
                 <div className={`p-2 rounded-full ${profitLoss >= 0 ? "bg-green/10" : "bg-red/10"}`}>
