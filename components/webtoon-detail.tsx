@@ -886,7 +886,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
         </Tabs>
 
         {/* 고정 하단 버튼 */}
-  
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-dark/95 backdrop-blur-sm border-t border-gray/10 shadow-2xl z-50">
           <div className="flex gap-3 p-4">
             <Button
               className={`flex-1 rounded-xl h-14 font-semibold shadow-lg transition-all duration-200 ${
