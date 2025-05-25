@@ -69,9 +69,9 @@ export function InvestmentVisualizationScreen() {
             return {
               id: inv.id || `inv-${Math.random().toString(36).substr(2, 9)}`,
               title: webtoonData ? webtoonData.title : inv.title || "투자 프로젝트",
-              amount: inv.amount || 0,
-              progress: inv.progress || 0,
-              expectedROI: inv.expectedROI || 0,
+              amount: Number(inv.amount) || 0,
+              progress: Number(inv.progress) || 0,
+              expectedROI: Number(inv.expectedROI) || 0,
               status: inv.status || "진행중",
               slug: inv.slug || inv.id,
               date: inv.date || new Date().toISOString().split("T")[0],
@@ -93,9 +93,9 @@ export function InvestmentVisualizationScreen() {
             return {
               id: project.id,
               title: webtoonData ? webtoonData.title : project.title,
-              amount: project.investedAmount || 0,
+              amount: Number(project.investedAmount) || 0,
               progress: 100,
-              expectedROI: project.roi || 15,
+              expectedROI: Number(project.roi) || 15,
               status: "완료됨",
               slug: project.slug || project.id,
               date: project.investmentDate || "2023-04-01",
@@ -143,12 +143,18 @@ export function InvestmentVisualizationScreen() {
       loadInvestments()
     }
 
+    const handleInvestmentUpdate = () => {
+      loadInvestments()
+    }
+
     window.addEventListener("userDataChanged", handleDataChange)
     window.addEventListener("storage", handleDataChange)
+    window.addEventListener("investmentUpdate", handleInvestmentUpdate)
 
     return () => {
       window.removeEventListener("userDataChanged", handleDataChange)
       window.removeEventListener("storage", handleDataChange)
+      window.removeEventListener("investmentUpdate", handleInvestmentUpdate)
     }
   }, [])
 

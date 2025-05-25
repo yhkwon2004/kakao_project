@@ -4,19 +4,11 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import {
-  TrendingUp,
-  Wallet,
-  PieChart,
-  BarChart3,
-  ArrowUpRight,
-  ArrowDownRight,
-  Eye,
-  Plus,
-} from "lucide-react"
+import { TrendingUp, Wallet, PieChart, BarChart3, ArrowDownRight, Eye, Plus } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Logo } from "@/components/logo"
 import { getUserFromStorage } from "@/lib/auth"
+import { formatKoreanCurrency } from "@/lib/format-currency"
 
 export function AssetScreen() {
   const router = useRouter()
@@ -28,8 +20,8 @@ export function AssetScreen() {
   useEffect(() => {
     const loadInvestments = () => {
       const user = getUserFromStorage()
-      if (user) {
-        setUserBalance(user.balance || 150000)
+      if (user && user.balance !== undefined) {
+        setUserBalance(user.balance)
       }
 
       const investmentsStr = localStorage.getItem("userInvestments")
@@ -41,12 +33,18 @@ export function AssetScreen() {
 
       setInvestments(userInvestments)
 
-      const total = userInvestments.reduce((sum: number, inv: any) => sum + inv.amount, 0)
+      // Add null checks and ensure numbers
+      const total = userInvestments.reduce((sum: number, inv: any) => {
+        const amount = Number(inv.amount) || 0
+        return sum + amount
+      }, 0)
       setTotalInvestment(total)
 
       const totalExpectedReturn = userInvestments.reduce((sum: number, inv: any) => {
-        const roi = typeof inv.expectedROI === "string" ? Number.parseFloat(inv.expectedROI) : inv.expectedROI
-        return sum + Math.round(inv.amount * (1 + roi / 100))
+        const amount = Number(inv.amount) || 0
+        const roi =
+          typeof inv.expectedROI === "string" ? Number.parseFloat(inv.expectedROI) || 0 : Number(inv.expectedROI) || 0
+        return sum + Math.round(amount * (1 + roi / 100))
       }, 0)
       setTotalReturn(totalExpectedReturn)
     }
@@ -55,23 +53,26 @@ export function AssetScreen() {
 
     const handleStorageChange = () => loadInvestments()
     const handleProgressUpdate = () => loadInvestments()
+    const handleInvestmentUpdate = () => loadInvestments()
 
     window.addEventListener("storage", handleStorageChange)
     window.addEventListener("focus", handleStorageChange)
     window.addEventListener("webtoonProgressUpdate", handleProgressUpdate)
     window.addEventListener("userDataChanged", handleStorageChange)
+    window.addEventListener("investmentUpdate", handleInvestmentUpdate)
 
     return () => {
       window.removeEventListener("storage", handleStorageChange)
       window.removeEventListener("focus", handleStorageChange)
       window.removeEventListener("webtoonProgressUpdate", handleProgressUpdate)
       window.removeEventListener("userDataChanged", handleStorageChange)
+      window.removeEventListener("investmentUpdate", handleInvestmentUpdate)
     }
   }, [])
 
-  const totalAssets = userBalance + totalReturn
-  const profitLoss = totalReturn - totalInvestment
-  const profitRate = totalInvestment > 0 ? (profitLoss / totalInvestment) * 100 : 0
+  const totalAssets = (userBalance || 0) + (totalReturn || 0)
+  const profitLoss = (totalReturn || 0) - (totalInvestment || 0)
+  const profitRate = totalInvestment > 0 ? ((profitLoss || 0) / totalInvestment) * 100 : 0
 
   const getWebtoonImage = (id: string) => {
     const imageMap: { [key: string]: string } = {
@@ -104,7 +105,7 @@ export function AssetScreen() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-blue-100 text-sm font-medium">총 자산</p>
-                <p className="text-3xl font-bold">{totalAssets.toLocaleString()}원</p>
+                <p className="text-3xl font-bold">{formatKoreanCurrency(totalAssets)}</p>
               </div>
               <div className="bg-white/20 p-3 rounded-full">
                 <Wallet className="h-6 w-6" />
@@ -114,49 +115,84 @@ export function AssetScreen() {
             <div className="grid grid-cols-2 gap-4 mt-6">
               <div className="bg-white/10 rounded-xl p-3">
                 <p className="text-blue-100 text-xs font-medium">현금</p>
-                <p className="text-lg font-bold">{userBalance.toLocaleString()}원</p>
+                <p className="text-lg font-bold">{formatKoreanCurrency(userBalance)}</p>
               </div>
               <div className="bg-white/10 rounded-xl p-3">
                 <p className="text-blue-100 text-xs font-medium">투자자산</p>
-                <p className="text-lg font-bold">{totalReturn.toLocaleString()}원</p>
+                <p className="text-lg font-bold">{formatKoreanCurrency(totalReturn)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* 수익률 */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="border-gray/20 shadow-lg">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray text-xs font-medium">총 수익</p>
-                  <p className={`text-lg font-bold ${profitLoss >= 0 ? "text-green-600" : "text-red-500"}`}>
-                    {profitLoss.toLocaleString()}원
-                  </p>
+        {/* 수익률 - 개선된 시각화 */}
+        <div className="grid grid-cols-1 gap-4">
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-3 rounded-full ${profitLoss >= 0 ? "bg-green/20" : "bg-red/20"}`}>
+                    {profitLoss >= 0 ? (
+                      <TrendingUp className="h-6 w-6 text-green-600" />
+                    ) : (
+                      <ArrowDownRight className="h-6 w-6 text-red-500" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-darkblue dark:text-light">투자 수익 현황</h3>
+                    <p className="text-sm text-gray">총 투자 대비 수익률</p>
+                  </div>
                 </div>
-                <div className={`p-2 rounded-full ${profitLoss >= 0 ? "bg-green/10" : "bg-red/10"}`}>
-                  {profitLoss >= 0 ? (
-                    <ArrowUpRight className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <ArrowDownRight className="h-4 w-4 text-red-500" />
-                  )}
+                <div className={`px-4 py-2 rounded-full ${profitLoss >= 0 ? "bg-green/10" : "bg-red/10"}`}>
+                  <span className={`text-lg font-bold ${profitLoss >= 0 ? "text-green-600" : "text-red-500"}`}>
+                    {profitRate >= 0 ? "+" : ""}
+                    {profitRate.toFixed(1)}%
+                  </span>
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          <Card className="border-gray/20 shadow-lg">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray text-xs font-medium">수익률</p>
-                  <p className={`text-lg font-bold ${profitRate >= 0 ? "text-green-600" : "text-red-500"}`}>
-                    {profitRate.toFixed(1)}%
-                  </p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/60 dark:bg-darkblue/20 p-4 rounded-xl">
+                    <p className="text-sm text-gray mb-1">총 투자금액</p>
+                    <p className="text-xl font-bold text-darkblue dark:text-light">
+                      {formatKoreanCurrency(totalInvestment)}
+                    </p>
+                  </div>
+                  <div className="bg-white/60 dark:bg-darkblue/20 p-4 rounded-xl">
+                    <p className="text-sm text-gray mb-1">예상 수익금</p>
+                    <p className="text-xl font-bold text-darkblue dark:text-light">
+                      {formatKoreanCurrency(totalReturn)}
+                    </p>
+                  </div>
                 </div>
-                <div className={`p-2 rounded-full ${profitRate >= 0 ? "bg-green/10" : "bg-red/10"}`}>
-                  <TrendingUp className={`h-4 w-4 ${profitRate >= 0 ? "text-green-600" : "text-red-500"}`} />
+
+                <div className="bg-white/60 dark:bg-darkblue/20 p-4 rounded-xl">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray">수익/손실</span>
+                    <span className={`text-2xl font-bold ${profitLoss >= 0 ? "text-green-600" : "text-red-500"}`}>
+                      {profitLoss >= 0 ? "+" : ""}
+                      {formatKoreanCurrency(profitLoss)}
+                    </span>
+                  </div>
+
+                  {/* 수익률 진행바 */}
+                  <div className="mt-3">
+                    <div className="h-3 bg-gray/20 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-1000 ${
+                          profitRate >= 0
+                            ? "bg-gradient-to-r from-green-400 to-green-600"
+                            : "bg-gradient-to-r from-red-400 to-red-600"
+                        }`}
+                        style={{ width: `${Math.min(Math.abs(profitRate), 100)}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-gray mt-1">
+                      <span>0%</span>
+                      <span>{Math.abs(profitRate).toFixed(1)}%</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -193,7 +229,7 @@ export function AssetScreen() {
           </Button>
         </div>
 
- {/* 투자 현황 */}
+        {/* 투자 현황 */}
         <Card className="border-gray/20 shadow-lg">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
@@ -207,6 +243,10 @@ export function AssetScreen() {
             {investments.length > 0 ? (
               <div className="space-y-4">
                 {investments.slice(0, 2).map((investment, index) => {
+                  const currentValue = Math.round((investment.amount || 0) * (1 + (investment.expectedROI || 0) / 100))
+                  const profit = currentValue - (investment.amount || 0)
+                  const isProfit = profit > 0
+
                   return (
                     <div
                       key={investment.id || index}
@@ -219,6 +259,7 @@ export function AssetScreen() {
                             investment.thumbnail ||
                             investment.webtoonThumbnail ||
                             getWebtoonImage(investment.id) ||
+                            "/placeholder.svg?height=60&width=60&query=webtoon cover" ||
                             "/placeholder.svg"
                           }
                           alt={investment.title || investment.webtoonTitle}
@@ -243,7 +284,7 @@ export function AssetScreen() {
                         <div className="flex items-center space-x-2 mb-2">
                           <span className="text-xs text-gray">투자금액</span>
                           <span className="text-sm font-medium text-darkblue dark:text-light">
-                            {investment.amount.toLocaleString()}원
+                            {formatKoreanCurrency(investment.amount)}
                           </span>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -261,11 +302,21 @@ export function AssetScreen() {
                       </div>
 
                       <div className="text-right flex-shrink-0">
-                        <div className="bg-green-50 dark:bg-green-900/20 px-3 py-2 rounded-lg">
-                          <p className="text-sm font-bold text-green-600 dark:text-green-400">
-                            +{investment.expectedROI}%
+                        <div
+                          className={`px-3 py-2 rounded-lg ${isProfit ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}
+                        >
+                          <p
+                            className={`text-sm font-bold ${isProfit ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+                          >
+                            {isProfit ? "+" : ""}
+                            {formatKoreanCurrency(profit)}
                           </p>
-                          <p className="text-xs text-green-500 dark:text-green-500">예상수익</p>
+                          <p
+                            className={`text-xs ${isProfit ? "text-green-500 dark:text-green-500" : "text-red-500 dark:text-red-500"}`}
+                          >
+                            {isProfit ? "+" : ""}
+                            {investment.expectedROI}%
+                          </p>
                         </div>
                       </div>
                     </div>
