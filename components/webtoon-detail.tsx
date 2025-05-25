@@ -1028,12 +1028,12 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       {/* 투자 모달 */}
       <Dialog open={isInvestModalOpen} onOpenChange={setIsInvestModalOpen}>
         <DialogContent className="w-[95vw] max-w-[425px] max-h-[90vh] overflow-y-auto rounded-xl bg-light dark:bg-darkblue border-gray/20 z-[100] p-4">
-          <DialogHeader>
-            <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">
-              투자 금액 입력
-            </DialogTitle>
-            </DialogDescription>
-          </DialogHeader>
+<DialogHeader>
+  <DialogTitle className="text-center text-lg font-bold text-darkblue dark:text-light">
+    투자 금액 입력
+  </DialogTitle>
+</DialogHeader>
+
 
           {/* 투자 금액 표시 */}
           <div className="py-3 space-y-4">
