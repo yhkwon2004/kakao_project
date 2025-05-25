@@ -10,25 +10,26 @@ export function SplashScreen() {
   const [screenOpacity, setScreenOpacity] = useState(1)
 
   useEffect(() => {
-    // 0.5초 후 페이드인
-    const fadeInTimer = setTimeout(() => {
-      setLogoOpacity(1)
-    }, 500)
+// 0.5초 후 로고 페이드인
+const fadeInTimer = setTimeout(() => {
+  setLogoOpacity(1)
+}, 500)
 
-    // 3.5초 후 페이드아웃
-    const fadeOutTimer = setTimeout(() => {
-      setLogoOpacity(0)
-    }, 3500)
+// 5초 후 로고 페이드아웃 시작
+const fadeOutTimer = setTimeout(() => {
+  setLogoOpacity(0)
+}, 5000)
 
-    // 전체 화면 페이드아웃 (4.5초)
-    const screenFadeOutTimer = setTimeout(() => {
-      setScreenOpacity(0)
-    }, 4500)
+// 5.8초 후 전체 화면 페이드아웃
+const screenFadeOutTimer = setTimeout(() => {
+  setScreenOpacity(0)
+}, 5800)
 
-    // 5초 후 로그인 페이지로 이동
-    const navigationTimer = setTimeout(() => {
-      router.push("/login")
-    }, 5000)
+// 6초 후 로그인 페이지로 이동
+const navigationTimer = setTimeout(() => {
+  router.push("/login")
+}, 6000)
+
 
     return () => {
       clearTimeout(fadeInTimer)
