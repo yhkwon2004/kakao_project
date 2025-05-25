@@ -176,13 +176,13 @@ export function InvestmentListScreen() {
                 <div>
                   <p className="text-xs text-gray">수익/손실</p>
                   <p className={`font-medium text-sm ${isProfit ? "text-green-600" : "text-red-500"}`}>
-                    {isProfit ? "+" : ""}{profit.toLocaleString()}원
+{profit.toLocaleString()}원
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray">수익률</p>
                   <p className={`font-medium text-sm ${isProfit ? "text-green-600" : "text-red-500"}`}>
-                    {isProfit ? "+" : ""}
+
                     {investment.expectedROI}%
                   </p>
                 </div>
@@ -259,13 +259,13 @@ export function InvestmentListScreen() {
               <div>
                 <p className="text-blue-100 text-xs font-medium">총 수익</p>
                 <p className={`text-lg font-bold ${totalProfit >= 0 ? "text-green-300" : "text-red-300"}`}>
-                  {totalProfit >= 0 ? "+" : ""}{totalProfit.toLocaleString()}원
+{totalProfit.toLocaleString()}원
                 </p>
               </div>
               <div>
                 <p className="text-blue-100 text-xs font-medium">수익률</p>
                 <p className={`text-lg font-bold ${totalProfitRate >= 0 ? "text-green-300" : "text-red-300"}`}>
-                  {totalProfitRate >= 0 ? "+" : ""}
+
                   {totalProfitRate.toFixed(1)}%
                 </p>
               </div>
