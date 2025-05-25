@@ -18,6 +18,8 @@ import {
   Building,
   TrendingDown,
   TrendingUp,
+  Receipt,
+  Download,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { getUserFromStorage, saveUserToStorage } from "@/lib/auth"
@@ -54,6 +56,12 @@ export function PaymentScreen() {
   const [transactionHistory, setTransactionHistory] = useState<TransactionRecord[]>([])
   const [isCharging, setIsCharging] = useState(false)
   const [totalInvested, setTotalInvested] = useState(0)
+
+  // 모달 상태들
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [showReceiptModal, setShowReceiptModal] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [currentTransaction, setCurrentTransaction] = useState<TransactionRecord | null>(null)
 
   // 투자 내역을 거래 내역으로 변환하는 함수
   const convertInvestmentsToTransactions = (investments: any[]): TransactionRecord[] => {
@@ -197,7 +205,7 @@ export function PaymentScreen() {
     setChargeAmount(amount.toString())
   }
 
-  const handleCharge = async () => {
+  const handleChargeClick = () => {
     if (!chargeAmount || !selectedMethod) {
       toast({
         title: "입력 오류",
@@ -217,11 +225,17 @@ export function PaymentScreen() {
       return
     }
 
+    setShowConfirmModal(true)
+  }
+
+  const handleConfirmCharge = async () => {
+    setShowConfirmModal(false)
     setIsCharging(true)
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
+      const amount = Number.parseInt(chargeAmount)
       const newBalance = userBalance + amount
       const user = getUserFromStorage()
       if (user) {
@@ -240,6 +254,8 @@ export function PaymentScreen() {
         description: `${amount.toLocaleString()}원 충전`,
       }
 
+      setCurrentTransaction(newRecord)
+
       // 충전 내역에 추가
       const savedHistory = localStorage.getItem("chargeHistory")
       const chargeHistory = savedHistory ? JSON.parse(savedHistory) : []
@@ -256,10 +272,8 @@ export function PaymentScreen() {
 
       window.dispatchEvent(new Event("userDataChanged"))
 
-      toast({
-        title: "충전 완료",
-        description: `${amount.toLocaleString()}원이 충전되었습니다.`,
-      })
+      // 영수증 모달 표시
+      setShowReceiptModal(true)
     } catch (error) {
       toast({
         title: "충전 실패",
@@ -269,6 +283,11 @@ export function PaymentScreen() {
     } finally {
       setIsCharging(false)
     }
+  }
+
+  const handleReceiptConfirm = () => {
+    setShowReceiptModal(false)
+    setShowSuccessModal(true)
   }
 
   const formatCurrency = (amount: number) => {
@@ -502,7 +521,7 @@ export function PaymentScreen() {
 
             {/* 충전 버튼 */}
             <Button
-              onClick={handleCharge}
+              onClick={handleChargeClick}
               disabled={!chargeAmount || !selectedMethod || isCharging}
               className="w-full bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233] font-bold py-3 rounded-xl disabled:bg-[#BCBCBC] disabled:text-[#989898]"
             >
@@ -706,6 +725,174 @@ export function PaymentScreen() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 충전 확인 모달 */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#FAFAFA] dark:bg-[#3F3F3F] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-[#F9DF52] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Wallet className="h-8 w-8 text-[#323233]" />
+              </div>
+              <h3 className="text-xl font-bold text-[#323233] dark:text-[#F9DF52] mb-2">충전 확인</h3>
+              <p className="text-[#989898] text-sm">다음 내용으로 충전하시겠습니까?</p>
+            </div>
+
+            <div className="bg-[#E5E4DC] dark:bg-[#454858] rounded-xl p-4 mb-6">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-[#989898] text-sm">충전 금액</span>
+                  <span className="font-bold text-[#323233] dark:text-[#F9DF52]">
+                    {formatCurrency(Number.parseInt(chargeAmount))}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#989898] text-sm">결제 수단</span>
+                  <span className="font-medium text-[#323233] dark:text-[#F9DF52]">{selectedMethod}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#989898] text-sm">수수료</span>
+                  <span className="font-medium text-[#323233] dark:text-[#F9DF52]">
+                    {Number.parseInt(chargeAmount) >= 50000 ? "무료" : "500원"}
+                  </span>
+                </div>
+                <div className="border-t border-[#BCBCBC] pt-2 mt-2">
+                  <div className="flex justify-between">
+                    <span className="text-[#323233] dark:text-[#F9DF52] font-bold">총 결제 금액</span>
+                    <span className="font-bold text-[#323233] dark:text-[#F9DF52]">
+                      {formatCurrency(
+                        Number.parseInt(chargeAmount) + (Number.parseInt(chargeAmount) >= 50000 ? 0 : 500),
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setShowConfirmModal(false)}
+                variant="outline"
+                className="flex-1 border-[#BCBCBC] text-[#989898] hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleConfirmCharge}
+                className="flex-1 bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233] font-bold"
+              >
+                충전하기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 영수증 모달 */}
+      {showReceiptModal && currentTransaction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#FAFAFA] dark:bg-[#3F3F3F] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-[#4F8F78] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Receipt className="h-8 w-8 text-[#FAFAFA]" />
+              </div>
+              <h3 className="text-xl font-bold text-[#323233] dark:text-[#F9DF52] mb-2">충전 영수증</h3>
+              <p className="text-[#989898] text-sm">충전이 완료되었습니다</p>
+            </div>
+
+            <div className="bg-[#E5E4DC] dark:bg-[#454858] rounded-xl p-4 mb-6">
+              <div className="space-y-3">
+                <div className="text-center border-b border-[#BCBCBC] pb-3">
+                  <p className="text-xs text-[#989898]">거래번호</p>
+                  <p className="font-mono text-sm text-[#323233] dark:text-[#F9DF52]">{currentTransaction.id}</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-[#989898] text-sm">충전 금액</span>
+                    <span className="font-bold text-[#323233] dark:text-[#F9DF52]">
+                      {formatCurrency(currentTransaction.amount)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#989898] text-sm">결제 수단</span>
+                    <span className="font-medium text-[#323233] dark:text-[#F9DF52]">{currentTransaction.method}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#989898] text-sm">수수료</span>
+                    <span className="font-medium text-[#323233] dark:text-[#F9DF52]">
+                      {currentTransaction.fee > 0 ? formatCurrency(currentTransaction.fee) : "무료"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#989898] text-sm">처리 일시</span>
+                    <span className="font-medium text-[#323233] dark:text-[#F9DF52]">
+                      {new Date().toLocaleString("ko-KR")}
+                    </span>
+                  </div>
+                  <div className="border-t border-[#BCBCBC] pt-2 mt-2">
+                    <div className="flex justify-between">
+                      <span className="text-[#323233] dark:text-[#F9DF52] font-bold">충전 후 잔액</span>
+                      <span className="font-bold text-[#4F8F78] text-lg">{formatCurrency(userBalance)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={() => {
+                  // 영수증 다운로드 로직 (실제로는 PDF 생성 등)
+                  toast({
+                    title: "영수증 저장",
+                    description: "영수증이 다운로드 폴더에 저장되었습니다.",
+                  })
+                }}
+                variant="outline"
+                className="flex-1 border-[#BCBCBC] text-[#989898] hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                저장
+              </Button>
+              <Button
+                onClick={handleReceiptConfirm}
+                className="flex-1 bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233] font-bold"
+              >
+                확인
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 충전 성공 모달 */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#FAFAFA] dark:bg-[#3F3F3F] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-[#4F8F78] to-[#6CB9B1] rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="h-10 w-10 text-[#FAFAFA]" />
+              </div>
+              <h3 className="text-2xl font-bold text-[#323233] dark:text-[#F9DF52] mb-3">충전 완료!</h3>
+              <p className="text-[#989898] text-sm mb-6">
+                {currentTransaction && formatCurrency(currentTransaction.amount)}이 성공적으로 충전되었습니다.
+              </p>
+
+              <div className="bg-gradient-to-r from-[#F9DF52] to-[#F5C882] rounded-xl p-4 mb-6">
+                <p className="text-[#323233] text-sm font-medium mb-1">현재 잔액</p>
+                <p className="text-[#323233] text-2xl font-bold">{formatCurrency(userBalance)}</p>
+              </div>
+
+              <Button
+                onClick={() => setShowSuccessModal(false)}
+                className="w-full bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233] font-bold py-3"
+              >
+                확인
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

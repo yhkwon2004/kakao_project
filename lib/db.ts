@@ -92,58 +92,64 @@ export const resetGuestData = async () => {
     await supabase.from("user_preferences").delete().eq("user_id", userId)
     await supabase.from("sessions").delete().eq("user_id", userId)
 
-    // Reset guest balance and theme - 게스트 계정은 15만원 유지
+    // Reset guest balance and theme
     await supabase.from("users").update({ balance: 150000, theme: "light" }).eq("id", userId)
 
-    // Add dummy investment history data
+    // Add dummy investment history data with proper schema
     const dummyInvestments = [
       {
         user_id: userId,
         webtoon_id: "1",
         amount: 50000,
-        created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days ago
+        investment_date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
         status: "completed",
-        roi: 15,
+        expected_return: 57500,
       },
       {
         user_id: userId,
         webtoon_id: "3",
         amount: 75000,
-        created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days ago
+        investment_date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
         status: "completed",
-        roi: 12,
+        expected_return: 84000,
       },
       {
         user_id: userId,
         webtoon_id: "5",
         amount: 100000,
-        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
+        investment_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
         status: "in_progress",
-        roi: null,
+        expected_return: null,
       },
       {
         user_id: userId,
         webtoon_id: "2",
         amount: 120000,
-        created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 days ago
+        investment_date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
         status: "in_progress",
-        roi: null,
+        expected_return: null,
       },
       {
         user_id: userId,
-        webtoon_id: "6", // 철혈검가 사냥개의 회귀
+        webtoon_id: "6",
         amount: 2800000,
-        created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days ago
+        investment_date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
         status: "completed",
-        roi: 18,
+        expected_return: 3304000,
       },
       {
         user_id: userId,
-        webtoon_id: "7", // 나쁜 비서
+        webtoon_id: "7",
         amount: 3400000,
-        created_at: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString(), // 75 days ago
+        investment_date: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString(),
         status: "completed",
-        roi: 22,
+        expected_return: 4148000,
       },
     ]
 
@@ -303,9 +309,36 @@ export const removeFavorite = async (userId: string, webtoonId: string) => {
   return true
 }
 
-// Investments related functions
-export const getInvestments = async (userId: string) => {
+// Helper function to get user ID by email (for cases where we only have email)
+export const getUserIdByEmail = async (email: string): Promise<string | null> => {
   const supabase = getSupabase()
+  const { data, error } = await supabase.from("users").select("id").eq("email", email).single()
+
+  if (error) {
+    console.error("Error fetching user ID:", error)
+    return null
+  }
+
+  return data?.id || null
+}
+
+// Investments related functions
+export const getInvestments = async (userIdentifier: string) => {
+  const supabase = getSupabase()
+
+  // Check if userIdentifier is a UUID or email
+  let userId = userIdentifier
+
+  // If it looks like an email, get the UUID
+  if (userIdentifier.includes("@")) {
+    const fetchedUserId = await getUserIdByEmail(userIdentifier)
+    if (!fetchedUserId) {
+      console.error("Could not find user ID for email:", userIdentifier)
+      return []
+    }
+    userId = fetchedUserId
+  }
+
   const { data, error } = await supabase
     .from("investments")
     .select("*")
@@ -320,8 +353,21 @@ export const getInvestments = async (userId: string) => {
   return data
 }
 
-export const addInvestment = async (userId: string, webtoonId: string, amount: number) => {
+export const addInvestment = async (userIdentifier: string, webtoonId: string, amount: number) => {
   const supabase = getSupabase()
+
+  // Check if userIdentifier is a UUID or email
+  let userId = userIdentifier
+
+  // If it looks like an email, get the UUID
+  if (userIdentifier.includes("@")) {
+    const fetchedUserId = await getUserIdByEmail(userIdentifier)
+    if (!fetchedUserId) {
+      console.error("Could not find user ID for email:", userIdentifier)
+      return false
+    }
+    userId = fetchedUserId
+  }
 
   // Start a transaction
   const { data: user, error: userError } = await supabase.from("users").select("balance").eq("id", userId).single()
@@ -356,9 +402,7 @@ export const addInvestment = async (userId: string, webtoonId: string, amount: n
     .single()
 
   if (checkError && checkError.code !== "PGRST116") {
-    // PGRST116 is "not found" error
     console.error("Error checking existing investment:", checkError)
-    // Rollback balance change
     await supabase.from("users").update({ balance: user.balance }).eq("id", userId)
     return false
   }
@@ -368,8 +412,8 @@ export const addInvestment = async (userId: string, webtoonId: string, amount: n
     const { error: updateInvestError } = await supabase
       .from("investments")
       .update({
-        amount: existingInvestment.amount + amount,
-        created_at: new Date().toISOString(), // Update timestamp to latest investment
+        amount: Number(existingInvestment.amount) + amount,
+        updated_at: new Date().toISOString(),
         status: "in_progress",
       })
       .eq("user_id", userId)
@@ -377,7 +421,6 @@ export const addInvestment = async (userId: string, webtoonId: string, amount: n
 
     if (updateInvestError) {
       console.error("Error updating investment:", updateInvestError)
-      // Rollback balance change
       await supabase.from("users").update({ balance: user.balance }).eq("id", userId)
       return false
     }
@@ -389,13 +432,13 @@ export const addInvestment = async (userId: string, webtoonId: string, amount: n
         webtoon_id: webtoonId,
         amount,
         status: "in_progress",
+        investment_date: new Date().toISOString(),
         created_at: new Date().toISOString(),
       },
     ])
 
     if (investError) {
       console.error("Error adding investment:", investError)
-      // Rollback balance change
       await supabase.from("users").update({ balance: user.balance }).eq("id", userId)
       return false
     }

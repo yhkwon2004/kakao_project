@@ -5,6 +5,7 @@ import { ArrowLeft, CheckCircle, Calendar, Award, Star, MessageCircle, Send } fr
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { getInvestments } from "@/lib/db"
 import { investmentWebtoons } from "@/data/webtoons"
 
 interface CompletedProject {
@@ -36,43 +37,100 @@ export function CompletedProjectsScreen() {
   const [completedProjects, setCompletedProjects] = useState<CompletedProject[]>([])
   const [comments, setComments] = useState<Comment[]>([])
   const [newComments, setNewComments] = useState<{ [key: string]: string }>({})
+  const [userEmail, setUserEmail] = useState<string | null>(null)
 
   useEffect(() => {
-    // Get completed webtoons from the data
-    const completedWebtoons = investmentWebtoons.filter((webtoon) => webtoon.status === "completed")
+    const loadCompletedProjects = async () => {
+      const storedUserEmail = localStorage.getItem("userEmail")
+      setUserEmail(storedUserEmail)
 
-    const mockCompletedProjects: CompletedProject[] = completedWebtoons.map((webtoon) => {
-      // Define investment data for specific webtoons
-      const investmentData: { [key: string]: { myInvestment: number; myReturn: number } } = {
-        "bad-secretary": { myInvestment: 500000, myReturn: 104000 },
-        "blood-sword-family-hunting-dog": { myInvestment: 750000, myReturn: 135000 },
+      // 게스트 계정 확인을 더 확실하게 처리
+      if (!storedUserEmail || storedUserEmail === "guest_social@guest.fake" || storedUserEmail.includes("guest")) {
+        // 게스트 계정인 경우 철혈검가와 나쁜비서 완료된 프로젝트 표시
+        const guestCompletedProjects: CompletedProject[] = [
+          {
+            id: "bad-secretary",
+            title: "나쁜 비서",
+            author: "김작가",
+            thumbnail: "/webtoons/나쁜-비서.png",
+            completedDate: "2024-03-15",
+            finalAmount: 120000000,
+            targetAmount: 100000000,
+            totalReturn: 25000000,
+            returnPercentage: 20.8,
+            investorCount: 1250,
+            rating: 4.8,
+            myInvestment: 500000,
+            myReturn: 104000,
+            slug: "bad-secretary",
+          },
+          {
+            id: "blood-sword-family-hunting-dog",
+            title: "철혈검가 사냥개의 회귀",
+            author: "이작가",
+            thumbnail: "/images/철혈검가-사냥개의-회귀.png",
+            completedDate: "2024-03-10",
+            finalAmount: 150000000,
+            targetAmount: 120000000,
+            totalReturn: 30000000,
+            returnPercentage: 18.0,
+            investorCount: 1800,
+            rating: 4.9,
+            myInvestment: 750000,
+            myReturn: 135000,
+            slug: "blood-sword-family-hunting-dog",
+          },
+        ]
+
+        console.log("게스트 계정 완료된 프로젝트 설정:", guestCompletedProjects)
+        setCompletedProjects(guestCompletedProjects)
+        return
       }
 
-      const slug = webtoon.title
-        .toLowerCase()
-        .replace(/[^a-z0-9가-힣]/g, "-")
-        .replace(/-+/g, "-")
-      const investment = investmentData[slug]
+      // 일반 유저인 경우 DB에서 완료된 투자 내역 가져오기
+      const userId = localStorage.getItem("userId")
+      if (userId) {
+        try {
+          const investments = await getInvestments(userId)
+          const completedInvestments = investments.filter((inv) => inv.status === "completed")
 
-      return {
-        id: webtoon.id,
-        title: webtoon.title,
-        author: webtoon.director || "작가명",
-        thumbnail: webtoon.thumbnail || "/placeholder.svg",
-        completedDate: "2024-03-15",
-        finalAmount: webtoon.currentRaised || webtoon.goalAmount || 100000000,
-        targetAmount: webtoon.goalAmount || 100000000,
-        totalReturn: 25000000,
-        returnPercentage: 20.8,
-        investorCount: webtoon.totalInvestors || 1000,
-        rating: 4.8,
-        myInvestment: investment?.myInvestment,
-        myReturn: investment?.myReturn,
-        slug: slug,
+          const completedProjects: CompletedProject[] = completedInvestments.map((investment) => {
+            const webtoon = investmentWebtoons.find((w) => w.id === investment.webtoon_id)
+            const slug =
+              webtoon?.title
+                .toLowerCase()
+                .replace(/[^a-z0-9가-힣]/g, "-")
+                .replace(/-+/g, "-") || investment.webtoon_id
+
+            return {
+              id: investment.webtoon_id,
+              title: webtoon?.title || "알 수 없는 웹툰",
+              author: webtoon?.director || "작가명",
+              thumbnail: webtoon?.thumbnail || "/placeholder.svg",
+              completedDate: new Date(investment.created_at).toISOString().split("T")[0],
+              finalAmount: webtoon?.currentRaised || webtoon?.goalAmount || 100000000,
+              targetAmount: webtoon?.goalAmount || 100000000,
+              totalReturn: investment.roi ? (investment.amount * investment.roi) / 100 : 0,
+              returnPercentage: investment.roi || 0,
+              investorCount: webtoon?.totalInvestors || 1000,
+              rating: 4.8,
+              myInvestment: investment.amount,
+              myReturn: investment.roi ? (investment.amount * investment.roi) / 100 : 0,
+              slug: slug,
+            }
+          })
+
+          setCompletedProjects(completedProjects)
+        } catch (error) {
+          console.error("Error loading completed investments:", error)
+          setCompletedProjects([])
+        }
+      } else {
+        setCompletedProjects([])
       }
-    })
+    }
 
-    setCompletedProjects(mockCompletedProjects)
+    loadCompletedProjects()
 
     // Load existing comments from localStorage
     const savedComments = localStorage.getItem("completedProjectComments")
@@ -177,7 +235,10 @@ export function CompletedProjectsScreen() {
           </div>
         )}
 
-        {completedProjects.length === 0 ? (
+        {completedProjects.length === 0 &&
+        userEmail &&
+        !userEmail.includes("guest") &&
+        userEmail !== "guest_social@guest.fake" ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-20 h-20 bg-gradient-to-r from-[#C2BDAD] to-[#989898] rounded-full flex items-center justify-center mb-4 shadow-lg">
               <CheckCircle className="h-10 w-10 text-[#323233] dark:text-[#F5D949]" />

@@ -13,7 +13,6 @@ import { saveUserToStorage, getUserFromStorage, clearUserFromStorage } from "@/l
 import { useToast } from "@/components/ui/use-toast"
 import { Eye, EyeOff } from "lucide-react"
 import { createClient } from "@supabase/supabase-js"
-import { SplashScreen } from "@/components/splash-screen"
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ""
@@ -26,27 +25,19 @@ export function LoginScreen() {
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [showSplash, setShowSplash] = useState(true)
   const [lastActivity, setLastActivity] = useState(Date.now())
   const router = useRouter()
   const { toast } = useToast()
 
-  // Check if already logged in
+  // Check if already logged in - 스플래시 로직 완전 제거
   useEffect(() => {
     const user = getUserFromStorage()
     if (user) {
       router.push("/home")
     }
-
-    // 스플래시 화면을 표시하고 일정 시간 후에 로그인 화면으로 전환
-    const timer = setTimeout(() => {
-      setShowSplash(false)
-    }, 2000) // 2초 후에 스플래시 화면 숨김
-
-    return () => clearTimeout(timer)
   }, [router])
 
-  // 자동 로그아웃 기능을 위한 useEffect 추가 (기존 useEffect들 아래에)
+  // 자동 로그아웃 기능을 위한 useEffect
   useEffect(() => {
     let inactivityTimer: NodeJS.Timeout
 
@@ -418,45 +409,45 @@ export function LoginScreen() {
     }
   }
 
-  // 스플래시 화면이 표시되는 동안에는 스플래시 컴포넌트만 렌더링
-  if (showSplash) {
-    return <SplashScreen />
-  }
-
   return (
-    <div className="flex items-center justify-center min-h-screen w-full px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-yellow-50 dark:from-darkblue dark:via-darkblue/90 dark:to-darkblue/80 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
-        <div className="flex flex-col items-center mb-8">
-          {/* 로고에서 부제목 제거 */}
+        {/* 로고 섹션 */}
+        <div className="flex flex-col items-center mb-10">
           <Logo size="lg" showSubtitle={false} />
+          <p className="text-gray-600 dark:text-gray-300 text-sm mt-3 text-center">
+            웹툰 투자의 새로운 경험을 시작하세요
+          </p>
         </div>
 
-        <Card className="w-full rounded-2xl shadow-md border-gray/20 bg-light dark:bg-darkblue/30">
-          <CardHeader>
-            <div className="flex justify-end">
-              <span className="text-xs bg-yellow text-dark px-2 py-1 rounded-full">베타 버전</span>
+        {/* 메인 카드 */}
+        <Card className="w-full rounded-3xl shadow-xl border-0 bg-white/80 dark:bg-darkblue/40 backdrop-blur-sm">
+          <CardHeader className="pb-4">
+            <div className="flex justify-between items-center">
+              <h1 className="text-xl font-bold text-darkblue dark:text-light">환영합니다</h1>
+              <span className="text-xs bg-yellow text-dark px-3 py-1 rounded-full font-medium">베타</span>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6">
             {/* Login/Signup tabs */}
             <Tabs defaultValue="login" className="w-full" onValueChange={setActiveTab} value={activeTab}>
-              <TabsList className="grid w-full grid-cols-2 mb-6 bg-light dark:bg-darkblue/20 p-1 rounded-full">
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-gray-100 dark:bg-darkblue/30 p-1 rounded-2xl h-12">
                 <TabsTrigger
                   value="login"
-                  className={`rounded-full transition-all ${
+                  className={`rounded-xl transition-all font-medium ${
                     activeTab === "login"
-                      ? "bg-yellow text-dark font-medium"
-                      : "text-gray hover:text-darkblue dark:hover:text-light"
+                      ? "bg-white dark:bg-darkblue text-darkblue dark:text-light shadow-sm"
+                      : "text-gray-500 hover:text-darkblue dark:hover:text-light"
                   }`}
                 >
                   로그인
                 </TabsTrigger>
                 <TabsTrigger
                   value="signup"
-                  className={`rounded-full transition-all ${
+                  className={`rounded-xl transition-all font-medium ${
                     activeTab === "signup"
-                      ? "bg-yellow text-dark font-medium"
-                      : "text-gray hover:text-darkblue dark:hover:text-light"
+                      ? "bg-white dark:bg-darkblue text-darkblue dark:text-light shadow-sm"
+                      : "text-gray-500 hover:text-darkblue dark:hover:text-light"
                   }`}
                 >
                   회원가입
@@ -464,13 +455,13 @@ export function LoginScreen() {
               </TabsList>
 
               {/* Login form */}
-              <TabsContent value="login">
+              <TabsContent value="login" className="space-y-4">
                 <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Input
                       type="email"
-                      placeholder="이메일"
-                      className="rounded-xl h-12 border-gray/20 bg-light dark:bg-darkblue/20"
+                      placeholder="이메일을 입력하세요"
+                      className="rounded-2xl h-14 border-gray-200 dark:border-gray-600 bg-white dark:bg-darkblue/20 text-base px-4 focus:ring-2 focus:ring-yellow focus:border-transparent"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -478,8 +469,8 @@ export function LoginScreen() {
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
-                        placeholder="비밀번호"
-                        className="rounded-xl h-12 border-gray/20 bg-light dark:bg-darkblue/20 pr-10"
+                        placeholder="비밀번호를 입력하세요"
+                        className="rounded-2xl h-14 border-gray-200 dark:border-gray-600 bg-white dark:bg-darkblue/20 text-base px-4 pr-12 focus:ring-2 focus:ring-yellow focus:border-transparent"
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -488,43 +479,46 @@ export function LoginScreen() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-700"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-gray" />
+                          <EyeOff className="h-4 w-4 text-gray-500" />
                         ) : (
-                          <Eye className="h-4 w-4 text-gray" />
+                          <Eye className="h-4 w-4 text-gray-500" />
                         )}
                       </Button>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full h-12 rounded-xl bg-green hover:bg-green/90 text-light">
+                  <Button
+                    type="submit"
+                    className="w-full h-14 rounded-2xl bg-gradient-to-r from-green to-green/80 hover:from-green/90 hover:to-green/70 text-white font-medium text-base shadow-lg transition-all duration-200 hover:shadow-xl"
+                  >
                     로그인
                   </Button>
                 </form>
 
-                <p className="text-xs text-gray text-center mt-4">
-                  * 베타 버전에서는 어떤 이메일/비밀번호 조합으로도 로그인이 가능합니다.
+                <p className="text-xs text-gray-500 text-center mt-4 px-4">
+                  베타 버전에서는 어떤 이메일/비밀번호 조합으로도 로그인이 가능합니다.
                 </p>
               </TabsContent>
 
               {/* Signup form */}
-              <TabsContent value="signup">
+              <TabsContent value="signup" className="space-y-4">
                 <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Input
                       type="text"
-                      placeholder="이름"
-                      className="rounded-xl h-12 border-gray/20 bg-light dark:bg-darkblue/20"
+                      placeholder="이름을 입력하세요"
+                      className="rounded-2xl h-14 border-gray-200 dark:border-gray-600 bg-white dark:bg-darkblue/20 text-base px-4 focus:ring-2 focus:ring-yellow focus:border-transparent"
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                     />
                     <Input
                       type="email"
-                      placeholder="이메일"
-                      className="rounded-xl h-12 border-gray/20 bg-light dark:bg-darkblue/20"
+                      placeholder="이메일을 입력하세요"
+                      className="rounded-2xl h-14 border-gray-200 dark:border-gray-600 bg-white dark:bg-darkblue/20 text-base px-4 focus:ring-2 focus:ring-yellow focus:border-transparent"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -532,8 +526,8 @@ export function LoginScreen() {
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
-                        placeholder="비밀번호"
-                        className="rounded-xl h-12 border-gray/20 bg-light dark:bg-darkblue/20 pr-10"
+                        placeholder="비밀번호를 입력하세요"
+                        className="rounded-2xl h-14 border-gray-200 dark:border-gray-600 bg-white dark:bg-darkblue/20 text-base px-4 pr-12 focus:ring-2 focus:ring-yellow focus:border-transparent"
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -542,96 +536,98 @@ export function LoginScreen() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-700"
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? (
-                          <EyeOff className="h-4 w-4 text-gray" />
+                          <EyeOff className="h-4 w-4 text-gray-500" />
                         ) : (
-                          <Eye className="h-4 w-4 text-gray" />
+                          <Eye className="h-4 w-4 text-gray-500" />
                         )}
                       </Button>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full h-12 rounded-xl bg-green hover:bg-green/90 text-light">
+                  <Button
+                    type="submit"
+                    className="w-full h-14 rounded-2xl bg-gradient-to-r from-green to-green/80 hover:from-green/90 hover:to-green/70 text-white font-medium text-base shadow-lg transition-all duration-200 hover:shadow-xl"
+                  >
                     회원가입
                   </Button>
                 </form>
               </TabsContent>
             </Tabs>
 
-            {/* Social login section - 텍스트 제거 */}
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray/20"></span>
-                </div>
-                {/* 소셜 계정으로 계속하기 텍스트 제거 */}
+            {/* 구분선 */}
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-200 dark:border-gray-600"></span>
               </div>
-
-              <div className="mt-6 space-y-3">
-                {/* 카카오 로그인 버튼 */}
-                <Button
-                  onClick={() => handleSocialLogin("카카오")}
-                  className="w-full h-12 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: "#FEE500", color: "#000000" }}
-                >
-                  <div className="flex items-center">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center mr-2">
-                      <span className="text-black font-bold text-sm">K</span>
-                    </div>
-                    <span className="text-black">카카오로 계속하기</span>
-                  </div>
-                </Button>
-
-                {/* 네이버 로그인 버튼 */}
-                <Button
-                  onClick={() => handleSocialLogin("네이버")}
-                  className="w-full h-12 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: "#03C75A", color: "#FFFFFF" }}
-                >
-                  <div className="flex items-center">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center mr-2">
-                      <span className="text-white font-bold text-sm">N</span>
-                    </div>
-                    <span className="text-white">네이버로 계속하기</span>
-                  </div>
-                </Button>
-
-                {/* 구글 로그인 버튼 */}
-                <Button
-                  onClick={() => handleSocialLogin("구글")}
-                  variant="outline"
-                  className="w-full h-12 rounded-xl border-gray/20 bg-white text-darkblue hover:bg-gray-50 flex items-center justify-center"
-                >
-                  <div className="flex items-center">
-                    <div className="w-6 h-6 mr-2 flex items-center justify-center">
-                      <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-                        <path
-                          fill="#EA4335"
-                          d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-                        />
-                        <path
-                          fill="#4285F4"
-                          d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-                        />
-                        <path
-                          fill="#FBBC05"
-                          d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-                        />
-                        <path
-                          fill="#34A853"
-                          d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-                        />
-                      </svg>
-                    </div>
-                    <span>구글로 계속하기</span>
-                  </div>
-                </Button>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white dark:bg-darkblue/40 px-4 text-gray-500 dark:text-gray-400">
+                  또는 소셜 계정으로 계속하기
+                </span>
               </div>
+            </div>
+
+            {/* 소셜 로그인 버튼들 - 원형 가로 배치, 텍스트 제거 */}
+            <div className="flex justify-center items-center space-x-6">
+              {/* 카카오 로그인 */}
+              <button
+                onClick={() => handleSocialLogin("카카오")}
+                className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                style={{ backgroundColor: "#FEE500" }}
+                aria-label="카카오로 로그인"
+              >
+                <span className="text-black font-bold text-xl">K</span>
+              </button>
+
+              {/* 네이버 로그인 */}
+              <button
+                onClick={() => handleSocialLogin("네이버")}
+                className="w-16 h-16 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                style={{ backgroundColor: "#03C75A" }}
+                aria-label="네이버로 로그인"
+              >
+                <span className="text-white font-bold text-xl">N</span>
+              </button>
+
+              {/* 구글 로그인 */}
+              <button
+                onClick={() => handleSocialLogin("구글")}
+                className="w-16 h-16 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                aria-label="구글로 로그인"
+              >
+                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                  <path
+                    fill="#EA4335"
+                    d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                  />
+                </svg>
+              </button>
             </div>
           </CardContent>
         </Card>
+
+        {/* 하단 정보 */}
+        <div className="text-center mt-8 space-y-2">
+          <p className="text-xs text-gray-500">
+            계속 진행하면 <span className="text-blue-600 hover:underline cursor-pointer">이용약관</span> 및{" "}
+            <span className="text-blue-600 hover:underline cursor-pointer">개인정보처리방침</span>에 동의하는 것으로
+            간주됩니다.
+          </p>
+        </div>
       </div>
     </div>
   )

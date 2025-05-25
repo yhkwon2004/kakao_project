@@ -38,8 +38,8 @@ export function InvestmentListScreen() {
       }
 
       try {
-        // DB에서 투자 내역 로드
-        const dbInvestments = await getInvestments(user.id || user.email)
+        // DB에서 투자 내역 로드 - email을 사용하여 UUID를 찾도록 수정
+        const dbInvestments = await getInvestments(user.email)
 
         if (dbInvestments && dbInvestments.length > 0) {
           // DB 데이터를 Investment 형태로 변환
@@ -47,8 +47,10 @@ export function InvestmentListScreen() {
             id: inv.webtoon_id,
             title: getWebtoonById(inv.webtoon_id)?.title || "알 수 없는 웹툰",
             thumbnail: getWebtoonById(inv.webtoon_id)?.thumbnail || "/placeholder.svg",
-            amount: inv.amount,
-            expectedROI: inv.roi || getWebtoonById(inv.webtoon_id)?.expectedROI || 15,
+            amount: Number(inv.amount),
+            expectedROI: inv.expected_return
+              ? Math.round(((Number(inv.expected_return) - Number(inv.amount)) / Number(inv.amount)) * 100)
+              : getWebtoonById(inv.webtoon_id)?.expectedROI || 15,
             status: inv.status === "completed" ? "완료" : "진행중",
             date: new Date(inv.created_at).toISOString().split("T")[0],
             progress: inv.status === "completed" ? 100 : 75,
@@ -68,15 +70,20 @@ export function InvestmentListScreen() {
           userInvestments = JSON.parse(investmentsStr)
         } else {
           // 게스트 계정인 경우에만 기본 투자 데이터 설정
-          if (isGuestAccount(user.email)) {
+          if (
+            isGuestAccount(user.email) ||
+            !user.email ||
+            user.email === "guest_social@guest.fake" ||
+            user.email.includes("guest")
+          ) {
             userInvestments = [
               {
                 id: "bad-secretary",
                 title: "나쁜 비서",
                 thumbnail: "/webtoons/나쁜-비서.png",
-                amount: 300000,
+                amount: 500000,
                 expectedROI: 25,
-                status: "완료",
+                status: "완료", // 완료 상태로 설정
                 date: "2024-01-15",
                 progress: 100,
               },
@@ -84,9 +91,9 @@ export function InvestmentListScreen() {
                 id: "blood-sword-family-hunting-dog",
                 title: "철혈검가 사냥개의 회귀",
                 thumbnail: "/images/철혈검가-사냥개의-회귀.png",
-                amount: 500000,
+                amount: 750000,
                 expectedROI: 30,
-                status: "완료",
+                status: "완료", // 완료 상태로 설정
                 date: "2024-01-10",
                 progress: 100,
               },
@@ -112,6 +119,7 @@ export function InvestmentListScreen() {
               },
             ]
             localStorage.setItem("userInvestments", JSON.stringify(userInvestments))
+            console.log("게스트 계정 투자 내역 설정:", userInvestments)
           } else {
             // 일반 유저는 빈 배열로 시작
             userInvestments = []
@@ -135,6 +143,7 @@ export function InvestmentListScreen() {
         userInvestments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
         setInvestments(userInvestments)
+        console.log("최종 투자 내역:", userInvestments)
       } catch (error) {
         console.error("Error loading investments:", error)
         setInvestments([])
@@ -163,7 +172,6 @@ export function InvestmentListScreen() {
     window.addEventListener("storage", handleStorageChange)
     window.addEventListener("focus", handleFocus)
     window.addEventListener("investmentUpdate", handleInvestmentUpdate)
-    window.addEventListener("userDataChanged", handleFocus)
     window.addEventListener("userDataChanged", handleFocus)
 
     return () => {
@@ -318,6 +326,7 @@ export function InvestmentListScreen() {
     )
   }
 
+  // 필터링 로직 - 상태 값을 정확히 매칭
   const filteredInvestments = investments.filter((investment) => {
     if (activeTab === "all") return true
     if (activeTab === "active") return investment.status === "진행중"
@@ -332,6 +341,10 @@ export function InvestmentListScreen() {
   )
   const totalProfit = totalCurrentValue - totalInvested
   const totalProfitRate = totalInvested > 0 ? (totalProfit / totalInvested) * 100 : 0
+
+  // 탭별 카운트 계산
+  const activeCount = investments.filter((inv) => inv.status === "진행중").length
+  const completedCount = investments.filter((inv) => inv.status === "완료").length
 
   return (
     <div className="flex flex-col pb-20 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
@@ -433,7 +446,7 @@ export function InvestmentListScreen() {
                   : "text-gray hover:text-darkblue dark:hover:text-light"
               }`}
             >
-              진행중 ({investments.filter((inv) => inv.status === "진행중").length})
+              진행중 ({activeCount})
             </TabsTrigger>
             <TabsTrigger
               value="completed"
@@ -443,7 +456,7 @@ export function InvestmentListScreen() {
                   : "text-gray hover:text-darkblue dark:hover:text-light"
               }`}
             >
-              완료 ({investments.filter((inv) => inv.status === "완료").length})
+              완료 ({completedCount})
             </TabsTrigger>
           </TabsList>
 
