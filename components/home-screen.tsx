@@ -1,4 +1,5 @@
 "use client"
+
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -20,7 +21,6 @@ export function HomeScreen() {
   const [totalProjects, setTotalProjects] = useState(0)
   const [dynamicWebtoons, setDynamicWebtoons] = useState(investmentWebtoons)
 
-  // 웹툰 진행 상황 업데이트 감지
   useEffect(() => {
     const updateWebtoonProgress = () => {
       const updatedWebtoons = investmentWebtoons.map((webtoon) => {
@@ -42,30 +42,23 @@ export function HomeScreen() {
 
     updateWebtoonProgress()
 
-    // 웹툰 진행 상황 업데이트 이벤트 리스너
-    const handleProgressUpdate = () => {
-      updateWebtoonProgress()
-    }
-
-    window.addEventListener("webtoonProgressUpdate", handleProgressUpdate)
-    window.addEventListener("storage", handleProgressUpdate)
+    window.addEventListener("webtoonProgressUpdate", updateWebtoonProgress)
+    window.addEventListener("storage", updateWebtoonProgress)
 
     return () => {
-      window.removeEventListener("webtoonProgressUpdate", handleProgressUpdate)
-      window.removeEventListener("storage", handleProgressUpdate)
+      window.removeEventListener("webtoonProgressUpdate", updateWebtoonProgress)
+      window.removeEventListener("storage", updateWebtoonProgress)
     }
   }, [])
 
-  // 사용자 정보 로드
   useEffect(() => {
     const user = getUserFromStorage()
     if (user) {
       setUserName(user.name || "사용자")
       setProfileImage(user.profileImage || null)
-      setUserBalance(user.balance || 150000)
+      setUserBalance(user.balance !== undefined ? user.balance : 150000)
     }
 
-    // 투자 내역 로드
     const investmentsStr = localStorage.getItem("userInvestments")
     if (investmentsStr) {
       try {
@@ -73,22 +66,19 @@ export function HomeScreen() {
         const total = investments.reduce((sum: number, inv: any) => sum + (inv.amount || 0), 0)
         setTotalInvested(total)
         setTotalProjects(investments.length)
-      } catch (error) {
+      } catch {
         setTotalInvested(0)
         setTotalProjects(0)
       }
     }
   }, [])
 
-  // 금액 포맷팅
   const formatCurrency = (amount: number): string => {
-    if (amount >= 1000000) {
-      return `${Math.floor(amount / 10000).toLocaleString()}만원`
-    }
-    return `${amount.toLocaleString()}원`
+    return amount >= 1000000
+      ? `${Math.floor(amount / 10000).toLocaleString()}만원`
+      : `${amount.toLocaleString()}원`
   }
 
-  // 진행 중인 투자 프로젝트 (상위 4개)
   const ongoingProjects = dynamicWebtoons.filter((webtoon) => webtoon.status === "ongoing").slice(0, 4)
 
   return (
@@ -109,7 +99,7 @@ export function HomeScreen() {
 
       {/* 메인 콘텐츠 */}
       <div className="flex-1 overflow-y-auto">
-        {/* 환영 메시지 & 잔액 */}
+        {/* 환영 메시지 */}
         <div className="p-4">
           <div className="bg-gradient-to-r from-green/10 to-yellow/10 rounded-2xl p-4 border border-green/20">
             <div className="flex justify-between items-center">
@@ -125,7 +115,7 @@ export function HomeScreen() {
           </div>
         </div>
 
-        {/* 투자 현황 (투자한 경우만 표시) */}
+        {/* 투자 현황 */}
         {totalProjects > 0 && (
           <div className="px-4 pb-4">
             <div className="bg-white dark:bg-darkblue/30 rounded-xl p-4 border border-gray/20">
@@ -152,7 +142,7 @@ export function HomeScreen() {
           </div>
         )}
 
-        {/* 드라마화된 인기 웹툰 - 가로 스크롤 */}
+        {/* 드라마화된 웹툰 */}
         <div className="px-4 pb-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
@@ -160,38 +150,26 @@ export function HomeScreen() {
               <h2 className="font-bold text-darkblue dark:text-light">드라마화 웹툰</h2>
             </div>
           </div>
-
           <div className="overflow-x-auto">
             <div className="flex gap-3 pb-2">
               {featuredDramas.slice(0, 6).map((drama) => (
-                <div
-                  key={drama.id}
-                  className="flex-shrink-0 w-20 cursor-pointer"
-                  onClick={() => router.push(`/webtoon/${drama.id}`)}
-                >
+                <div key={drama.id} className="flex-shrink-0 w-20 cursor-pointer" onClick={() => router.push(`/webtoon/${drama.id}`)}>
                   <div className="relative h-28 w-20 rounded-lg overflow-hidden mb-2 bg-gray-100 dark:bg-gray-800">
-                    <Image
-                      src={drama.thumbnail || "/placeholder.svg"}
-                      alt={drama.title}
-                      fill
-                      className="object-cover"
-                    />
+                    <Image src={drama.thumbnail || "/placeholder.svg"} alt={drama.title} fill className="object-cover" />
                     <div className="absolute top-1 right-1">
                       <Badge className="bg-green/90 text-white text-xs px-1 py-0">
                         <Play className="h-2 w-2" />
                       </Badge>
                     </div>
                   </div>
-                  <p className="text-xs font-medium text-darkblue dark:text-light line-clamp-2 leading-tight">
-                    {drama.title}
-                  </p>
+                  <p className="text-xs font-medium text-darkblue dark:text-light line-clamp-2 leading-tight">{drama.title}</p>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* 투자 가능한 웹툰 - 카드 형태 */}
+        {/* 투자 가능한 웹툰 */}
         <div className="px-4 pb-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center">
@@ -212,12 +190,7 @@ export function HomeScreen() {
                   onClick={() => router.push(`/webtoon/${webtoon.id}`)}
                 >
                   <div className="relative h-32 bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-                    <Image
-                      src={webtoon.thumbnail || "/placeholder.svg"}
-                      alt={webtoon.title}
-                      fill
-                      className="object-cover"
-                    />
+                    <Image src={webtoon.thumbnail || "/placeholder.svg"} alt={webtoon.title} fill className="object-cover" />
                     <div className="absolute top-2 right-2">
                       <Badge className="bg-yellow/90 text-dark text-xs">{webtoon.daysLeft}일</Badge>
                     </div>
@@ -229,19 +202,14 @@ export function HomeScreen() {
                         </div>
                         <div className="relative">
                           <div className="h-1 bg-white/30 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-green transition-all duration-500"
-                              style={{ width: `${Math.min(webtoon.fundingPercentage || 0, 100)}%` }}
-                            />
+                            <div className="h-full bg-green transition-all duration-500" style={{ width: `${Math.min(webtoon.fundingPercentage || 0, 100)}%` }} />
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                   <CardContent className="p-3">
-                    <h3 className="font-bold text-sm text-darkblue dark:text-light line-clamp-1 mb-1">
-                      {webtoon.title}
-                    </h3>
+                    <h3 className="font-bold text-sm text-darkblue dark:text-light line-clamp-1 mb-1">{webtoon.title}</h3>
                     <p className="text-xs text-gray line-clamp-1">{webtoon.category}</p>
                   </CardContent>
                 </Card>
@@ -258,27 +226,19 @@ export function HomeScreen() {
         <div className="px-4 pb-4">
           <h2 className="font-bold text-darkblue dark:text-light mb-3 text-center">이용 방법</h2>
           <div className="grid grid-cols-3 gap-3">
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-yellow/20 flex items-center justify-center mx-auto mb-2">
-                <BookOpen className="h-6 w-6 text-yellow" />
+            {[
+              { icon: BookOpen, title: "웹툰 탐색", desc: "인기 웹툰 둘러보기", color: "bg-yellow/20", iconColor: "text-yellow" },
+              { icon: DollarSign, title: "투자하기", desc: "마음에 드는 작품에 투자", color: "bg-green/20", iconColor: "text-green" },
+              { icon: TrendingUp, title: "수익 확인", desc: "실시간 수익률 체크", color: "bg-blue/20", iconColor: "text-blue-600" },
+            ].map((item, idx) => (
+              <div key={idx} className="text-center">
+                <div className={`w-12 h-12 rounded-full ${item.color} flex items-center justify-center mx-auto mb-2`}>
+                  <item.icon className={`h-6 w-6 ${item.iconColor}`} />
+                </div>
+                <p className="text-xs font-medium text-darkblue dark:text-light">{item.title}</p>
+                <p className="text-xs text-gray mt-1">{item.desc}</p>
               </div>
-              <p className="text-xs font-medium text-darkblue dark:text-light">웹툰 탐색</p>
-              <p className="text-xs text-gray mt-1">인기 웹툰 둘러보기</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-green/20 flex items-center justify-center mx-auto mb-2">
-                <DollarSign className="h-6 w-6 text-green" />
-              </div>
-              <p className="text-xs font-medium text-darkblue dark:text-light">투자하기</p>
-              <p className="text-xs text-gray mt-1">마음에 드는 작품에 투자</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-blue/20 flex items-center justify-center mx-auto mb-2">
-                <TrendingUp className="h-6 w-6 text-blue-600" />
-              </div>
-              <p className="text-xs font-medium text-darkblue dark:text-light">수익 확인</p>
-              <p className="text-xs text-gray mt-1">실시간 수익률 체크</p>
-            </div>
+            ))}
           </div>
         </div>
       </div>
