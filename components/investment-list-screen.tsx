@@ -163,12 +163,12 @@ export function InvestmentListScreen() {
                 <div>
                   <p className="text-xs text-gray">투자 금액</p>
                   <p className="font-medium text-darkblue dark:text-light text-sm">
-                    ₩{investment.amount.toLocaleString()}
+                    {investment.amount.toLocaleString()}원
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-gray">현재 가치</p>
-                  <p className="font-medium text-darkblue dark:text-light text-sm">₩{currentValue.toLocaleString()}</p>
+                  <p className="font-medium text-darkblue dark:text-light text-sm">{currentValue.toLocaleString()}원</p>
                 </div>
               </div>
 
@@ -176,7 +176,7 @@ export function InvestmentListScreen() {
                 <div>
                   <p className="text-xs text-gray">수익/손실</p>
                   <p className={`font-medium text-sm ${isProfit ? "text-green-600" : "text-red-500"}`}>
-                    {isProfit ? "+" : ""}₩{profit.toLocaleString()}
+                    {isProfit ? "+" : ""}{profit.toLocaleString()}원
                   </p>
                 </div>
                 <div>
@@ -248,18 +248,18 @@ export function InvestmentListScreen() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-blue-100 text-xs font-medium">총 투자금액</p>
-                <p className="text-xl font-bold">₩{totalInvested.toLocaleString()}</p>
+                <p className="text-xl font-bold">{totalInvested.toLocaleString()}원</p>
               </div>
               <div>
                 <p className="text-blue-100 text-xs font-medium">현재 가치</p>
-                <p className="text-xl font-bold">₩{totalCurrentValue.toLocaleString()}</p>
+                <p className="text-xl font-bold">{totalCurrentValue.toLocaleString()}원</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div>
                 <p className="text-blue-100 text-xs font-medium">총 수익</p>
                 <p className={`text-lg font-bold ${totalProfit >= 0 ? "text-green-300" : "text-red-300"}`}>
-                  {totalProfit >= 0 ? "+" : ""}₩{totalProfit.toLocaleString()}
+                  {totalProfit >= 0 ? "+" : ""}{totalProfit.toLocaleString()}원
                 </p>
               </div>
               <div>
