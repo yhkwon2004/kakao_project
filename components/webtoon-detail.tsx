@@ -367,9 +367,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 )}
               </div>
               <div className="flex-1 text-[#F9F9F9]">
-                <h1 className="text-2xl font-bold mb-2">{webtoon.title}</h1>
+                <h1 className="text-2xl font-bold mb-2">{webtoon.title || "제목 없음"}</h1>
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {webtoon.genre.split(",").map((genre, index) => (
+                  {(webtoon.genre || "").split(",").map((genre, index) => (
                     <Badge key={index} className="bg-[#F9DF52]/20 text-[#F9DF52] border-[#F9DF52]/30 backdrop-blur-sm">
                       {genre.trim()}
                     </Badge>
@@ -378,7 +378,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
-                    <span>{webtoon.daysLeft}일 남음</span>
+                    <span>{webtoon.daysLeft || 0}일 남음</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
@@ -425,7 +425,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                     <span className="text-sm font-medium text-[#989898]">예상 수익률</span>
                   </div>
                   <p className="text-xl font-bold text-[#4F8F78]">
-                    +{webtoon.expectedROI.toString().replace("%", "")}%
+                    +{webtoon.expectedROI?.toString().replace("%", "") || "0"}%
                   </p>
                 </div>
 
@@ -531,7 +531,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   </h3>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-[#323233] dark:text-[#F5C882] leading-relaxed">{webtoon.description}</p>
+                  <p className="text-[#323233] dark:text-[#F5C882] leading-relaxed">
+                    {webtoon.description || "설명이 없습니다"}
+                  </p>
                 </CardContent>
               </Card>
 
