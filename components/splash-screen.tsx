@@ -27,9 +27,9 @@ export function SplashScreen() {
           <Image
             src="/images/main-logo.png"
             alt="WX WEEK"
-            width={320}
-            height={240}
-            className="w-80 h-60 sm:w-96 sm:h-72 lg:w-[400px] lg:h-80 object-contain drop-shadow-2xl"
+            width={400}
+            height={300}
+            className="w-96 h-72 sm:w-[28rem] sm:h-84 lg:w-[32rem] lg:h-96 object-contain drop-shadow-2xl"
             priority
           />
         </div>
@@ -47,8 +47,15 @@ export function SplashScreen() {
           ))}
         </div>
 
+        {/* 터치 안내 문구 추가 */}
+        <div className="mt-6 text-center">
+          <p className="text-black text-sm font-light tracking-wider animate-pulse drop-shadow-md">
+            터치하여 시작하세요
+          </p>
+        </div>
+
         <div className="absolute bottom-8 text-center">
-          <p className="text-black text-sm font-medium opacity-70">v1.9.9</p>
+          <p className="text-black text-sm font-medium opacity-70">v1.10.8</p>
         </div>
       </div>
     </div>

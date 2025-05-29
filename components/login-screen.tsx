@@ -415,9 +415,6 @@ export function LoginScreen() {
         {/* 로고 섹션 */}
         <div className="flex flex-col items-center mb-10">
           <Logo size="lg" showSubtitle={false} />
-          <p className="text-gray-600 dark:text-gray-300 text-sm mt-3 text-center">
-            웹툰 투자의 새로운 경험을 시작하세요
-          </p>
         </div>
 
         {/* 메인 카드 */}
