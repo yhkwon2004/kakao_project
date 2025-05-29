@@ -55,7 +55,7 @@ export function SplashScreen() {
         </div>
 
         <div className="absolute bottom-8 text-center">
-          <p className="text-black text-sm font-medium opacity-70">v1.10.8</p>
+          <p className="text-black text-sm font-medium opacity-70">v1.11.8</p>
         </div>
       </div>
     </div>

@@ -8,13 +8,13 @@ interface LogoProps {
 
 export function Logo({ size = "md", showSubtitle = true, className = "" }: LogoProps) {
   return (
-    <div className={`flex flex-col items-center ${className}`}>
+    <div className={`flex flex-col items-start ${className}`}>
       {/* 모든 페이지에서 동일한 고정 크기로 로고 표시 */}
       <Image
         src="/images/logo_bar_new-removebg-preview.png"
         alt="WEEK"
-        width={180}
-        height={15}
+        width={120}
+        height={6}
         className="object-contain filter dark:brightness-110 dark:contrast-125 dark:saturate-150"
         priority
       />
