@@ -174,13 +174,13 @@ export function AssetScreen() {
       "blood-sword-family-hunting-dog": "/images/철혈검가-사냥개의-회귀.png",
       // 기타 웹툰 맵 추가 가능
     }
-    return imageMap[id] || "/placeholder.svg?height=60&width=60&query=webtoon cover art"
+    return imageMap[id] || "/placeholder.svg?height=60&width=60"
   }
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#FAFAFA] via-[#F9F9F9] to-[#E5E4DC] dark:from-[#323233] dark:via-[#3F3F3F] dark:to-[#383B4B] overflow-y-auto">
       {/* ✅ 헤더 - 뒤로가기 버튼 제거됨 */}
-      <div className="flex justify-between items-center p-4 bg-[#F9F9F9]/80 dark:bg-[#3F3F3F]/80 backdrop-blur-sm sticky top-0 z-40 border-b border-[#C2BDAD] dark:border-[#454858]">
+      <div className="h-16 flex justify-between items-center px-4 bg-[#F9F9F9]/80 dark:bg-[#3F3F3F]/80 backdrop-blur-md sticky top-0 z-40 border-b border-[#C2BDAD] dark:border-[#454858]">
         <div className="flex items-center">
           {/* 삭제된 뒤로가기 버튼 */}
           <Logo size="sm" showSubtitle={false} />
@@ -355,12 +355,13 @@ export function AssetScreen() {
                             investment.webtoonThumbnail ||
                             getWebtoonImage(investment.id) ||
                             "/placeholder.svg?height=60&width=60&query=webtoon cover" ||
+                            "/placeholder.svg" ||
                             "/placeholder.svg"
                           }
                           alt={investment.title || investment.webtoonTitle}
                           className="w-16 h-16 rounded-xl object-cover shadow-sm"
                           onError={(e) => {
-                            e.currentTarget.src = "/placeholder.svg?height=60&width=60&query=webtoon cover"
+                            e.currentTarget.src = "/placeholder.svg?height=60&width=60"
                           }}
                         />
                         <div

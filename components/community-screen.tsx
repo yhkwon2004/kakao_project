@@ -401,8 +401,8 @@ export function CommunityScreen() {
   return (
     <div className="flex flex-col pb-20 bg-[#E5E4DC]/5 dark:bg-[#323233] min-h-screen">
       {/* Header */}
-      <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#C2BDAD] dark:border-[#454858] sticky top-0 z-40">
-        <div className="flex justify-between items-center p-4">
+      <div className="h-16 bg-[#F9F9F9]/80 dark:bg-[#3F3F3F]/80 backdrop-blur-md border-b border-[#C2BDAD] dark:border-[#454858] sticky top-0 z-40">
+        <div className="flex justify-between items-center px-4 h-full">
           <div className="flex items-center gap-3">
             <Logo size="md" showSubtitle={false} />
           </div>
@@ -428,7 +428,7 @@ export function CommunityScreen() {
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="px-4 pb-4">
+        <div className="px-4 py-3">
           <div className="flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#989898]" />

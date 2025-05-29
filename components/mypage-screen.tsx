@@ -300,7 +300,7 @@ export function MyPageScreen() {
       className={`flex flex-col pb-20 bg-light dark:bg-dark transition-colors duration-300 ${isChangingTheme ? "theme-transition" : ""}`}
     >
       {/* Header - 로고 일관성을 위해 수정 */}
-      <div className="flex justify-between items-center p-4 border-b border-gray/10 transition-colors duration-300">
+      <div className="flex justify-between items-center h-16 px-4 border-b border-gray/10 transition-colors duration-300 bg-light/80 dark:bg-dark/80 backdrop-blur-md sticky top-0 z-40">
         <Logo size="md" showSubtitle={false} />
         <Button variant="ghost" size="icon" className="rounded-full" onClick={toggleTheme} aria-label="Toggle theme">
           {isDarkMode ? <Sun className="h-5 w-5 text-yellow" /> : <Moon className="h-5 w-5 text-darkblue" />}

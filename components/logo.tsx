@@ -14,13 +14,17 @@ export function Logo({ size = "md", showSubtitle = true, className = "" }: LogoP
         src="/images/logo_bar_new-removebg-preview.png"
         alt="WEEK"
         width={180}
-        height={30}
-        className="object-contain"
+        height={15}
+        className="object-contain filter dark:brightness-110 dark:contrast-125 dark:saturate-150"
         priority
       />
 
       {/* 부제목이 true일 때만 표시 */}
-      {showSubtitle && <span className="text-xs text-gray-500 mt-1">Webtoon Investment Platform</span>}
+      {showSubtitle && (
+        <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-light tracking-wide">
+          Webtoon Investment Platform
+        </span>
+      )}
     </div>
   )
 }

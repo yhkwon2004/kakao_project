@@ -127,7 +127,7 @@ export function HomeScreen() {
   return (
     <div className="flex flex-col h-screen pb-20 bg-light dark:bg-dark overflow-hidden">
       {/* 헤더 */}
-      <div className="flex justify-between items-center p-4 border-b border-gray/10 flex-shrink-0">
+      <div className="h-16 flex justify-between items-center px-4 border-b border-gray/10 bg-light/80 dark:bg-dark/80 backdrop-blur-md sticky top-0 z-40 flex-shrink-0">
         <Logo size="sm" showSubtitle={false} />
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => router.push("/webtoons")}>
