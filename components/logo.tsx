@@ -16,9 +16,9 @@ export function Logo({ size = "md", showSubtitle = true, className = "" }: LogoP
   return (
     <div className={`flex items-center ${className}`}>
       <Image
-        src="/images/logo_bar-removebg-preview.png"
-        alt="Kakao FANance"
-        width={size === "sm" ? 120 : size === "md" ? 150 : 180}
+        src="/images/main-logo.png"
+        alt="WX WEEK"
+        width={size === "sm" ? 160 : size === "md" ? 200 : 240}
         height={size === "sm" ? 32 : size === "md" ? 40 : 48}
         className={`${sizeClasses[size]} w-auto object-contain`}
         priority
