@@ -13,8 +13,8 @@ export function Logo({ size = "md", showSubtitle = true, className = "" }: LogoP
       <Image
         src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo_bar_new-removebg-preview.png-mMnphcspLDPNTEXjNzlX1pUyBX6Ssu.png"
         alt="WEEK"
-        width={120}
-        height={10}
+        width={80}
+        height={7}
         className="object-contain filter dark:brightness-110 dark:contrast-125 dark:saturate-150"
         priority
       />
