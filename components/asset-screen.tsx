@@ -178,9 +178,9 @@ export function AssetScreen() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#FAFAFA] via-[#F9F9F9] to-[#E5E4DC] dark:from-[#323233] dark:via-[#3F3F3F] dark:to-[#383B4B] overflow-y-auto">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-[#FAFAFA] via-[#F9F9F9] to-[#E5E4DC] dark:from-[#323233] dark:via-[#3F3F3F] dark:to-[#383B4B]">
       {/* ✅ 헤더 - 뒤로가기 버튼 제거됨 */}
-      <div className="h-16 flex justify-between items-center px-4 bg-[#F9F9F9]/80 dark:bg-[#3F3F3F]/80 backdrop-blur-md sticky top-0 z-40 border-b border-[#C2BDAD] dark:border-[#454858]">
+      <div className="h-16 flex justify-between items-center px-4 bg-[#F9F9F9]/90 dark:bg-[#3F3F3F]/90 backdrop-blur-md sticky top-0 z-50 border-b border-[#C2BDAD] dark:border-[#454858]">
         <div className="flex items-center">
           {/* 삭제된 뒤로가기 버튼 */}
           <Logo size="sm" showSubtitle={false} />
@@ -192,7 +192,7 @@ export function AssetScreen() {
         </Button>
       </div>
 
-      <div className="flex-1 p-4 pb-24 space-y-6">
+      <div className="flex-1 p-4 pb-24 space-y-6 overflow-y-auto">
         {/* 자산 카드 */}
         <Card className="bg-gradient-to-br from-[#5F859F] to-[#58678C] text-[#F9F9F9] border-0 shadow-2xl">
           <CardContent className="p-6">
@@ -355,6 +355,7 @@ export function AssetScreen() {
                             investment.webtoonThumbnail ||
                             getWebtoonImage(investment.id) ||
                             "/placeholder.svg?height=60&width=60&query=webtoon cover" ||
+                            "/placeholder.svg" ||
                             "/placeholder.svg" ||
                             "/placeholder.svg"
                           }

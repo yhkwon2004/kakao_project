@@ -93,7 +93,7 @@ export const resetGuestData = async () => {
     await supabase.from("sessions").delete().eq("user_id", userId)
 
     // Reset guest balance and theme
-    await supabase.from("users").update({ balance: 150000, theme: "light" }).eq("id", userId)
+    await supabase.from("users").update({ balance: 150000, theme: "light", name: "홍길동" }).eq("id", userId)
 
     // Add dummy investment history data with proper schema
     const dummyInvestments = [

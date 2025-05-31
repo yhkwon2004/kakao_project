@@ -12,7 +12,7 @@ const notoSansKR = Noto_Sans_KR({
 })
 
 export const metadata: Metadata = {
-  title: "Kakao FANance (베타버전)",
+  title: "WEEK (베타버전)",
   description: "웹툰 기반 드라마/애니메이션 제작에 투자하세요",
   generator: "v0.dev",
 }

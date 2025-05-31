@@ -84,7 +84,7 @@ export const loginAsGuest = async () => {
     saveUserToStorage({
       id: guestData.id,
       email: guestData.email,
-      name: guestData.name,
+      name: "홍길동",
       theme: guestData.theme,
       balance: guestData.balance,
     })

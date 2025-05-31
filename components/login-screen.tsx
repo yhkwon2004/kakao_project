@@ -208,10 +208,10 @@ export function LoginScreen() {
 
         if (guestError) throw guestError
 
-        // Save guest user to storage
+        // Save guest user to storage with name "홍길동"
         saveUserToStorage({
           email: guestData.email,
-          name: guestData.name,
+          name: "홍길동",
           balance: guestData.balance,
         })
 
@@ -388,7 +388,7 @@ export function LoginScreen() {
       // Save guest user to storage
       saveUserToStorage({
         email: guestData.email,
-        name: guestData.name,
+        name: "홍길동",
         balance: guestData.balance,
       })
 

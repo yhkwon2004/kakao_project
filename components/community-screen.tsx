@@ -400,7 +400,7 @@ export function CommunityScreen() {
 
   return (
     <div className="flex flex-col pb-20 bg-[#E5E4DC]/5 dark:bg-[#323233] min-h-screen">
-      {/* Header */}
+      {/* Header - 이 부분만 고정 */}
       <div className="h-16 bg-[#F9F9F9]/80 dark:bg-[#3F3F3F]/80 backdrop-blur-md border-b border-[#C2BDAD] dark:border-[#454858] sticky top-0 z-40">
         <div className="flex justify-between items-center px-4 h-full">
           <div className="flex items-center gap-3">
@@ -426,33 +426,33 @@ export function CommunityScreen() {
             </Button>
           </div>
         </div>
+      </div>
 
-        {/* Search and Filter Bar */}
-        <div className="px-4 py-3">
-          <div className="flex gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#989898]" />
-              <Input
-                placeholder="게시물 검색..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 rounded-full border-[#C2BDAD] dark:border-[#454858] bg-[#E5E4DC]/5 dark:bg-[#383B4B]/20 focus:bg-[#F9F9F9] dark:focus:bg-[#3F3F3F] transition-colors text-[#323233] dark:text-[#F5D949] focus:border-[#5F859F]"
-              />
-            </div>
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full border-[#C2BDAD] dark:border-[#454858] text-[#989898] hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
-              onClick={() => setIsFilterOpen(true)}
-            >
-              <Filter className="h-4 w-4" />
-            </Button>
+      {/* Search and Filter Bar - 헤더 밖으로 이동하고 고정 속성 제거 */}
+      <div className="px-4 py-3 bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#C2BDAD] dark:border-[#454858]">
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#989898]" />
+            <Input
+              placeholder="게시물 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 rounded-full border-[#C2BDAD] dark:border-[#454858] bg-[#E5E4DC]/5 dark:bg-[#383B4B]/20 focus:bg-[#F9F9F9] dark:focus:bg-[#3F3F3F] transition-colors text-[#323233] dark:text-[#F5D949] focus:border-[#5F859F]"
+            />
           </div>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full border-[#C2BDAD] dark:border-[#454858] text-[#989898] hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
+            onClick={() => setIsFilterOpen(true)}
+          >
+            <Filter className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#C2BDAD] dark:border-[#454858] sticky top-[120px] z-30">
+      {/* Tabs - sticky 속성 제거 */}
+      <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#C2BDAD] dark:border-[#454858]">
         <div className="p-4">
           <Tabs defaultValue="all" onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-5 bg-[#E5E4DC]/10 dark:bg-[#383B4B]/30 p-1 rounded-full w-full">
