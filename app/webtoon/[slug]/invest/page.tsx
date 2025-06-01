@@ -250,7 +250,7 @@ export default function InvestPage() {
     localStorage.setItem("userInvestments", JSON.stringify(existingInvestments))
 
     // 마일리지 적립
-    const mileageToAdd = Math.floor(amount / 1000) * 10
+    const mileageToAdd = Math.floor(amount / 1000) * 1 // 1000원당 1 마일리지
     if (mileageToAdd > 0) {
       const mileageDataStr = localStorage.getItem("userMileage")
       const mileageData = mileageDataStr
@@ -262,10 +262,12 @@ export default function InvestPage() {
         totalMileage: (mileageData.totalMileage || 0) + mileageToAdd,
         history: [
           {
+            id: Date.now().toString(),
             date: currentDate,
             amount: mileageToAdd,
-            type: "적립",
-            reason: `웹툰 투자: ${webtoon.title} (${formatKoreanCurrency(amount)})`,
+            type: "earned",
+            description: `웹툰 투자: ${webtoon.title} (${formatKoreanCurrency(amount)})`,
+            source: "investment",
           },
           ...(mileageData.history || []),
         ],
@@ -277,6 +279,7 @@ export default function InvestPage() {
     // 이벤트 발생
     window.dispatchEvent(new Event("storage"))
     window.dispatchEvent(new Event("userDataChanged"))
+    window.dispatchEvent(new CustomEvent("mileageUpdated"))
     window.dispatchEvent(
       new CustomEvent("webtoonProgressUpdate", {
         detail: { webtoonId: webtoonId, ...progressData },
@@ -429,7 +432,15 @@ export default function InvestPage() {
                       key={index}
                       variant="outline"
                       onClick={() => {
-                        setInvestmentAmount(amount.toString())
+                        let finalAmount = amount
+
+                        // 전액 버튼인 경우 (마지막 인덱스)
+                        if (index === quickAmounts.length - 1) {
+                          // 사용자 잔액과 남은 모금액 중 작은 값을 선택
+                          finalAmount = Math.min(userBalance, remainingAmount)
+                        }
+
+                        setInvestmentAmount(finalAmount.toString())
                         setInputError("")
                       }}
                       className="h-10 text-xs font-semibold border border-gray/20 hover:bg-blue/10 hover:border-blue/30 transition-all duration-200 rounded-lg"

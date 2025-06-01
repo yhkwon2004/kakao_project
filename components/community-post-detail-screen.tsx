@@ -189,7 +189,7 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
     <div className="flex flex-col min-h-screen bg-gray/5 dark:bg-dark">
       {/* 헤더 */}
       <div className="bg-white dark:bg-darkblue border-b border-gray/10 sticky top-0 z-40">
-        <div className="flex justify-between items-center p-4">
+        <div className="flex justify-between items-center p-4 h-16">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => router.back()}>
               <ChevronLeft className="h-5 w-5" />
@@ -226,7 +226,17 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
               <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12 ring-2 ring-yellow/20">
                   <AvatarImage
-                    src={post.author === currentUser && profileImage ? profileImage : "/placeholder.svg"}
+                    src={
+                      post.author === currentUser && profileImage
+                        ? profileImage
+                        : post.author === "김지원"
+                          ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972677586_EF_BC_8D0.jpg-Q4Or9Sq7GYCZ1TxpW2EiNhSGv0pvsK.jpeg"
+                          : post.author === "박민호"
+                            ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D1.jpg-Xy8p98remiThU5dlPSoCTHV9MQ8aQ6.jpeg"
+                            : post.author === "이수진"
+                              ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D0.jpg-BPmkzTjLQtwopnDCFMwgHNLjJ9mXh1.jpeg"
+                              : "/placeholder.svg"
+                    }
                     alt={post.author}
                   />
                   <AvatarFallback className="bg-gradient-to-br from-yellow/20 to-green/20 text-darkblue dark:text-light font-semibold">
@@ -307,7 +317,17 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
                     >
                       <Avatar className="h-8 w-8 flex-shrink-0">
                         <AvatarImage
-                          src={comment.author === currentUser && profileImage ? profileImage : "/placeholder.svg"}
+                          src={
+                            comment.author === currentUser && profileImage
+                              ? profileImage
+                              : comment.author === "김지원"
+                                ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972677586_EF_BC_8D0.jpg-Q4Or9Sq7GYCZ1TxpW2EiNhSGv0pvsK.jpeg"
+                                : comment.author === "박민호"
+                                  ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D1.jpg-Xy8p98remiThU5dlPSoCTHV9MQ8aQ6.jpeg"
+                                  : comment.author === "이수진"
+                                    ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D0.jpg-BPmkzTjLQtwopnDCFMwgHNLjJ9mXh1.jpeg"
+                                    : "/placeholder.svg"
+                          }
                           alt={comment.author}
                         />
                         <AvatarFallback className="bg-gradient-to-br from-yellow/20 to-green/20 text-darkblue dark:text-light text-xs font-semibold">

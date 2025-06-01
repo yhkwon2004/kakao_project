@@ -13,7 +13,7 @@ export function PrivacyScreen() {
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#323233]">
       {/* Header */}
       <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#BCBCBC] dark:border-[#454858] sticky top-0 z-10">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between p-4 h-16">
           <div className="flex items-center">
             <Button
               variant="ghost"
@@ -35,7 +35,7 @@ export function PrivacyScreen() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#3F4458] dark:text-[#706FB9]">
               <Shield className="h-6 w-6" />
-              Kakao FANance 개인정보처리방침
+              WEEK 개인정보처리방침
             </CardTitle>
             <p className="text-[#989898] text-sm">최종 업데이트: 2024년 1월 1일</p>
           </CardHeader>
@@ -46,9 +46,9 @@ export function PrivacyScreen() {
                   1. 개인정보의 처리목적
                 </h3>
                 <p className="leading-relaxed mb-3">
-                  Kakao FANance(이하 "회사")는 다음의 목적을 위하여 개인정보를 처리합니다. 처리하고 있는 개인정보는
-                  다음의 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 개인정보보호법 제18조에
-                  따라 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.
+                  WEEK(이하 "회사")는 다음의 목적을 위하여 개인정보를 처리합니다. 처리하고 있는 개인정보는 다음의 목적
+                  이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 개인정보보호법 제18조에 따라 별도의
+                  동의를 받는 등 필요한 조치를 이행할 예정입니다.
                 </p>
                 <div className="space-y-2">
                   <p>• 회원 가입 및 관리: 회원 가입의사 확인, 회원제 서비스 제공에 따른 본인 식별·인증</p>
@@ -190,7 +190,7 @@ export function PrivacyScreen() {
                       <p className="font-medium">개인정보보호책임자</p>
                       <p className="text-sm">성명: 김개인</p>
                       <p className="text-sm">직책: 개인정보보호팀장</p>
-                      <p className="text-sm">연락처: privacy@kakaofanance.com</p>
+                      <p className="text-sm">연락처: privacy@week.com</p>
                     </div>
                     <div>
                       <p className="font-medium">개인정보보호 담당부서</p>

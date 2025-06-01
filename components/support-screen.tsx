@@ -13,7 +13,7 @@ export function SupportScreen() {
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#323233]">
       {/* Header */}
       <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#BCBCBC] dark:border-[#454858] sticky top-0 z-10">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between p-4 h-16">
           <div className="flex items-center">
             <Button
               variant="ghost"
@@ -25,7 +25,7 @@ export function SupportScreen() {
             </Button>
             <Logo size="sm" showSubtitle={false} />
           </div>
-          <h1 className="text-lg font-bold text-[#323233] dark:text-[#F5D949]">고객 지원</h1>
+          <h1 className="text-lg font-bold text-[#323233] dark:text-[#F5D949]">WEEK 고객 지원</h1>
           <div className="w-8" />
         </div>
       </div>
@@ -49,7 +49,7 @@ export function SupportScreen() {
               <Mail className="h-6 w-6 text-[#5F859F]" />
               <div>
                 <p className="font-semibold text-[#323233] dark:text-[#F5D949]">이메일 문의</p>
-                <p className="text-[#989898]">support@kakaofanance.com</p>
+                <p className="text-[#989898]">support@week.com</p>
               </div>
             </div>
 

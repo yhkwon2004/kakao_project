@@ -41,6 +41,7 @@ interface Comment {
   id: string
   author: string
   authorInitial: string
+  profileImage?: string
   content: string
   time: string
 }
@@ -50,6 +51,7 @@ interface Post {
   id: string
   author: string
   authorInitial: string
+  profileImage?: string
   title: string
   content: string
   likes: number
@@ -96,6 +98,8 @@ export function CommunityScreen() {
           id: "1",
           author: "김지원",
           authorInitial: "김",
+          profileImage:
+            "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972677586_EF_BC_8D0.jpg-Q4Or9Sq7GYCZ1TxpW2EiNhSGv0pvsK.jpeg",
           title: "황녀, 반역자를 각인시키다 - 제작 업데이트",
           content:
             "드라마 각색 캐스팅이 완료되었다는 소식을 들었어요! 주요 역할에 훌륭한 배우들을 선택했다고 합니다. 주연으로 누가 캐스팅되었는지 정말 궁금해요!",
@@ -125,6 +129,8 @@ export function CommunityScreen() {
           id: "2",
           author: "박민호",
           authorInitial: "박",
+          profileImage:
+            "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D1.jpg-Xy8p98remiThU5dlPSoCTHV9MQ8aQ6.jpeg",
           title: "검술명가 막내아들 - 투자 분석",
           content:
             "과거 유사한 각색 작품을 기반으로 이 프로젝트의 잠재적 ROI를 분석했습니다. 애니메이션 품질이 유망해 보이고 원작은 강력한 팬층을 보유하고 있습니다. 출시 후 첫 해 내에 20% 수익을 예상합니다.",
@@ -147,6 +153,8 @@ export function CommunityScreen() {
           id: "3",
           author: "이수진",
           authorInitial: "이",
+          profileImage:
+            "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D0.jpg-BPmkzTjLQtwopnDCFMwgHNLjJ9mXh1.jpeg",
           title: "이번 생은 가주가 되겠습니다 - 캐스팅 소식",
           content:
             "인기 배우가 이 작품의 주연으로 고려되고 있다는 소문이 있어요! 확정되면 프로젝트 가치가 크게 상승할 수 있을 것 같습니다.",
@@ -308,7 +316,9 @@ export function CommunityScreen() {
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 ring-2 ring-[#F9DF52]/20">
               <AvatarImage
-                src={post.author === currentUser && profileImage ? profileImage : "/placeholder.svg"}
+                src={
+                  post.profileImage || (post.author === currentUser && profileImage ? profileImage : "/placeholder.svg")
+                }
                 alt={post.author}
               />
               <AvatarFallback className="bg-gradient-to-br from-[#F9DF52]/20 to-[#4F8F78]/20 text-[#323233] dark:text-[#F5D949] font-semibold">

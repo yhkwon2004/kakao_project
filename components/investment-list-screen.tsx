@@ -100,7 +100,7 @@ export function InvestmentListScreen() {
               {
                 id: "princess-imprinting-traitor",
                 title: "황녀, 반역자를 각인시키다",
-                thumbnail: "/placeholder.svg?height=80&width=80&query=princess fantasy webtoon",
+                thumbnail: "/placeholder.svg?height=80&width=80",
                 amount: 250000,
                 expectedROI: 18,
                 status: "진행중",
@@ -208,7 +208,7 @@ export function InvestmentListScreen() {
                 alt={investment.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.currentTarget.src = "/placeholder.svg?height=80&width=80&query=webtoon cover"
+                  e.currentTarget.src = "/placeholder.svg?height=80&width=80"
                 }}
               />
 
@@ -349,7 +349,7 @@ export function InvestmentListScreen() {
   return (
     <div className="flex flex-col pb-20 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
       {/* 헤더 */}
-      <div className="flex items-center p-4 border-b border-gray/10 bg-white/80 dark:bg-darkblue/80 backdrop-blur-sm sticky top-0 z-40">
+      <div className="flex items-center p-4 border-b border-gray/10 bg-white/80 dark:bg-darkblue/80 backdrop-blur-sm sticky top-0 z-40 h-16">
         <Button variant="ghost" size="icon" className="mr-2" onClick={() => router.back()}>
           <ChevronLeft className="h-5 w-5" />
         </Button>

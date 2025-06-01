@@ -140,6 +140,7 @@ export function MyPageScreen() {
     }
 
     window.addEventListener("userDataChanged", handleCustomEvent)
+    window.addEventListener("mileageUpdated", handleCustomEvent)
 
     // 1분마다 데이터 새로고침 (실시간 업데이트 시뮬레이션)
     const intervalId = setInterval(updateUserData, 60000)
@@ -147,6 +148,7 @@ export function MyPageScreen() {
     return () => {
       window.removeEventListener("storage", handleStorageChange)
       window.removeEventListener("userDataChanged", handleCustomEvent)
+      window.removeEventListener("mileageUpdated", handleCustomEvent)
       clearInterval(intervalId)
     }
   }, [router])
@@ -167,41 +169,50 @@ export function MyPageScreen() {
 
     // 마일리지 데이터 가져오기
     const mileageData = localStorage.getItem("userMileage")
+    let parsedData = {}
+
     if (mileageData) {
-      const parsedData = JSON.parse(mileageData)
-      const attendanceMileage = 5 // 출석 체크 시 지급할 마일리지
-
-      // 마일리지 업데이트
-      const updatedData = {
-        ...parsedData,
-        totalMileage: (parsedData.totalMileage || 0) + attendanceMileage,
-        lastAttendanceDate: today,
-        history: [
-          ...(parsedData.history || []),
-          {
-            date: today,
-            amount: attendanceMileage,
-            type: "적립",
-            reason: "출석 체크",
-          },
-        ],
-      }
-
-      // 로컬 스토리지에 저장
-      localStorage.setItem("userMileage", JSON.stringify(updatedData))
-
-      // 상태 업데이트
-      setMileage(updatedData.totalMileage)
-      setLastAttendanceDate(today)
-      setHasCheckedToday(true)
-
-      // 토스트 메시지 표시
-      toast({
-        title: "출석 체크 완료!",
-        description: `${attendanceMileage} 마일리지가 적립되었습니다.`,
-        duration: 3000,
-      })
+      parsedData = JSON.parse(mileageData)
     }
+
+    const attendanceMileage = 5 // 출석 체크 시 지급할 마일리지
+
+    // 새로운 마일리지 기록
+    const newRecord = {
+      id: Date.now().toString(),
+      type: "earned",
+      amount: attendanceMileage,
+      description: "출석 체크 보상",
+      date: today,
+      source: "attendance",
+    }
+
+    // 마일리지 업데이트
+    const updatedData = {
+      totalMileage: (parsedData.totalMileage || 0) + attendanceMileage,
+      lastAttendanceDate: today,
+      attendanceStreak: (parsedData.attendanceStreak || 0) + 1,
+      history: [newRecord, ...(parsedData.history || [])],
+      exchangedItems: parsedData.exchangedItems || [],
+    }
+
+    // 로컬 스토리지에 저장
+    localStorage.setItem("userMileage", JSON.stringify(updatedData))
+
+    // 상태 업데이트
+    setMileage(updatedData.totalMileage)
+    setLastAttendanceDate(today)
+    setHasCheckedToday(true)
+
+    // 마일리지 업데이트 이벤트 발생
+    window.dispatchEvent(new CustomEvent("mileageUpdated"))
+
+    // 토스트 메시지 표시
+    toast({
+      title: "출석 체크 완료!",
+      description: `${attendanceMileage} 마일리지가 적립되었습니다.`,
+      duration: 3000,
+    })
   }
 
   const menuItems = [

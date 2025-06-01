@@ -185,7 +185,7 @@ export function InvestmentVisualizationScreen() {
   return (
     <div className="flex flex-col pb-20 bg-[#FAFAFA] dark:bg-[#323233]">
       {/* 헤더 */}
-      <div className="flex items-center p-4 border-b border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F]">
+      <div className="flex items-center p-4 border-b border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F] h-16">
         <Button
           variant="ghost"
           size="icon"

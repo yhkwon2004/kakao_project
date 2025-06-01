@@ -325,7 +325,7 @@ export function InvestmentHistoryScreen() {
   return (
     <div className="flex flex-col pb-20 bg-light dark:bg-dark">
       {/* 헤더 */}
-      <div className="flex items-center p-4 border-b border-gray/10">
+      <div className="flex items-center p-4 border-b border-gray/10 h-16">
         <Button variant="ghost" size="icon" className="mr-2" onClick={() => router.back()}>
           <ChevronLeft className="h-5 w-5" />
         </Button>

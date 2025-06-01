@@ -301,13 +301,13 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   return (
     <div className="flex flex-col min-h-screen bg-[#FAFAFA] dark:bg-[#323233]">
       {/* 헤더 */}
-      <div className="flex justify-between items-center p-4 bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#C2BDAD] dark:border-[#454858] sticky top-0 z-40 backdrop-blur-sm">
+      <div className="flex justify-between items-center p-4 bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#C2BDAD] dark:border-[#454858] sticky top-0 z-40 backdrop-blur-sm h-16">
         <div className="flex items-center">
           <Button
             variant="ghost"
             size="icon"
             className="mr-2 text-[#323233] dark:text-[#F5D949] hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
-            onClick={() => router.back()}
+            onClick={() => router.push("/home")}
           >
             <ChevronLeft className="h-5 w-5" />
           </Button>

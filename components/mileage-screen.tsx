@@ -25,6 +25,12 @@ export function MileageScreen() {
   const [mileageHistory, setMileageHistory] = useState<MileageRecord[]>([])
   const [lastAttendanceDate, setLastAttendanceDate] = useState<string | null>(null)
   const [attendanceStreak, setAttendanceStreak] = useState(0)
+  const [showExchangeModal, setShowExchangeModal] = useState(false)
+  const [selectedReward, setSelectedReward] = useState<any>(null)
+  const [exchangedItems, setExchangedItems] = useState<any[]>([])
+  const [exchangeStep, setExchangeStep] = useState<"confirm" | "phone" | "success" | null>(null)
+  const [phoneNumber, setPhoneNumber] = useState("")
+  const [deliveryInfo, setDeliveryInfo] = useState({ name: "", address: "" })
 
   useEffect(() => {
     const user = getUserFromStorage()
@@ -32,21 +38,53 @@ export function MileageScreen() {
       setCurrentUser(user.name)
     }
 
-    const mileageData = localStorage.getItem("userMileage")
-    if (mileageData) {
-      const data = JSON.parse(mileageData)
-      setTotalMileage(data.totalMileage || 0)
-      setMileageHistory(data.history || [])
-      setLastAttendanceDate(data.lastAttendanceDate)
-      setAttendanceStreak(data.attendanceStreak || 0)
-    } else {
-      const initialData = {
-        totalMileage: 0,
-        history: [],
-        lastAttendanceDate: null,
-        attendanceStreak: 0,
+    // 마일리지 데이터 로드 함수
+    const loadMileageData = () => {
+      const mileageData = localStorage.getItem("userMileage")
+      if (mileageData) {
+        const data = JSON.parse(mileageData)
+        setTotalMileage(data.totalMileage || 0)
+        setMileageHistory(data.history || [])
+        setLastAttendanceDate(data.lastAttendanceDate)
+        setAttendanceStreak(data.attendanceStreak || 0)
+        setExchangedItems(data.exchangedItems || [])
+      } else {
+        const initialData = {
+          totalMileage: 0,
+          history: [],
+          lastAttendanceDate: null,
+          attendanceStreak: 0,
+          exchangedItems: [],
+        }
+        localStorage.setItem("userMileage", JSON.stringify(initialData))
       }
-      localStorage.setItem("userMileage", JSON.stringify(initialData))
+    }
+
+    // 초기 로드
+    loadMileageData()
+
+    // 다른 페이지에서 마일리지 변경 감지
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "userMileage") {
+        loadMileageData()
+      }
+    }
+
+    const handleCustomMileageEvent = () => {
+      loadMileageData()
+    }
+
+    // 이벤트 리스너 등록
+    window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("mileageUpdated", handleCustomMileageEvent)
+
+    // 1초마다 마일리지 데이터 체크 (실시간 업데이트)
+    const intervalId = setInterval(loadMileageData, 1000)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("mileageUpdated", handleCustomMileageEvent)
+      clearInterval(intervalId)
     }
   }, [])
 
@@ -81,8 +119,12 @@ export function MileageScreen() {
       history: newHistory,
       lastAttendanceDate: today,
       attendanceStreak: newStreak,
+      exchangedItems,
     }
     localStorage.setItem("userMileage", JSON.stringify(updatedData))
+
+    // 마일리지 업데이트 이벤트 발생
+    window.dispatchEvent(new CustomEvent("mileageUpdated"))
   }
 
   const canAttendToday = () => {
@@ -102,10 +144,84 @@ export function MileageScreen() {
     { points: 50000, reward: "OTT 이용권 (1개월)", icon: "📺", available: totalMileage >= 50000 },
   ]
 
+  const handleExchange = (reward: any) => {
+    if (totalMileage >= reward.points) {
+      setExchangeStep("phone")
+    }
+  }
+
+  const completeExchange = () => {
+    if (!phoneNumber || phoneNumber.length < 10) {
+      alert("올바른 전화번호를 입력해주세요.")
+      return
+    }
+
+    const newRecord: MileageRecord = {
+      id: Date.now().toString(),
+      type: "used",
+      amount: selectedReward.points,
+      description: `${selectedReward.reward} 교환`,
+      date: new Date().toISOString().split("T")[0],
+      source: "exchange",
+    }
+
+    const newTotalMileage = totalMileage - selectedReward.points
+    const newHistory = [newRecord, ...mileageHistory]
+    const newExchangedItems = [
+      ...exchangedItems,
+      {
+        ...selectedReward,
+        exchangeDate: new Date().toISOString(),
+        phoneNumber: phoneNumber.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3"),
+      },
+    ]
+
+    setTotalMileage(newTotalMileage)
+    setMileageHistory(newHistory)
+    setExchangedItems(newExchangedItems)
+
+    const updatedData = {
+      totalMileage: newTotalMileage,
+      history: newHistory,
+      lastAttendanceDate,
+      attendanceStreak,
+      exchangedItems: newExchangedItems,
+    }
+    localStorage.setItem("userMileage", JSON.stringify(updatedData))
+
+    setExchangeStep("success")
+
+    // 3초 후 자동으로 모달 닫기
+    setTimeout(() => {
+      setExchangeStep(null)
+      setSelectedReward(null)
+      setPhoneNumber("")
+    }, 3000)
+  }
+
+  const isEarnedMileage = (record: MileageRecord) => {
+    // 명시적으로 earned 타입이거나, 출석/투자 소스이거나, 설명에 적립 관련 키워드가 포함된 경우
+    if (record.type === "earned") return true
+    if (record.source === "attendance" || record.source === "investment") return true
+    if (
+      record.description &&
+      (record.description.includes("출석 체크") ||
+        record.description.includes("투자 보상") ||
+        record.description.includes("투자 마일리지") ||
+        record.description.includes("웹툰 투자"))
+    )
+      return true
+
+    // 사용 타입이면서 교환이 아닌 경우는 false
+    if (record.type === "used" && record.source !== "exchange") return false
+
+    return false
+  }
+
   return (
     <div className="flex flex-col pb-20 bg-gradient-to-br from-[#FAFAFA] to-[#F9F9F9] dark:from-[#323233] dark:to-[#3F3F3F]">
       {/* 헤더 */}
-      <div className="flex items-center p-4 border-b border-[#BCBCBC]/20 bg-[#FAFAFA]/80 dark:bg-[#3F3F3F]/80 backdrop-blur-sm sticky top-0 z-40">
+      <div className="flex items-center p-4 border-b border-[#BCBCBC]/20 bg-[#FAFAFA]/80 dark:bg-[#3F3F3F]/80 backdrop-blur-sm sticky top-0 z-40 h-16">
         <Button variant="ghost" size="icon" className="mr-2" onClick={() => router.back()}>
           <ChevronLeft className="h-5 w-5 text-[#58678C]" />
         </Button>
@@ -261,6 +377,10 @@ export function MileageScreen() {
                     <Button
                       size="sm"
                       disabled={!reward.available}
+                      onClick={() => {
+                        setSelectedReward(reward)
+                        setExchangeStep("confirm")
+                      }}
                       className={`w-full text-xs ${
                         reward.available
                           ? "bg-[#4F8F78] hover:bg-[#4F8F78]/90 text-white"
@@ -305,10 +425,10 @@ export function MileageScreen() {
                       <div className="flex items-center gap-3">
                         <div
                           className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            record.type === "earned" ? "bg-[#4F8F78]/20" : "bg-[#D16561]/20"
+                            isEarnedMileage(record) ? "bg-[#4F8F78]/20" : "bg-[#D16561]/20"
                           }`}
                         >
-                          {record.type === "earned" ? (
+                          {isEarnedMileage(record) ? (
                             <Zap className="h-4 w-4 text-[#4F8F78]" />
                           ) : (
                             <Gift className="h-4 w-4 text-[#D16561]" />
@@ -320,8 +440,8 @@ export function MileageScreen() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`font-bold ${record.type === "earned" ? "text-[#4F8F78]" : "text-[#D16561]"}`}>
-                          {record.type === "earned" ? "+" : "-"}
+                        <p className={`font-bold ${isEarnedMileage(record) ? "text-[#4F8F78]" : "text-[#D16561]"}`}>
+                          {isEarnedMileage(record) ? "+" : "-"}
                           {record.amount.toLocaleString()}P
                         </p>
                       </div>
@@ -338,7 +458,7 @@ export function MileageScreen() {
 
               <TabsContent value="earned" className="space-y-3">
                 {mileageHistory
-                  .filter((record) => record.type === "earned")
+                  .filter((record) => isEarnedMileage(record))
                   .slice(0, 10)
                   .map((record) => (
                     <div key={record.id} className="flex items-center justify-between p-3 bg-[#4F8F78]/5 rounded-xl">
@@ -357,9 +477,9 @@ export function MileageScreen() {
               </TabsContent>
 
               <TabsContent value="used" className="space-y-3">
-                {mileageHistory.filter((record) => record.type === "used").length > 0 ? (
+                {mileageHistory.filter((record) => !isEarnedMileage(record) && record.type === "used").length > 0 ? (
                   mileageHistory
-                    .filter((record) => record.type === "used")
+                    .filter((record) => !isEarnedMileage(record) && record.type === "used")
                     .slice(0, 10)
                     .map((record) => (
                       <div key={record.id} className="flex items-center justify-between p-3 bg-[#D16561]/5 rounded-xl">
@@ -387,6 +507,158 @@ export function MileageScreen() {
             </Tabs>
           </CardContent>
         </Card>
+
+        {/* 교환된 상품 목록 */}
+        {exchangedItems.length > 0 && (
+          <Card className="border-[#BCBCBC]/20 shadow-lg shadow-[#C2BDAD]/20 bg-[#FAFAFA] dark:bg-[#3F3F3F]">
+            <CardHeader className="p-4 border-b border-[#BCBCBC]/10">
+              <div className="flex items-center gap-2">
+                <Gift className="h-5 w-5 text-[#4F8F78]" />
+                <h3 className="font-bold text-[#3F3F3F] dark:text-[#F9DF52]">교환 완료 상품</h3>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-2 gap-3">
+                {exchangedItems.map((item, index) => (
+                  <div key={index} className="p-4 rounded-xl border-2 border-[#4F8F78] bg-[#4F8F78]/5">
+                    <div className="text-center">
+                      <div className="text-2xl mb-2">{item.icon}</div>
+                      <p className="font-medium text-sm text-[#3F3F3F] dark:text-[#F9DF52] mb-1">{item.reward}</p>
+                      <p className="text-xs text-[#4F8F78] mb-2">교환 완료</p>
+                      <p className="text-xs text-[#989898]">{formatDate(item.exchangeDate.split("T")[0])}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 교환 단계별 모달 */}
+        {exchangeStep && selectedReward && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-[#FAFAFA] dark:bg-[#3F3F3F] rounded-2xl p-6 max-w-sm w-full">
+              {/* 교환 확인 단계 */}
+              {exchangeStep === "confirm" && (
+                <div className="text-center">
+                  <div className="text-4xl mb-3">{selectedReward.icon}</div>
+                  <h3 className="text-lg font-bold text-[#3F3F3F] dark:text-[#F9DF52] mb-2">{selectedReward.reward}</h3>
+                  <p className="text-sm text-[#989898] mb-4">
+                    {selectedReward.points.toLocaleString()}P로 교환하시겠습니까?
+                  </p>
+                  <p className="text-xs text-[#989898] mb-6">
+                    교환 후 잔여 포인트: {(totalMileage - selectedReward.points).toLocaleString()}P
+                  </p>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setExchangeStep(null)
+                        setSelectedReward(null)
+                      }}
+                      className="flex-1"
+                    >
+                      취소
+                    </Button>
+                    <Button
+                      onClick={() => setExchangeStep("phone")}
+                      className="flex-1 bg-[#4F8F78] hover:bg-[#4F8F78]/90 text-white"
+                    >
+                      교환하기
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* 전화번호 입력 단계 */}
+              {exchangeStep === "phone" && (
+                <div>
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-[#4F8F78]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Gift className="h-8 w-8 text-[#4F8F78]" />
+                    </div>
+                    <h3 className="text-lg font-bold text-[#3F3F3F] dark:text-[#F9DF52] mb-2">배송 정보 입력</h3>
+                    <p className="text-sm text-[#989898]">{selectedReward.reward} 배송을 위한 정보를 입력해주세요</p>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <div>
+                      <label className="block text-sm font-medium text-[#3F3F3F] dark:text-[#F9DF52] mb-2">
+                        연락처 *
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="010-0000-0000"
+                        value={phoneNumber}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9]/g, "")
+                          if (value.length <= 11) {
+                            setPhoneNumber(value)
+                          }
+                        }}
+                        className="w-full p-3 border border-[#BCBCBC]/30 rounded-xl bg-[#FAFAFA] dark:bg-[#454858] text-[#3F3F3F] dark:text-[#F9DF52] focus:outline-none focus:ring-2 focus:ring-[#4F8F78]"
+                      />
+                    </div>
+
+                    <div className="bg-[#4F8F78]/5 p-3 rounded-xl">
+                      <p className="text-xs text-[#4F8F78] font-medium mb-1">📦 배송 안내</p>
+                      <p className="text-xs text-[#989898]">
+                        • 교환 완료 후 3-5일 내 배송 예정
+                        <br />• 배송 상태는 SMS로 안내드립니다
+                        <br />• 문의: 1588-0000
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={() => setExchangeStep("confirm")} className="flex-1">
+                      이전
+                    </Button>
+                    <Button
+                      onClick={completeExchange}
+                      disabled={phoneNumber.length < 10}
+                      className="flex-1 bg-[#4F8F78] hover:bg-[#4F8F78]/90 text-white disabled:bg-[#BCBCBC] disabled:cursor-not-allowed"
+                    >
+                      교환 완료
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* 교환 성공 단계 */}
+              {exchangeStep === "success" && (
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-[#4F8F78] rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <CheckCircle className="h-10 w-10 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#4F8F78] mb-2">교환 완료!</h3>
+                  <p className="text-sm text-[#989898] mb-4">{selectedReward.reward} 교환이 완료되었습니다</p>
+
+                  <div className="bg-[#4F8F78]/5 p-4 rounded-xl mb-4">
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="text-[#989898]">상품명</span>
+                      <span className="font-medium text-[#3F3F3F] dark:text-[#F9DF52]">{selectedReward.reward}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="text-[#989898]">사용 포인트</span>
+                      <span className="font-medium text-[#D16561]">-{selectedReward.points.toLocaleString()}P</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-[#989898]">연락처</span>
+                      <span className="font-medium text-[#3F3F3F] dark:text-[#F9DF52]">
+                        {phoneNumber.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3")}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#F9DF52]/10 p-3 rounded-xl">
+                    <p className="text-xs text-[#989898]">🎉 교환 완료! 배송 정보는 SMS로 안내드립니다</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

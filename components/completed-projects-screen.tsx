@@ -189,7 +189,7 @@ export function CompletedProjectsScreen() {
     <div className="min-h-screen bg-gradient-to-br from-[#FAFAFA] via-[#F9F9F9] to-[#E5E4DC] dark:from-[#323233] dark:via-[#3F3F3F] dark:to-[#3F4458]">
       {/* 헤더 */}
       <div className="sticky top-0 z-10 bg-[#FAFAFA]/80 dark:bg-[#323233]/80 backdrop-blur-md border-b border-[#BCBCBC]/50 dark:border-[#454858]/50">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between p-4 h-16">
           <Button
             variant="ghost"
             size="sm"
@@ -228,7 +228,7 @@ export function CompletedProjectsScreen() {
                 <p className="font-bold text-lg text-[#4F8F78]">+{formatCurrency(totalMyReturn)}</p>
               </div>
               <div className="text-center">
-                <p className="text-[#323233]/80 text-xs mb-1">평균 수익률</p>
+                <p className="text-[#323233]/80 text-xs mb-1">��균 수익률</p>
                 <p className="font-bold text-lg text-[#4F8F78]">+{averageReturnRate.toFixed(1)}%</p>
               </div>
             </div>

@@ -13,7 +13,7 @@ export function TermsScreen() {
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#323233]">
       {/* Header */}
       <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#BCBCBC] dark:border-[#454858] sticky top-0 z-10">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between p-4 h-16">
           <div className="flex items-center">
             <Button
               variant="ghost"
@@ -25,7 +25,7 @@ export function TermsScreen() {
             </Button>
             <Logo size="sm" showSubtitle={false} />
           </div>
-          <h1 className="text-lg font-bold text-[#323233] dark:text-[#F5D949]">이용약관</h1>
+          <h1 className="text-lg font-bold text-[#323233] dark:text-[#F5D949]">WEEK 이용약관</h1>
           <div className="w-8" />
         </div>
       </div>
@@ -35,7 +35,7 @@ export function TermsScreen() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-[#3F4458] dark:text-[#706FB9]">
               <FileText className="h-6 w-6" />
-              Kakao FANance 이용약관
+              WEEK 이용약관
             </CardTitle>
             <p className="text-[#989898] text-sm">최종 업데이트: 2024년 1월 1일</p>
           </CardHeader>
@@ -44,8 +44,8 @@ export function TermsScreen() {
               <section>
                 <h3 className="text-lg font-semibold text-[#3F4458] dark:text-[#706FB9] mb-3">제1조 (목적)</h3>
                 <p className="leading-relaxed">
-                  이 약관은 Kakao FANance(이하 "회사")가 제공하는 웹툰 기반 문화 콘텐츠 투자 플랫폼 서비스(이하
-                  "서비스")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.
+                  이 약관은 WEEK(이하 "회사")가 제공하는 웹툰 기반 문화 콘텐츠 투자 플랫폼 서비스(이하 "서비스")의
+                  이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.
                 </p>
               </section>
 

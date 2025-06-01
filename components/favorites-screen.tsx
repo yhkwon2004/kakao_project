@@ -82,7 +82,7 @@ export function FavoritesScreen() {
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-[#323233]">
       {/* Header */}
       <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#BCBCBC] dark:border-[#454858] sticky top-0 z-10">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between p-4 h-16">
           <div className="flex items-center">
             <Button
               variant="ghost"

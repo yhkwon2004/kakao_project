@@ -202,7 +202,8 @@ export function PaymentScreen() {
   const quickAmounts = [10000, 30000, 50000, 100000, 300000, 500000]
 
   const handleQuickAmount = (amount: number) => {
-    setChargeAmount(amount.toString())
+    const formattedValue = amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+    setChargeAmount(formattedValue)
   }
 
   const handleChargeClick = () => {
@@ -215,7 +216,7 @@ export function PaymentScreen() {
       return
     }
 
-    const amount = Number.parseInt(chargeAmount)
+    const amount = Number.parseInt(chargeAmount.replace(/,/g, "")) // 콤마 제거 후 숫자 변환
     if (amount < 1000) {
       toast({
         title: "충전 오류",
@@ -235,7 +236,7 @@ export function PaymentScreen() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      const amount = Number.parseInt(chargeAmount)
+      const amount = Number.parseInt(chargeAmount.replace(/,/g, ""))
       const newBalance = userBalance + amount
       const user = getUserFromStorage()
       if (user) {
@@ -400,7 +401,7 @@ export function PaymentScreen() {
   return (
     <div className="flex flex-col pb-20 bg-gradient-to-br from-[#FAFAFA] to-[#F9F9F9] dark:from-[#323233] dark:to-[#3F3F3F]">
       {/* 헤더 */}
-      <div className="flex items-center p-4 border-b border-[#BCBCBC]/20 bg-[#FAFAFA]/80 dark:bg-[#3F3F3F]/80 backdrop-blur-sm sticky top-0 z-40">
+      <div className="flex items-center p-4 border-b border-[#BCBCBC]/20 bg-[#FAFAFA]/80 dark:bg-[#3F3F3F]/80 backdrop-blur-sm sticky top-0 z-40 h-16">
         <Button variant="ghost" size="icon" className="mr-2" onClick={() => router.back()}>
           <ChevronLeft className="h-5 w-5 text-[#58678C]" />
         </Button>
@@ -452,13 +453,22 @@ export function PaymentScreen() {
             {/* 금액 입력 */}
             <div>
               <label className="text-sm font-medium text-[#3F3F3F] dark:text-[#F9DF52] mb-2 block">충전 금액</label>
-              <Input
-                type="number"
-                placeholder="충전할 금액을 입력하세요"
-                value={chargeAmount}
-                onChange={(e) => setChargeAmount(e.target.value)}
-                className="rounded-xl border-[#BCBCBC] focus:ring-[#5F859F] focus:border-[#5F859F] bg-[#F9F9F9] dark:bg-[#454858] text-[#3F3F3F] dark:text-[#F9DF52]"
-              />
+              <div className="relative">
+                <Input
+                  type="text"
+                  placeholder="충전할 금액을 입력하세요"
+                  value={chargeAmount}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^\d]/g, "") // 숫자만 추출
+                    const formattedValue = value.replace(/\B(?=(\d{3})+(?!\d))/g, ",") // 천 단위 콤마 추가
+                    setChargeAmount(formattedValue)
+                  }}
+                  className="rounded-xl border-[#BCBCBC] focus:ring-[#5F859F] focus:border-[#5F859F] bg-[#F9F9F9] dark:bg-[#454858] text-[#3F3F3F] dark:text-[#F9DF52] pr-8"
+                />
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#989898] text-sm pointer-events-none">
+                  원
+                </span>
+              </div>
             </div>
 
             {/* 빠른 금액 선택 */}
@@ -525,9 +535,7 @@ export function PaymentScreen() {
               disabled={!chargeAmount || !selectedMethod || isCharging}
               className="w-full bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233] font-bold py-3 rounded-xl disabled:bg-[#BCBCBC] disabled:text-[#989898]"
             >
-              {isCharging
-                ? "충전 중..."
-                : `${chargeAmount ? formatCurrency(Number.parseInt(chargeAmount)) : "0원"} 충전하기`}
+              {isCharging ? "충전 중..." : `${chargeAmount ? `${chargeAmount}원` : "0원"} 충전하기`}
             </Button>
           </CardContent>
         </Card>
@@ -742,9 +750,7 @@ export function PaymentScreen() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-[#989898] text-sm">충전 금액</span>
-                  <span className="font-bold text-[#323233] dark:text-[#F9DF52]">
-                    {formatCurrency(Number.parseInt(chargeAmount))}
-                  </span>
+                  <span className="font-bold text-[#323233] dark:text-[#F9DF52]">{chargeAmount}원</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#989898] text-sm">결제 수단</span>
@@ -753,7 +759,7 @@ export function PaymentScreen() {
                 <div className="flex justify-between">
                   <span className="text-[#989898] text-sm">수수료</span>
                   <span className="font-medium text-[#323233] dark:text-[#F9DF52]">
-                    {Number.parseInt(chargeAmount) >= 50000 ? "무료" : "500원"}
+                    {Number.parseInt(chargeAmount.replace(/,/g, "")) >= 50000 ? "무료" : "500원"}
                   </span>
                 </div>
                 <div className="border-t border-[#BCBCBC] pt-2 mt-2">
@@ -761,7 +767,8 @@ export function PaymentScreen() {
                     <span className="text-[#323233] dark:text-[#F9DF52] font-bold">총 결제 금액</span>
                     <span className="font-bold text-[#323233] dark:text-[#F9DF52]">
                       {formatCurrency(
-                        Number.parseInt(chargeAmount) + (Number.parseInt(chargeAmount) >= 50000 ? 0 : 500),
+                        Number.parseInt(chargeAmount.replace(/,/g, "")) +
+                          (Number.parseInt(chargeAmount.replace(/,/g, "")) >= 50000 ? 0 : 500),
                       )}
                     </span>
                   </div>
