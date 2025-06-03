@@ -241,7 +241,7 @@ export function HomeScreen() {
               {ongoingProjects.map((webtoon) => (
                 <Card
                   key={webtoon.id}
-                  className="rounded-xl overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 border-gray/20 bg-white dark:bg-darkblue/30 hover:scale-[1.02]"
+                  className="rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl transition-all duration-300 border border-gray/10 bg-gradient-to-b from-white to-gray-50/50 dark:from-darkblue/30 dark:to-darkblue/20 hover:scale-[1.03] hover:border-green/20 backdrop-blur-sm"
                   onClick={() => router.push(`/webtoon/${webtoon.id}`)}
                 >
                   <div className="relative h-32 bg-gradient-to-b from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
@@ -263,10 +263,6 @@ export function HomeScreen() {
                       <div className="text-white space-y-2">
                         {/* 진행률과 목표 금액 */}
                         <div className="flex justify-between items-center text-xs">
-                          <div className="flex items-center gap-1 bg-green/10 px-2 py-1 rounded-full">
-                            <TrendingUp className="h-3 w-3 text-green" />
-                            <span className="text-xs font-medium text-green">예상 수익률: {webtoon.expectedROI}</span>
-                          </div>
                           <span className="text-white/80">
                             {formatCurrency(webtoon.currentRaised || 0)} / {formatCurrency(webtoon.goalAmount)}
                           </span>
@@ -298,20 +294,20 @@ export function HomeScreen() {
                     </div>
                   </div>
 
-                  <CardContent className="p-3">
-                    <h3 className="font-bold text-sm text-darkblue dark:text-light line-clamp-1 mb-2">
+                  <CardContent className="p-4 bg-white/80 dark:bg-darkblue/40 backdrop-blur-sm">
+                    <h3 className="font-bold text-sm text-darkblue dark:text-light line-clamp-1 mb-3 tracking-tight">
                       {webtoon.title}
                     </h3>
                     <div className="flex justify-between items-center">
                       <Badge
                         variant="outline"
-                        className="text-xs font-normal bg-gray-100/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+                        className="text-xs font-medium bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1 shadow-sm"
                       >
                         {webtoon.category}
                       </Badge>
-                      <div className="inline-flex items-center gap-1 bg-green/10 px-2 py-1 rounded-full">
+                      <div className="inline-flex items-center gap-1 bg-gradient-to-r from-green/10 to-green/5 px-3 py-1.5 rounded-full border border-green/20 shadow-sm">
                         <TrendingUp className="h-3 w-3 text-green" />
-                        <span className="text-xs font-medium text-green">{webtoon.expectedROI}</span>
+                        <span className="text-xs font-medium text-green">예상 수익률: {webtoon.expectedROI}</span>
                       </div>
                     </div>
                   </CardContent>
