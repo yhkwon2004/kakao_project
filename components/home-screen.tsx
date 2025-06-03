@@ -128,7 +128,7 @@ export function HomeScreen() {
   const ongoingProjects = dynamicWebtoons.filter((webtoon) => webtoon.status === "ongoing").slice(0, 4)
 
   return (
-    <div className="flex flex-col h-screen pb-20 bg-light dark:bg-dark overflow-hidden">
+    <div className="flex flex-col h-screen bg-light dark:bg-dark overflow-hidden">
       {/* 헤더 */}
       <div className="h-16 flex justify-between items-center px-4 border-b border-gray/10 bg-light/80 dark:bg-dark/80 backdrop-blur-md sticky top-0 z-40 flex-shrink-0">
         <Logo size="sm" showSubtitle={false} />
@@ -153,7 +153,7 @@ export function HomeScreen() {
       </div>
 
       {/* 메인 콘텐츠 */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto pb-20">
         {/* 환영 메시지 & 잔액 */}
         <div className="p-4">
           <div className="bg-gradient-to-r from-green/10 to-yellow/10 rounded-2xl p-4 border border-green/20">
