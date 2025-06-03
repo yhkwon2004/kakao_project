@@ -437,10 +437,14 @@ export function CommunityScreen() {
               글쓰기
             </Button>
             <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.push("/mypage")}>
-              <Avatar className="h-9 w-9 ring-2 ring-[#F9DF52]/20">
+              <Avatar className="h-10 w-10 bg-[#E5E4DC] dark:bg-[#454858] border border-[#C2BDAD] dark:border-[#989898] ring-2 ring-yellow/20 hover:ring-yellow/40 transition-all duration-200 shadow-sm">
                 <AvatarImage src={profileImage || "/placeholder.svg"} alt={currentUser} />
-                <AvatarFallback className="bg-gradient-to-br from-[#F9DF52]/20 to-[#4F8F78]/20 text-[#323233] dark:text-[#F5D949] font-semibold">
-                  {currentUser.charAt(0)}
+                <AvatarFallback className="text-[#323233] dark:text-[#F5D949]">
+                  <img
+                    src="/images/guest-profile.jpeg"
+                    alt="게스트 프로필"
+                    className="w-full h-full object-cover rounded-full"
+                  />
                 </AvatarFallback>
               </Avatar>
             </Button>
