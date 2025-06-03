@@ -11,10 +11,10 @@ export function Logo({ size = "md", showSubtitle = true, className = "" }: LogoP
     <div className={`flex flex-col items-start ${className}`}>
       {/* 모든 페이지에서 동일한 고정 크기로 로고 표시 */}
       <Image
-        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo_bar_new-removebg-preview.png-mMnphcspLDPNTEXjNzlX1pUyBX6Ssu.png"
+        src="/images/main-logo-new.png"
         alt="WEEK"
         width={80}
-        height={7}
+        height={40}
         className="object-contain filter dark:brightness-110 dark:contrast-125 dark:saturate-150"
         priority
       />

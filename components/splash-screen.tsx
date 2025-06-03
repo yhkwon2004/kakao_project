@@ -10,9 +10,15 @@ export function SplashScreen() {
 
   const handleTouch = () => {
     setFadeOut(true)
+
+    // 스플래시에서 온 것을 표시하는 플래그 설정
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("fromSplash", "true")
+    }
+
     setTimeout(() => {
       setIsVisible(false)
-      router.push("/home")
+      router.push("/login")
     }, 500)
   }
 
@@ -25,7 +31,7 @@ export function SplashScreen() {
       <div className="flex flex-col items-center space-y-8 animate-fade-in-up">
         <div className="relative">
           <Image
-            src="/images/main-logo.png"
+            src="/images/main-logo-new.png"
             alt="WX WEEK"
             width={400}
             height={300}
@@ -47,11 +53,12 @@ export function SplashScreen() {
           ))}
         </div>
 
-        {/* 터치 안내 문구 추가 */}
+        {/* 터치 안내 문구 수정 */}
         <div className="mt-6 text-center">
           <p className="text-black text-sm font-light tracking-wider animate-pulse drop-shadow-md">
             터치하여 시작하세요
           </p>
+          <p className="text-black text-xs font-light opacity-70 mt-1">게스트 계정으로 자동 로그인됩니다</p>
         </div>
 
         <div className="absolute bottom-8 text-center">

@@ -85,6 +85,140 @@ export function LoginScreen() {
     }
   }, [router, toast])
 
+  // 스플래시에서 바로 게스트 로그인 처리
+  useEffect(() => {
+    const autoGuestLogin = async () => {
+      try {
+        // Reset guest data
+        await resetGuestData()
+
+        // Get guest user data
+        const { data: guestData, error: guestError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("email", "guest_social@guest.fake")
+          .single()
+
+        if (guestError) throw guestError
+
+        // 게스트 계정에 초기 데이터 설정
+        const initialInvestments = [
+          {
+            id: "bad-secretary",
+            title: "나쁜 비서",
+            amount: 500000,
+            date: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            status: "완료됨",
+            expectedROI: 10,
+            progress: 100,
+            slug: "bad-secretary",
+            thumbnail: "/images/나쁜-비서-cover.png",
+          },
+          {
+            id: "blood-sword-family-hunting-dog",
+            title: "철혈검가 사냥개의 회귀",
+            amount: 750000,
+            date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            status: "완료됨",
+            expectedROI: 16,
+            progress: 100,
+            slug: "blood-sword-family-hunting-dog",
+            thumbnail: "/images/철혈검가-사냥개의-회귀.png",
+          },
+        ]
+
+        const initialFavorites = [
+          {
+            id: "moving",
+            title: "무빙",
+            genre: "액션, 판타지",
+            status: "투자 가능",
+            notification: true,
+            slug: "moving",
+            invested: false,
+          },
+          {
+            id: "hospital-playlist",
+            title: "슬기로운 의사생활",
+            genre: "의료드라마",
+            status: "투자 가능",
+            notification: true,
+            slug: "hospital-playlist",
+            invested: false,
+          },
+        ]
+
+        // 로컬 스토리지에 초기 데이터 저장
+        if (typeof window !== "undefined") {
+          localStorage.setItem("userInvestments", JSON.stringify(initialInvestments))
+          localStorage.setItem("favoriteWebtoons", JSON.stringify(initialFavorites))
+
+          const completedProjects = [
+            {
+              id: "bad-secretary",
+              title: "나쁜 비서",
+              genre: "로맨스, 드라마",
+              investedAmount: 500000,
+              returnAmount: 550000,
+              roi: 10,
+              completionDate: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              investors: 342,
+              hasFeedback: false,
+              thumbnail: "/images/나쁜-비서.jpg",
+              slug: "bad-secretary",
+              feedback: "",
+              adaptationInterest: "",
+              investmentDate: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            },
+            {
+              id: "blood-sword-family-hunting-dog",
+              title: "철혈검가 사냥개의 회귀",
+              genre: "액션, 판타지",
+              investedAmount: 750000,
+              returnAmount: 870000,
+              roi: 16,
+              completionDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              investors: 256,
+              hasFeedback: true,
+              thumbnail: "/images/철혈검가-사냥개의-회귀.png",
+              slug: "blood-sword-family-hunting-dog",
+              feedback:
+                "캐릭터의 성장 과정과 액션 장면이 인상적이었습니다. 특히 주인공의 복수 스토리가 드라마틱하게 전개되어 몰입감이 뛰어났습니다.",
+              adaptationInterest: "high",
+              investmentDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            },
+          ]
+          localStorage.setItem("completedProjects", JSON.stringify(completedProjects))
+
+          const initialMileage = {
+            totalMileage: 0,
+            history: [],
+            lastAttendanceDate: null,
+          }
+          localStorage.setItem("userMileage", JSON.stringify(initialMileage))
+        }
+
+        // Save guest user to storage
+        saveUserToStorage({
+          email: guestData.email,
+          name: "홍길동",
+          balance: guestData.balance,
+        })
+
+        router.push("/home")
+      } catch (error) {
+        console.error("Auto guest login error:", error)
+      }
+    }
+
+    // 스플래시에서 온 경우 자동 게스트 로그인
+    const fromSplash = sessionStorage.getItem("fromSplash")
+    if (fromSplash) {
+      sessionStorage.removeItem("fromSplash")
+      autoGuestLogin()
+    }
+  }, [router])
+
   const resetGuestData = async () => {
     try {
       // Get guest user ID
@@ -292,7 +426,7 @@ export function LoginScreen() {
           id: "bad-secretary",
           title: "나쁜 비서",
           amount: 500000,
-          date: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 75일 전
+          date: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           status: "완료됨",
           expectedROI: 10,
           progress: 100,
@@ -303,7 +437,7 @@ export function LoginScreen() {
           id: "blood-sword-family-hunting-dog",
           title: "철혈검가 사냥개의 회귀",
           amount: 750000,
-          date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 90일 전
+          date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           status: "완료됨",
           expectedROI: 16,
           progress: 100,
