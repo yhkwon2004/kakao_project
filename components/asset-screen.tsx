@@ -191,7 +191,7 @@ export function AssetScreen() {
           <Logo size="sm" showSubtitle={false} />
         </div>
         <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.push("/mypage")}>
-          <Avatar className="h-8 w-8 bg-[#E5E4DC] dark:bg-[#454858] border border-[#C2BDAD] dark:border-[#989898]">
+          <Avatar className="h-10 w-10 bg-[#E5E4DC] dark:bg-[#454858] border border-[#C2BDAD] dark:border-[#989898]">
             <AvatarImage src={getUserProfileImage(user) || "/placeholder.svg"} alt="프로필" className="object-cover" />
             <AvatarFallback className="text-[#323233] dark:text-[#F5D949]">
               <img
@@ -367,6 +367,7 @@ export function AssetScreen() {
                             investment.webtoonThumbnail ||
                             getWebtoonImage(investment.id) ||
                             "/placeholder.svg?height=60&width=60&query=webtoon cover" ||
+                            "/placeholder.svg" ||
                             "/placeholder.svg" ||
                             "/placeholder.svg" ||
                             "/placeholder.svg" ||

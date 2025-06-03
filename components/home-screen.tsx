@@ -137,12 +137,16 @@ export function HomeScreen() {
             <Search className="h-5 w-5 text-gray" />
           </Button>
           <Avatar
-            className="h-10 w-10 cursor-pointer ring-2 ring-yellow/20 hover:ring-yellow/40 transition-all duration-200 shadow-sm"
+            className="h-10 w-10 bg-[#E5E4DC] dark:bg-[#454858] border border-[#C2BDAD] dark:border-[#989898] cursor-pointer ring-2 ring-yellow/20 hover:ring-yellow/40 transition-all duration-200 shadow-sm"
             onClick={() => router.push("/mypage")}
           >
             <AvatarImage src={profileImage || "/placeholder.svg"} alt={userName} className="object-cover" />
-            <AvatarFallback className="text-darkblue bg-gradient-to-br from-yellow/30 to-yellow/20 font-semibold text-sm">
-              {userName.charAt(0)}
+            <AvatarFallback className="text-[#323233] dark:text-[#F5D949]">
+              <img
+                src="/images/guest-profile.jpeg"
+                alt="게스트 프로필"
+                className="w-full h-full object-cover rounded-full"
+              />
             </AvatarFallback>
           </Avatar>
         </div>
