@@ -317,7 +317,15 @@ export function CommunityScreen() {
             <Avatar className="h-10 w-10 ring-2 ring-[#F9DF52]/20">
               <AvatarImage
                 src={
-                  post.profileImage || (post.author === currentUser && profileImage ? profileImage : "/placeholder.svg")
+                  post.author === currentUser && profileImage
+                    ? profileImage
+                    : post.author === "김지원"
+                      ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972677586_EF_BC_8D0.jpg-Q4Or9Sq7GYCZ1TxpW2EiNhSGv0pvsK.jpeg"
+                      : post.author === "박민호"
+                        ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D1.jpg-Xy8p98remiThU5dlPSoCTHV9MQ8aQ6.jpeg"
+                        : post.author === "이수진"
+                          ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D0.jpg-BPmkzTjLQtwopnDCFMwgHNLjJ9mXh1.jpeg"
+                          : post.profileImage || "/placeholder.svg"
                 }
                 alt={post.author}
               />
