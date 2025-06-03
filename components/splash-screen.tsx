@@ -12,7 +12,7 @@ export function SplashScreen() {
     setFadeOut(true)
     setTimeout(() => {
       setIsVisible(false)
-      router.push("/login")
+      router.push("/home")
     }, 500)
   }
 
