@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { TrendingUp, Wallet, PieChart, BarChart3, ArrowDownRight, Eye, Plus, X, AlertTriangle } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Logo } from "@/components/logo"
-import { getUserFromStorage } from "@/lib/auth"
+import { getUserFromStorage, getUserProfileImage } from "@/lib/auth"
 import { formatKoreanCurrency } from "@/lib/format-currency"
 import { useToast } from "@/components/ui/use-toast"
 import {
@@ -28,6 +28,7 @@ export function AssetScreen() {
   const [investments, setInvestments] = useState<any[]>([])
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
   const [selectedInvestment, setSelectedInvestment] = useState<any>(null)
+  const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
     const loadInvestments = () => {
@@ -35,6 +36,10 @@ export function AssetScreen() {
       if (user && user.balance !== undefined) {
         setUserBalance(user.balance)
       }
+
+      // Add this inside the loadInvestments function, after setting userBalance
+      const currentUser = getUserFromStorage()
+      setUser(currentUser)
 
       const investmentsStr = localStorage.getItem("userInvestments")
       let userInvestments = []
@@ -187,7 +192,14 @@ export function AssetScreen() {
         </div>
         <Button variant="ghost" size="icon" className="rounded-full" onClick={() => router.push("/mypage")}>
           <Avatar className="h-8 w-8 bg-[#E5E4DC] dark:bg-[#454858] border border-[#C2BDAD] dark:border-[#989898]">
-            <AvatarFallback className="text-[#323233] dark:text-[#F5D949]"> </AvatarFallback>
+            <AvatarImage src={getUserProfileImage(user) || "/placeholder.svg"} alt="프로필" className="object-cover" />
+            <AvatarFallback className="text-[#323233] dark:text-[#F5D949]">
+              <img
+                src="/images/guest-profile.jpeg"
+                alt="게스트 프로필"
+                className="w-full h-full object-cover rounded-full"
+              />
+            </AvatarFallback>
           </Avatar>
         </Button>
       </div>
@@ -355,6 +367,7 @@ export function AssetScreen() {
                             investment.webtoonThumbnail ||
                             getWebtoonImage(investment.id) ||
                             "/placeholder.svg?height=60&width=60&query=webtoon cover" ||
+                            "/placeholder.svg" ||
                             "/placeholder.svg" ||
                             "/placeholder.svg" ||
                             "/placeholder.svg"

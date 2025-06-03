@@ -80,13 +80,14 @@ export const loginAsGuest = async () => {
       throw new Error("Guest user not found")
     }
 
-    // Save guest user to storage
+    // Save guest user to storage with default profile image
     saveUserToStorage({
       id: guestData.id,
       email: guestData.email,
       name: "홍길동",
       theme: guestData.theme,
       balance: guestData.balance,
+      profileImage: "/images/guest-profile.jpeg", // 게스트 전용 프로필 이미지
     })
 
     return true
@@ -99,6 +100,19 @@ export const loginAsGuest = async () => {
 // Check if user is a guest account
 export const isGuestAccount = (email: string): boolean => {
   return email === "guest_social@guest.fake"
+}
+
+// Get user profile image with fallback
+export const getUserProfileImage = (user: User | null): string => {
+  if (!user) return "/images/guest-profile.jpeg"
+
+  // 게스트 계정인 경우 항상 게스트 프로필 이미지 사용
+  if (isGuestAccount(user.email)) {
+    return "/images/guest-profile.jpeg"
+  }
+
+  // 일반 사용자의 경우 설정된 프로필 이미지 또는 기본 이미지
+  return user.profileImage || "/placeholder.svg"
 }
 
 // Change user password

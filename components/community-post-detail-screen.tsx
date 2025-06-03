@@ -9,7 +9,7 @@ import { MessageCircle, ThumbsUp, Send, Trash2, MoreVertical, ChevronLeft, Clock
 import { Logo } from "@/components/logo"
 import { useToast } from "@/components/ui/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { getUserFromStorage } from "@/lib/auth"
+import { getUserFromStorage, getUserProfileImage } from "@/lib/auth"
 import {
   Dialog,
   DialogContent,
@@ -52,7 +52,7 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
   const [post, setPost] = useState<Post | null>(null)
   const [newComment, setNewComment] = useState("")
   const [currentUser, setCurrentUser] = useState("권용현")
-  const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [profileImage, setProfileImage] = useState<string>("/images/guest-profile.jpeg")
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   useEffect(() => {
@@ -60,7 +60,9 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
     const user = getUserFromStorage()
     if (user && user.name) {
       setCurrentUser(user.name)
-      setProfileImage(user.profileImage || null)
+      setProfileImage(getUserProfileImage(user))
+    } else {
+      setProfileImage("/images/guest-profile.jpeg")
     }
 
     // 게시물 로드
@@ -227,7 +229,7 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
                 <Avatar className="h-12 w-12 ring-2 ring-yellow/20">
                   <AvatarImage
                     src={
-                      post.author === currentUser && profileImage
+                      post.author === currentUser
                         ? profileImage
                         : post.author === "김지원"
                           ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972677586_EF_BC_8D0.jpg-Q4Or9Sq7GYCZ1TxpW2EiNhSGv0pvsK.jpeg"
@@ -235,7 +237,7 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
                             ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D1.jpg-Xy8p98remiThU5dlPSoCTHV9MQ8aQ6.jpeg"
                             : post.author === "이수진"
                               ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D0.jpg-BPmkzTjLQtwopnDCFMwgHNLjJ9mXh1.jpeg"
-                              : "/placeholder.svg"
+                              : "/images/guest-profile.jpeg"
                     }
                     alt={post.author}
                   />
@@ -318,7 +320,7 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
                       <Avatar className="h-8 w-8 flex-shrink-0">
                         <AvatarImage
                           src={
-                            comment.author === currentUser && profileImage
+                            comment.author === currentUser
                               ? profileImage
                               : comment.author === "김지원"
                                 ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972677586_EF_BC_8D0.jpg-Q4Or9Sq7GYCZ1TxpW2EiNhSGv0pvsK.jpeg"
@@ -326,7 +328,7 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
                                   ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D1.jpg-Xy8p98remiThU5dlPSoCTHV9MQ8aQ6.jpeg"
                                   : comment.author === "이수진"
                                     ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D0.jpg-BPmkzTjLQtwopnDCFMwgHNLjJ9mXh1.jpeg"
-                                    : "/placeholder.svg"
+                                    : "/images/guest-profile.jpeg"
                           }
                           alt={comment.author}
                         />

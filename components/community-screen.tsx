@@ -34,7 +34,7 @@ import {
 import { Logo } from "@/components/logo"
 import { useToast } from "@/components/ui/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { getUserFromStorage } from "@/lib/auth"
+import { getUserFromStorage, getUserProfileImage } from "@/lib/auth"
 
 // Comment type definition
 interface Comment {
@@ -71,7 +71,7 @@ export function CommunityScreen() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [posts, setPosts] = useState<Post[]>([])
   const [currentUser, setCurrentUser] = useState("권용현")
-  const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [profileImage, setProfileImage] = useState<string>("/images/guest-profile.jpeg")
   const [searchQuery, setSearchQuery] = useState("")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [sortBy, setSortBy] = useState("latest") // latest, popular, oldest
@@ -83,7 +83,9 @@ export function CommunityScreen() {
     const user = getUserFromStorage()
     if (user && user.name) {
       setCurrentUser(user.name)
-      setProfileImage(user.profileImage || null)
+      setProfileImage(getUserProfileImage(user))
+    } else {
+      setProfileImage("/images/guest-profile.jpeg")
     }
 
     const storedPosts = localStorage.getItem("communityPosts")
@@ -317,7 +319,7 @@ export function CommunityScreen() {
             <Avatar className="h-10 w-10 ring-2 ring-[#F9DF52]/20">
               <AvatarImage
                 src={
-                  post.author === currentUser && profileImage
+                  post.author === currentUser
                     ? profileImage
                     : post.author === "김지원"
                       ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972677586_EF_BC_8D0.jpg-Q4Or9Sq7GYCZ1TxpW2EiNhSGv0pvsK.jpeg"
@@ -325,7 +327,7 @@ export function CommunityScreen() {
                         ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D1.jpg-Xy8p98remiThU5dlPSoCTHV9MQ8aQ6.jpeg"
                         : post.author === "이수진"
                           ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/1629972927371_EF_BC_8D0.jpg-BPmkzTjLQtwopnDCFMwgHNLjJ9mXh1.jpeg"
-                          : post.profileImage || "/placeholder.svg"
+                          : post.profileImage || "/images/guest-profile.jpeg"
                 }
                 alt={post.author}
               />

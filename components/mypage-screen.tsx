@@ -13,14 +13,19 @@ import {
   Star,
   Package,
   LogOut,
-  User,
   Sun,
   Moon,
   Calendar,
   Plus,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
-import { getUserFromStorage, clearUserFromStorage, updateUserProfile, saveUserToStorage } from "@/lib/auth"
+import {
+  getUserFromStorage,
+  clearUserFromStorage,
+  updateUserProfile,
+  saveUserToStorage,
+  getUserProfileImage,
+} from "@/lib/auth"
 import { createClient } from "@supabase/supabase-js"
 import { useToast } from "@/components/ui/use-toast"
 
@@ -326,23 +331,25 @@ export function MyPageScreen() {
             <div className="relative flex items-center gap-4">
               <div className="relative">
                 <Avatar className="h-20 w-20 border-4 border-white dark:border-darkblue shadow-lg">
+                  <AvatarImage
+                    src={getUserProfileImage() || "/placeholder.svg"}
+                    alt={userName}
+                    onError={() => {
+                      const user = getUserFromStorage()
+                      if (user) {
+                        user.profileImage = undefined
+                        saveUserToStorage(user)
+                        setProfileImage(null)
+                      }
+                    }}
+                  />
                   <AvatarFallback className="bg-gradient-to-br from-green to-yellow text-white text-xl">
-                    <User className="h-10 w-10" />
-                  </AvatarFallback>
-                  {profileImage && !profileImage.startsWith("blob:") && (
-                    <AvatarImage
-                      src={profileImage || "/placeholder.svg"}
-                      alt={userName}
-                      onError={() => {
-                        const user = getUserFromStorage()
-                        if (user) {
-                          user.profileImage = undefined
-                          saveUserToStorage(user)
-                          setProfileImage(null)
-                        }
-                      }}
+                    <img
+                      src="/images/guest-profile.jpeg"
+                      alt="Guest Profile"
+                      className="w-full h-full object-cover rounded-full"
                     />
-                  )}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green rounded-full border-2 border-white dark:border-darkblue flex items-center justify-center">
                   <div className="w-2 h-2 bg-white rounded-full"></div>

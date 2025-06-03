@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, TrendingUp, Wallet, Play, Search, BookOpen, DollarSign } from "lucide-react"
 import { Logo } from "@/components/logo"
-import { getUserFromStorage } from "@/lib/auth"
+import { getUserFromStorage, getUserProfileImage } from "@/lib/auth"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Image from "next/image"
@@ -14,7 +14,7 @@ import { featuredDramas, investmentWebtoons } from "@/data/webtoons"
 export function HomeScreen() {
   const router = useRouter()
   const [userName, setUserName] = useState("사용자")
-  const [profileImage, setProfileImage] = useState<string | null>(null)
+  const [profileImage, setProfileImage] = useState<string>("/images/guest-profile.jpeg")
   const [userBalance, setUserBalance] = useState(0)
   const [totalInvested, setTotalInvested] = useState(0)
   const [totalProjects, setTotalProjects] = useState(0)
@@ -62,13 +62,16 @@ export function HomeScreen() {
       const user = getUserFromStorage()
       if (user) {
         setUserName(user.name || "사용자")
-        setProfileImage(user.profileImage || null)
+        setProfileImage(getUserProfileImage(user))
         // 잔액이 undefined인 경우에만 기본값 설정
         if (user.balance === undefined) {
           user.balance = 150000
           localStorage.setItem("currentUser", JSON.stringify(user))
         }
         setUserBalance(user.balance)
+      } else {
+        // 사용자가 없는 경우 게스트 프로필 이미지 사용
+        setProfileImage("/images/guest-profile.jpeg")
       }
 
       // 투자 내역 로드
@@ -129,13 +132,18 @@ export function HomeScreen() {
       {/* 헤더 */}
       <div className="h-16 flex justify-between items-center px-4 border-b border-gray/10 bg-light/80 dark:bg-dark/80 backdrop-blur-md sticky top-0 z-40 flex-shrink-0">
         <Logo size="sm" showSubtitle={false} />
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => router.push("/webtoons")}>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" className="hover:bg-gray/10" onClick={() => router.push("/webtoons")}>
             <Search className="h-5 w-5 text-gray" />
           </Button>
-          <Avatar className="h-8 w-8 cursor-pointer" onClick={() => router.push("/mypage")}>
-            <AvatarImage src={profileImage || "/placeholder.svg"} alt={userName} />
-            <AvatarFallback className="text-darkblue bg-yellow/20">{userName.charAt(0)}</AvatarFallback>
+          <Avatar
+            className="h-10 w-10 cursor-pointer ring-2 ring-yellow/20 hover:ring-yellow/40 transition-all duration-200 shadow-sm"
+            onClick={() => router.push("/mypage")}
+          >
+            <AvatarImage src={profileImage || "/placeholder.svg"} alt={userName} className="object-cover" />
+            <AvatarFallback className="text-darkblue bg-gradient-to-br from-yellow/30 to-yellow/20 font-semibold text-sm">
+              {userName.charAt(0)}
+            </AvatarFallback>
           </Avatar>
         </div>
       </div>
@@ -298,16 +306,20 @@ export function HomeScreen() {
                     <h3 className="font-bold text-sm text-darkblue dark:text-light line-clamp-1 mb-3 tracking-tight">
                       {webtoon.title}
                     </h3>
-                    <div className="flex justify-between items-center">
-                      <Badge
-                        variant="outline"
-                        className="text-xs font-medium bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1 shadow-sm"
-                      >
-                        {webtoon.category}
-                      </Badge>
-                      <div className="inline-flex items-center gap-1 bg-gradient-to-r from-green/10 to-green/5 px-3 py-1.5 rounded-full border border-green/20 shadow-sm">
-                        <TrendingUp className="h-3 w-3 text-green" />
-                        <span className="text-xs font-medium text-green">예상 수익률: {webtoon.expectedROI}</span>
+                    <div className="space-y-2">
+                      <div className="flex justify-start">
+                        <div className="inline-flex items-center gap-1 bg-gradient-to-r from-green/10 to-green/5 px-3 py-1.5 rounded-full border border-green/20 shadow-sm">
+                          <TrendingUp className="h-3 w-3 text-green" />
+                          <span className="text-xs font-medium text-green">예상 수익률: {webtoon.expectedROI}</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-start">
+                        <Badge
+                          variant="outline"
+                          className="text-xs font-medium bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-2 py-1 shadow-sm"
+                        >
+                          {webtoon.category}
+                        </Badge>
                       </div>
                     </div>
                   </CardContent>
