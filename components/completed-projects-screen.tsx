@@ -228,7 +228,7 @@ export function CompletedProjectsScreen() {
                 <p className="font-bold text-lg text-[#4F8F78]">+{formatCurrency(totalMyReturn)}</p>
               </div>
               <div className="text-center">
-                <p className="text-[#323233]/80 text-xs mb-1">��균 수익률</p>
+                <p className="text-[#323233]/80 text-xs mb-1">평균 수익률</p>
                 <p className="font-bold text-lg text-[#4F8F78]">+{averageReturnRate.toFixed(1)}%</p>
               </div>
             </div>
