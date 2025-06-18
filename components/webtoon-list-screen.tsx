@@ -75,7 +75,7 @@ export function WebtoonListScreen() {
   return (
     <div className="flex flex-col pb-20 bg-[#FAFAFA] dark:bg-[#323233]">
       {/* 헤더 */}
-      <div className="flex items-center p-4 border-b border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F]">
+      <div className="h-16 flex items-center px-4 border-b border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F] sticky top-0 z-40 backdrop-blur-md">
         <Button
           variant="ghost"
           size="icon"
@@ -88,13 +88,13 @@ export function WebtoonListScreen() {
       </div>
 
       {/* 검색 및 필터 */}
-      <div className="p-4">
-        <div className="flex gap-2 mb-4">
+      <div className="p-6 bg-gradient-to-b from-[#F9F9F9] to-[#FAFAFA] dark:from-[#3F3F3F] dark:to-[#323233]">
+        <div className="flex gap-3 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#989898]" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[#989898]" />
             <Input
               placeholder="웹툰 검색"
-              className="pl-9 rounded-xl border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949] focus:border-[#5F859F]"
+              className="pl-12 h-12 rounded-2xl border-[#C2BDAD] dark:border-[#454858] bg-white dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949] focus:border-[#5F859F] shadow-sm"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -102,19 +102,19 @@ export function WebtoonListScreen() {
           <Button
             variant="outline"
             size="icon"
-            className="rounded-xl border-[#C2BDAD] dark:border-[#454858] text-[#989898] hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
+            className="h-12 w-12 rounded-2xl border-[#C2BDAD] dark:border-[#454858] text-[#989898] hover:bg-[#E5E4DC] dark:hover:bg-[#454858] bg-white dark:bg-[#3F3F3F] shadow-sm"
             onClick={() => setShowFilters(!showFilters)}
           >
-            <Filter className="h-4 w-4" />
+            <Filter className="h-5 w-5" />
           </Button>
         </div>
 
         {showFilters && (
-          <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-[#E5E4DC] dark:bg-[#383B4B]/20 rounded-xl border border-[#C2BDAD] dark:border-[#454858]">
+          <div className="grid grid-cols-2 gap-3 mb-6 p-4 bg-white dark:bg-[#383B4B]/30 rounded-2xl border border-[#C2BDAD] dark:border-[#454858] shadow-sm backdrop-blur-sm">
             <div>
-              <label className="text-xs text-[#989898] mb-1 block">카테고리</label>
+              <label className="text-sm font-medium text-[#323233] dark:text-[#F5D949] mb-2 block">카테고리</label>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="rounded-lg border-[#C2BDAD] dark:border-[#454858] h-9 bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949]">
+                <SelectTrigger className="rounded-xl border-[#C2BDAD] dark:border-[#454858] h-10 bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949]">
                   <SelectValue placeholder="모든 카테고리" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-[#C2BDAD] dark:border-[#454858]">
@@ -127,9 +127,9 @@ export function WebtoonListScreen() {
             </div>
 
             <div>
-              <label className="text-xs text-[#989898] mb-1 block">진행률</label>
+              <label className="text-sm font-medium text-[#323233] dark:text-[#F5D949] mb-2 block">진행률</label>
               <Select value={progressFilter} onValueChange={setProgressFilter}>
-                <SelectTrigger className="rounded-lg border-[#C2BDAD] dark:border-[#454858] h-9 bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949]">
+                <SelectTrigger className="rounded-xl border-[#C2BDAD] dark:border-[#454858] h-10 bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949]">
                   <SelectValue placeholder="모든 진행률" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-[#C2BDAD] dark:border-[#454858]">
@@ -142,9 +142,9 @@ export function WebtoonListScreen() {
             </div>
 
             <div>
-              <label className="text-xs text-[#989898] mb-1 block">남은 시간</label>
+              <label className="text-sm font-medium text-[#323233] dark:text-[#F5D949] mb-2 block">남은 시간</label>
               <Select value={timeFilter} onValueChange={setTimeFilter}>
-                <SelectTrigger className="rounded-lg border-[#C2BDAD] dark:border-[#454858] h-9 bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949]">
+                <SelectTrigger className="rounded-xl border-[#C2BDAD] dark:border-[#454858] h-10 bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949]">
                   <SelectValue placeholder="모든 기간" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-[#C2BDAD] dark:border-[#454858]">
@@ -157,9 +157,9 @@ export function WebtoonListScreen() {
             </div>
 
             <div>
-              <label className="text-xs text-[#989898] mb-1 block">상태</label>
+              <label className="text-sm font-medium text-[#323233] dark:text-[#F5D949] mb-2 block">상태</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="rounded-lg border-[#C2BDAD] dark:border-[#454858] h-9 bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949]">
+                <SelectTrigger className="rounded-xl border-[#C2BDAD] dark:border-[#454858] h-10 bg-[#F9F9F9] dark:bg-[#3F3F3F] text-[#323233] dark:text-[#F5D949]">
                   <SelectValue placeholder="모든 상태" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-[#C2BDAD] dark:border-[#454858]">
@@ -174,10 +174,13 @@ export function WebtoonListScreen() {
       </div>
 
       {/* 웹툰 목록 */}
-      <div className="p-4">
-        <h2 className="text-lg font-bold mb-4 text-[#323233] dark:text-[#F5D949]">
-          전체 웹툰 ({filteredWebtoons.length})
-        </h2>
+      <div className="px-6 pb-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-[#323233] dark:text-[#F5D949]">전체 웹툰</h2>
+          <div className="bg-[#5F859F]/10 dark:bg-[#F5D949]/10 px-3 py-1 rounded-full">
+            <span className="text-sm font-medium text-[#5F859F] dark:text-[#F5D949]">{filteredWebtoons.length}개</span>
+          </div>
+        </div>
 
         {filteredWebtoons.length > 0 ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -283,8 +286,10 @@ export function WebtoonListScreen() {
             })}
           </div>
         ) : (
-          <div className="flex items-center justify-center h-32 bg-[#E5E4DC] dark:bg-[#383B4B]/20 rounded-xl">
-            <p className="text-[#989898]">검색 결과가 없습니다.</p>
+          <div className="flex flex-col items-center justify-center h-40 bg-gradient-to-b from-[#E5E4DC]/50 to-[#E5E4DC]/20 dark:from-[#383B4B]/20 dark:to-[#383B4B]/10 rounded-2xl border border-dashed border-[#C2BDAD] dark:border-[#454858]">
+            <div className="text-4xl mb-3">🔍</div>
+            <p className="text-[#989898] font-medium">검색 결과가 없습니다</p>
+            <p className="text-sm text-[#989898] mt-1">다른 검색어를 시도해보세요</p>
           </div>
         )}
       </div>

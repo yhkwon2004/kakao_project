@@ -17,6 +17,8 @@ import {
   Moon,
   Calendar,
   Plus,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react"
 import { Logo } from "@/components/logo"
 import {
@@ -28,6 +30,7 @@ import {
 } from "@/lib/auth"
 import { createClient } from "@supabase/supabase-js"
 import { useToast } from "@/components/ui/use-toast"
+import { deleteSelectedInvestmentData } from "@/lib/db"
 
 // Supabase 클라이언트 싱글톤 패턴 적용
 let supabaseInstance: ReturnType<typeof createClient> | null = null
@@ -54,6 +57,8 @@ export function MyPageScreen() {
   const [lastAttendanceDate, setLastAttendanceDate] = useState<string | null>(null)
   const [hasCheckedToday, setHasCheckedToday] = useState(false)
   const [currentTheme, setCurrentTheme] = useState<string>("light")
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // 컴포넌트가 마운트되었는지 확인
   useEffect(() => {
@@ -261,6 +266,87 @@ export function MyPageScreen() {
   const handleLogout = () => {
     clearUserFromStorage()
     router.push("/")
+  }
+
+  // 서버에서 선택적 투자 데이터 삭제 함수
+  const handleDeleteInvestmentData = async () => {
+    setIsDeleting(true)
+
+    try {
+      console.log("서버에서 선택적 투자 데이터 삭제 시작...")
+
+      // 서버에서 선택적 투자 데이터 삭제 실행
+      const success = await deleteSelectedInvestmentData()
+
+      if (success) {
+        console.log("서버 데이터 삭제 성공")
+
+        // 로컬 스토리지도 정리
+        const keysToDelete = [
+          "userInvestments",
+          "userFavorites",
+          "investmentHistory",
+          "portfolioData",
+          "completedProjects",
+          "chartData",
+          "investmentStats",
+        ]
+
+        keysToDelete.forEach((key) => {
+          localStorage.removeItem(key)
+          console.log(`로컬 스토리지 삭제된 키: ${key}`)
+        })
+
+        // 사용자 데이터 새로고침 (서버에서 업데이트된 잔액 반영)
+        const user = getUserFromStorage()
+        if (user) {
+          user.balance = 150000 // 베타버전 초기 잔액
+          saveUserToStorage(user)
+          setPoints(150000)
+        }
+
+        // 마일리지 데이터도 초기화
+        const initialMileageData = {
+          totalMileage: 1250, // 남은 투자에 대한 마일리지 (1,250,000원 / 1000)
+          history: [],
+          lastAttendanceDate: null,
+        }
+        localStorage.setItem("userMileage", JSON.stringify(initialMileageData))
+        setMileage(1250)
+        setLastAttendanceDate(null)
+        setHasCheckedToday(false)
+
+        // 이벤트 발생
+        window.dispatchEvent(new CustomEvent("userDataChanged"))
+        window.dispatchEvent(new CustomEvent("mileageUpdated"))
+        window.dispatchEvent(new CustomEvent("investmentDataDeleted"))
+        window.dispatchEvent(new CustomEvent("investmentUpdate"))
+
+        toast({
+          title: "베타버전 초기값 설정 완료",
+          description: "현금 15만원, 철혈검가 사냥개의 회귀(750,000원)와 나쁜 비서(500,000원) 투자로 초기화되었습니다.",
+          duration: 5000,
+        })
+
+        setShowDeleteConfirm(false)
+
+        // 페이지 새로고침으로 확실하게 반영
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
+      } else {
+        throw new Error("서버에서 데이터 삭제 실패")
+      }
+    } catch (error) {
+      console.error("Error deleting investment data:", error)
+      toast({
+        title: "삭제 실패",
+        description: "서버에서 데이터 삭제 중 오류가 발생했습니다.",
+        duration: 3000,
+      })
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   // 테마 전환 함수
@@ -512,8 +598,32 @@ export function MyPageScreen() {
         </Card>
       </div>
 
-      {/* Logout button */}
-      <div className="p-4 mt-auto">
+      {/* Action buttons */}
+      <div className="p-4 mt-auto space-y-3">
+        {/* 베타버전 투자 데이터 삭제 */}
+        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4">
+          <div className="flex items-start gap-3 mb-3">
+            <AlertTriangle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-orange-800 dark:text-orange-200 text-sm">베타 테스트 기능</h4>
+              <p className="text-xs text-orange-600 dark:text-orange-300 mt-1">
+                베타버전 초기값으로 돌아갑니다. 현금 15만원, 철혈검가 사냥개의 회귀(750,000원)와 나쁜 비서(500,000원)
+                투자만 유지됩니다.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            className="w-full rounded-xl border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-300"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={isDeleting}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            {isDeleting ? "초기화 중..." : "베타버전 초기값으로 돌아가기"}
+          </Button>
+        </div>
+
+        {/* 로그아웃 버튼 */}
         <Button
           variant="outline"
           className="w-full rounded-xl border-green text-green hover:bg-green/10 transition-colors duration-300"
@@ -523,6 +633,46 @@ export function MyPageScreen() {
           로그아웃
         </Button>
       </div>
+
+      {/* 삭제 확인 팝업 */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-darkblue rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="h-8 w-8 text-red-500" />
+              </div>
+              <h3 className="text-lg font-bold text-darkblue dark:text-light mb-2">베타버전 초기값으로 돌아가기</h3>
+              <p className="text-sm text-gray mb-4">
+                <strong className="text-green">초기값으로 설정될 데이터:</strong>
+                <br />• 현금: 150,000원
+                <br />• 철혈검가 사냥개의 회귀: 750,000원
+                <br />• 나쁜 비서: 500,000원
+              </p>
+              <p className="text-sm text-red-600 dark:text-red-400 mb-6">
+                <strong>현재 투자 데이터가 초기값으로 재설정됩니다.</strong> 이 작업은 되돌릴 수 없습니다.
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                >
+                  취소
+                </Button>
+                <Button
+                  className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 text-white"
+                  onClick={handleDeleteInvestmentData}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? "삭제 중..." : "삭제"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

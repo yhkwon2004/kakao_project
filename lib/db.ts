@@ -69,6 +69,243 @@ export const updateUserPassword = async (email: string, newPassword: string): Pr
   }
 }
 
+// 특정 투자 데이터만 남기고 나머지 삭제하는 함수
+export const deleteSelectedInvestmentData = async () => {
+  try {
+    const supabase = getSupabase()
+
+    // Get guest user ID
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", "guest_social@guest.fake")
+      .single()
+
+    if (userError) {
+      console.error("Error fetching guest user:", userError)
+      throw userError
+    }
+
+    const userId = userData.id
+    console.log("Guest user ID:", userId)
+
+    // 현재 투자 데이터 조회
+    const { data: currentInvestments, error: fetchError } = await supabase
+      .from("investments")
+      .select("*")
+      .eq("user_id", userId)
+
+    if (fetchError) {
+      console.error("Error fetching current investments:", fetchError)
+      throw fetchError
+    }
+
+    console.log("Current investments:", currentInvestments)
+
+    // 남겨둘 투자 데이터 정의 (웹툰 ID와 금액으로 식별)
+    const keepInvestments = [
+      { webtoon_id: "blood-sword-family-hunting-dog", amount: 750000 },
+      { webtoon_id: "bad-secretary", amount: 500000 },
+    ]
+
+    // 삭제할 투자 데이터 필터링
+    const investmentsToDelete =
+      currentInvestments?.filter((investment) => {
+        const shouldKeep = keepInvestments.some(
+          (keep) => keep.webtoon_id === investment.webtoon_id && keep.amount === investment.amount,
+        )
+        return !shouldKeep
+      }) || []
+
+    console.log("Investments to delete:", investmentsToDelete)
+    console.log("Number of investments to delete:", investmentsToDelete.length)
+
+    if (investmentsToDelete.length > 0) {
+      // 삭제할 투자 ID 목록
+      const investmentIdsToDelete = investmentsToDelete.map((inv) => inv.id)
+
+      // 투자 데이터 삭제
+      const { error: deleteError } = await supabase.from("investments").delete().in("id", investmentIdsToDelete)
+
+      if (deleteError) {
+        console.error("Error deleting investments:", deleteError)
+        throw deleteError
+      }
+
+      console.log(`Successfully deleted ${investmentIdsToDelete.length} investments`)
+    }
+
+    // 차트 데이터도 업데이트 (남은 투자에 맞게)
+    const { error: deleteChartError } = await supabase.from("charts").delete().eq("user_id", userId)
+
+    if (deleteChartError) {
+      console.error("Error deleting chart data:", deleteChartError)
+      throw deleteChartError
+    }
+
+    // 남은 투자 데이터를 기반으로 새로운 차트 데이터 생성
+    const remainingInvestments =
+      currentInvestments?.filter((investment) => {
+        return keepInvestments.some(
+          (keep) => keep.webtoon_id === investment.webtoon_id && keep.amount === investment.amount,
+        )
+      }) || []
+
+    if (remainingInvestments.length > 0) {
+      // 남은 투자 데이터를 기반으로 차트 데이터 재생성
+      const newChartData = [
+        {
+          user_id: userId,
+          date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          invested: 750000, // 철혈검가 사냥개의 회귀
+          expected_return: 861750, // 14.9% ROI
+        },
+        {
+          user_id: userId,
+          date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          invested: 1250000, // 철혈검가 + 나쁜 비서
+          expected_return: 1426750,
+        },
+        {
+          user_id: userId,
+          date: new Date().toISOString().split("T")[0],
+          invested: 1250000,
+          expected_return: 1426750,
+        },
+      ]
+
+      const { error: chartError } = await supabase.from("charts").insert(newChartData)
+      if (chartError) {
+        console.error("Error inserting new chart data:", chartError)
+        throw chartError
+      }
+    }
+
+    // 사용자 잔액 업데이트 (삭제된 투자 금액만큼 복구)
+    // const deletedAmount = investmentsToDelete.reduce((sum, inv) => sum + inv.amount, 0)
+    // console.log("Amount to refund:", deletedAmount)
+
+    // if (deletedAmount > 0) {
+    //   const { data: currentUser, error: userFetchError } = await supabase
+    //     .from("users")
+    //     .select("balance")
+    //     .eq("id", userId)
+    //     .single()
+
+    //   if (userFetchError) {
+    //     console.error("Error fetching user balance:", userFetchError)
+    //     throw userFetchError
+    //   }
+
+    //   const newBalance = (currentUser.balance || 0) + deletedAmount
+    //   console.log("New balance:", newBalance)
+
+    //   const { error: balanceError } = await supabase.from("users").update({ balance: newBalance }).eq("id", userId)
+
+    //   if (balanceError) {
+    //     console.error("Error updating balance:", balanceError)
+    //     throw balanceError
+    //   }
+    // }
+
+    // 사용자 잔액을 150,000원으로 설정 (삭제된 투자 금액 환불 대신)
+    const newBalance = 150000
+    console.log("Setting balance to:", newBalance)
+
+    const { error: balanceError } = await supabase.from("users").update({ balance: newBalance }).eq("id", userId)
+
+    if (balanceError) {
+      console.error("Error updating balance:", balanceError)
+      throw balanceError
+    }
+
+    // 기타 관련 데이터 정리
+    await supabase.from("favorites").delete().eq("user_id", userId)
+    await supabase.from("user_preferences").delete().eq("user_id", userId)
+    await supabase.from("sessions").delete().eq("user_id", userId)
+
+    // 마일리지 데이터 초기화
+    const { error: mileageDeleteError } = await supabase.from("mileage").delete().eq("user_id", userId)
+
+    if (mileageDeleteError) {
+      console.error("Error deleting mileage:", mileageDeleteError)
+    }
+
+    const { error: mileageHistoryDeleteError } = await supabase.from("mileage_history").delete().eq("user_id", userId)
+
+    if (mileageHistoryDeleteError) {
+      console.error("Error deleting mileage history:", mileageHistoryDeleteError)
+    }
+
+    // 새로운 마일리지 데이터 추가 (남은 투자에 대한 마일리지만)
+    const totalRemainingAmount = remainingInvestments.reduce((sum, inv) => sum + inv.amount, 0)
+    const mileageFromInvestments = Math.floor(totalRemainingAmount / 1000) // 1000원당 1마일리지
+
+    const newMileageData = {
+      user_id: userId,
+      total_points: mileageFromInvestments,
+      attendance_streak: 0,
+      last_attendance: null,
+    }
+
+    const { error: newMileageError } = await supabase.from("mileage").insert(newMileageData)
+    if (newMileageError) {
+      console.error("Error inserting new mileage:", newMileageError)
+    }
+
+    // 마일리지 히스토리 추가
+    if (mileageFromInvestments > 0) {
+      const mileageHistory = remainingInvestments.map((inv) => ({
+        user_id: userId,
+        points: Math.floor(inv.amount / 1000),
+        type: "investment",
+        description: `웹툰 투자 마일리지 (${inv.webtoon_id})`,
+        created_at: inv.created_at,
+      }))
+
+      const { error: historyError } = await supabase.from("mileage_history").insert(mileageHistory)
+      if (historyError) {
+        console.error("Error inserting mileage history:", historyError)
+      }
+    }
+
+    // 로컬스토리지에 남은 투자 데이터 설정
+    const remainingInvestmentsForLocal = [
+      {
+        id: "blood-sword-family-hunting-dog",
+        title: "철혈검가 사냥개의 회귀",
+        amount: 750000,
+        expectedROI: 14.9,
+        status: "진행중",
+        date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        thumbnail: "/images/철혈검가-사냥개의-회귀.png",
+        slug: "blood-sword-family-hunting-dog",
+      },
+      {
+        id: "bad-secretary",
+        title: "나쁜 비서",
+        amount: 500000,
+        expectedROI: 18.5,
+        status: "진행중",
+        date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        thumbnail: "/webtoons/나쁜-비서.png",
+        slug: "bad-secretary",
+      },
+    ]
+
+    // 브라우저 환경에서만 로컬스토리지 업데이트
+    if (typeof window !== "undefined") {
+      localStorage.setItem("userInvestments", JSON.stringify(remainingInvestmentsForLocal))
+    }
+
+    console.log("Successfully completed selective investment data deletion")
+    return true
+  } catch (error) {
+    console.error("Error in deleteSelectedInvestmentData:", error)
+    return false
+  }
+}
+
 // Guest account reset with dummy data
 export const resetGuestData = async () => {
   try {

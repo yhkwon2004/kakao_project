@@ -35,6 +35,9 @@ export function AssetScreen() {
       const user = getUserFromStorage()
       if (user && user.balance !== undefined) {
         setUserBalance(user.balance)
+      } else {
+        // 베타버전 초기 잔액 설정
+        setUserBalance(150000)
       }
 
       // Add this inside the loadInvestments function, after setting userBalance
@@ -46,6 +49,31 @@ export function AssetScreen() {
 
       if (investmentsStr) {
         userInvestments = JSON.parse(investmentsStr)
+      } else {
+        // 베타버전 초기 투자 데이터 설정
+        userInvestments = [
+          {
+            id: "blood-sword-family-hunting-dog",
+            title: "철혈검가 사냥개의 회귀",
+            amount: 750000,
+            expectedROI: 14.9,
+            status: "진행중",
+            date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            thumbnail: "/images/철혈검가-사냥개의-회귀.png",
+            slug: "blood-sword-family-hunting-dog",
+          },
+          {
+            id: "bad-secretary",
+            title: "나쁜 비서",
+            amount: 500000,
+            expectedROI: 18.5,
+            status: "진행중",
+            date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            thumbnail: "/webtoons/나쁜-비서.png",
+            slug: "bad-secretary",
+          },
+        ]
+        localStorage.setItem("userInvestments", JSON.stringify(userInvestments))
       }
 
       setInvestments(userInvestments)
@@ -372,6 +400,8 @@ export function AssetScreen() {
                             "/placeholder.svg" ||
                             "/placeholder.svg" ||
                             "/placeholder.svg" ||
+                            "/placeholder.svg" ||
+                            "/placeholder.svg" ||
                             "/placeholder.svg"
                           }
                           alt={investment.title || investment.webtoonTitle}
@@ -443,7 +473,7 @@ export function AssetScreen() {
                               className={`text-xs ${isProfit ? "text-[#4F8F78] dark:text-[#848954]" : "text-[#D16561] dark:text-[#DD8369]"}`}
                             >
                               {isProfit ? "+" : ""}
-                              {investment.expectedROI}%
+                              {investment.currentROI || investment.expectedROI}%
                             </p>
                           </div>
                         </div>
