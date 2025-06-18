@@ -233,13 +233,14 @@ export function CommunityScreen() {
     }
   }, [])
 
-  // 새 게시물 감지를 위한 useEffect 추가
+  // 새 게시물 감지를 위한 useEffect 수정
   useEffect(() => {
     const handleStorageChange = () => {
       const storedPosts = localStorage.getItem("communityPosts")
       if (storedPosts) {
         const parsedPosts = JSON.parse(storedPosts)
         setPosts(parsedPosts)
+        console.log("Posts updated from localStorage:", parsedPosts.length)
       }
     }
 
@@ -248,20 +249,28 @@ export function CommunityScreen() {
 
     // 컴포넌트가 포커스될 때도 체크
     const handleFocus = () => {
+      console.log("Window focused, refreshing posts...")
       handleStorageChange()
     }
 
     window.addEventListener("focus", handleFocus)
 
+    // 주기적으로 체크 (500ms마다로 더 자주)
+    const interval = setInterval(() => {
+      handleStorageChange()
+    }, 500)
+
     return () => {
       window.removeEventListener("storage", handleStorageChange)
       window.removeEventListener("focus", handleFocus)
+      clearInterval(interval)
     }
   }, [])
 
   // 페이지 포커스 시 게시물 새로고침
   useEffect(() => {
     const refreshPosts = () => {
+      console.log("Refreshing posts due to visibility change...")
       const storedPosts = localStorage.getItem("communityPosts")
       if (storedPosts) {
         const parsedPosts = JSON.parse(storedPosts)
@@ -270,14 +279,16 @@ export function CommunityScreen() {
     }
 
     // 페이지가 보일 때마다 새로고침
-    document.addEventListener("visibilitychange", () => {
+    const handleVisibilityChange = () => {
       if (!document.hidden) {
         refreshPosts()
       }
-    })
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
 
     return () => {
-      document.removeEventListener("visibilitychange", refreshPosts)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
   }, [])
 
@@ -291,6 +302,46 @@ export function CommunityScreen() {
       localStorage.setItem("communityLikes", JSON.stringify(likedPostIds))
     }
   }, [posts])
+
+  // 컴포넌트 마운트 시 강제 새로고침
+  useEffect(() => {
+    const refreshData = () => {
+      console.log("Force refreshing data...")
+      const storedPosts = localStorage.getItem("communityPosts")
+      if (storedPosts) {
+        const parsedPosts = JSON.parse(storedPosts)
+        setPosts(parsedPosts)
+        console.log("Current user for filtering:", currentUser)
+        console.log("Total posts:", parsedPosts.length)
+        console.log("My posts:", parsedPosts.filter((post) => post.author === currentUser).length)
+      }
+    }
+
+    // 초기 로드
+    refreshData()
+
+    // 페이지 가시성 변경 시
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        refreshData()
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    // 라우터 이벤트 감지 (Next.js)
+    const handleRouteChange = () => {
+      setTimeout(refreshData, 100) // 약간의 지연 후 새로고침
+    }
+
+    // popstate 이벤트 감지 (뒤로가기/앞으로가기)
+    window.addEventListener("popstate", handleRouteChange)
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("popstate", handleRouteChange)
+    }
+  }, [currentUser])
 
   // Post reading handler
   const handleReadPost = (post: Post) => {
@@ -420,6 +471,16 @@ export function CommunityScreen() {
         return "bg-[#706FB9]/10 text-[#706FB9] border-[#706FB9]/20"
       default:
         return "bg-[#989898]/10 text-[#989898] border-[#989898]/20"
+    }
+  }
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+    // 탭 변경 시 데이터 새로고침
+    const storedPosts = localStorage.getItem("communityPosts")
+    if (storedPosts) {
+      const parsedPosts = JSON.parse(storedPosts)
+      setPosts(parsedPosts)
     }
   }
 
@@ -605,7 +666,7 @@ export function CommunityScreen() {
       {/* Tabs - sticky 속성 제거 */}
       <div className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-b border-[#C2BDAD] dark:border-[#454858]">
         <div className="p-4">
-          <Tabs defaultValue="all" onValueChange={setActiveTab}>
+          <Tabs defaultValue="all" onValueChange={handleTabChange}>
             <TabsList className="grid grid-cols-5 bg-[#E5E4DC]/10 dark:bg-[#383B4B]/30 p-1 rounded-full w-full">
               <TabsTrigger
                 value="all"

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { ChevronLeft, Send, Tag, X, Plus } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { useToast } from "@/components/ui/use-toast"
+import { getUserFromStorage, getUserProfileImage } from "@/lib/auth"
 
 export function CommunityWriteScreen() {
   const router = useRouter()
@@ -46,6 +47,11 @@ export function CommunityWriteScreen() {
     setIsSubmitting(true)
 
     try {
+      // 현재 사용자 정보 가져오기
+      const user = getUserFromStorage()
+      const currentUserName = user && user.name ? user.name : "권용현"
+      const currentUserProfile = user ? getUserProfileImage(user) : "/images/guest-profile.jpeg"
+
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -54,10 +60,16 @@ export function CommunityWriteScreen() {
         title: title.trim(),
         content: content.trim(),
         tags: tags,
-        author: "사용자",
+        author: currentUserName, // 현재 사용자 이름 사용
+        authorInitial: currentUserName.charAt(0),
+        profileImage: currentUserProfile,
         date: new Date().toISOString().split("T")[0],
+        time: "방금 전",
+        tag: tags.length > 0 ? tags[0] : "일반", // 첫 번째 태그를 카테고리로 사용
         likes: 0,
-        comments: 0,
+        comments: [],
+        liked: false,
+        views: 0,
       }
 
       // Save to localStorage (in real app, this would be an API call)
