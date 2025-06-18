@@ -298,9 +298,7 @@ export function HomeScreen() {
                         {/* 투자자 수 */}
                         <div className="flex justify-between items-center text-xs text-white/90">
                           <span>{webtoon.totalInvestors || 0}명 참여</span>
-                          <span className="text-yellow font-medium">
-                            최소 {formatCurrency(webtoon.minInvestment || 10000)}
-                          </span>
+                          <span className="text-yellow font-medium">현재 {webtoon.currentROI || 0}%</span>
                         </div>
                       </div>
                     </div>
