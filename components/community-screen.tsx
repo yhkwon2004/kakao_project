@@ -35,6 +35,8 @@ import { Logo } from "@/components/logo"
 import { useToast } from "@/components/ui/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { getUserFromStorage, getUserProfileImage } from "@/lib/auth"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 // Comment type definition
 interface Comment {
@@ -77,16 +79,25 @@ export function CommunityScreen() {
   const [sortBy, setSortBy] = useState("latest") // latest, popular, oldest
   const [selectedPost, setSelectedPost] = useState<Post | null>(null)
 
+  const [editingPost, setEditingPost] = useState<Post | null>(null)
+  const [editTitle, setEditTitle] = useState("")
+  const [editContent, setEditContent] = useState("")
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+
   // 로컬 스토리지에서 데이터 로드
   useEffect(() => {
     // 현재 사용자 정보 로드
     const user = getUserFromStorage()
+    let userInfo = "권용현"
+    let userProfile = "/images/guest-profile.jpeg"
+
     if (user && user.name) {
-      setCurrentUser(user.name)
-      setProfileImage(getUserProfileImage(user))
-    } else {
-      setProfileImage("/images/guest-profile.jpeg")
+      userInfo = user.name
+      userProfile = getUserProfileImage(user)
     }
+
+    setCurrentUser(userInfo)
+    setProfileImage(userProfile)
 
     const storedPosts = localStorage.getItem("communityPosts")
     const storedLikes = localStorage.getItem("communityLikes")
@@ -94,8 +105,23 @@ export function CommunityScreen() {
     if (storedPosts) {
       setPosts(JSON.parse(storedPosts))
     } else {
-      // 기본 게시물 데이터
+      // 기본 게시물 데이터 - 현재 사용자 정보를 사용
       const defaultPosts: Post[] = [
+        // 현재 사용자의 테스트 게시물 추가
+        {
+          id: "user-post-1",
+          author: userInfo, // 현재 사용자
+          authorInitial: userInfo.charAt(0),
+          profileImage: userProfile,
+          title: "내가 작성한 테스트 게시물",
+          content: "이것은 내가 작성한 게시물입니다. 삭제 테스트를 위한 샘플 글입니다.",
+          likes: 5,
+          comments: [],
+          time: "방금 전",
+          tag: "투자 분석",
+          liked: false,
+          views: 12,
+        },
         {
           id: "1",
           author: "김지원",
@@ -207,6 +233,54 @@ export function CommunityScreen() {
     }
   }, [])
 
+  // 새 게시물 감지를 위한 useEffect 추가
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const storedPosts = localStorage.getItem("communityPosts")
+      if (storedPosts) {
+        const parsedPosts = JSON.parse(storedPosts)
+        setPosts(parsedPosts)
+      }
+    }
+
+    // localStorage 변경 감지
+    window.addEventListener("storage", handleStorageChange)
+
+    // 컴포넌트가 포커스될 때도 체크
+    const handleFocus = () => {
+      handleStorageChange()
+    }
+
+    window.addEventListener("focus", handleFocus)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("focus", handleFocus)
+    }
+  }, [])
+
+  // 페이지 포커스 시 게시물 새로고침
+  useEffect(() => {
+    const refreshPosts = () => {
+      const storedPosts = localStorage.getItem("communityPosts")
+      if (storedPosts) {
+        const parsedPosts = JSON.parse(storedPosts)
+        setPosts(parsedPosts)
+      }
+    }
+
+    // 페이지가 보일 때마다 새로고침
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        refreshPosts()
+      }
+    })
+
+    return () => {
+      document.removeEventListener("visibilitychange", refreshPosts)
+    }
+  }, [])
+
   // 게시물 및 좋아요 상태 저장
   useEffect(() => {
     if (posts.length > 0) {
@@ -256,12 +330,55 @@ export function CommunityScreen() {
     })
   }
 
+  const handleEditPost = (post: Post) => {
+    setEditingPost(post)
+    setEditTitle(post.title)
+    setEditContent(post.content)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleSaveEdit = () => {
+    if (!editingPost || !editTitle.trim() || !editContent.trim()) {
+      toast({
+        title: "입력 오류",
+        description: "제목과 내용을 모두 입력해주세요.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const updatedPosts = posts.map((post) =>
+      post.id === editingPost.id
+        ? {
+            ...post,
+            title: editTitle.trim(),
+            content: editContent.trim(),
+          }
+        : post,
+    )
+
+    setPosts(updatedPosts)
+    setIsEditDialogOpen(false)
+    setEditingPost(null)
+    setEditTitle("")
+    setEditContent("")
+
+    toast({
+      title: "게시물 수정 완료",
+      description: "게시물이 성공적으로 수정되었습니다.",
+      duration: 2000,
+    })
+  }
+
   // Get filtered posts
   const getFilteredPosts = () => {
     let filtered = posts
 
-    if (activeTab === "my") filtered = posts.filter((post) => post.author === currentUser)
-    else if (activeTab === "updates") filtered = posts.filter((post) => post.tag === "제작 업데이트")
+    if (activeTab === "my") {
+      // 내 글 필터링을 더 명확하게 처리
+      filtered = posts.filter((post) => post.author === currentUser)
+      console.log("Current user:", currentUser, "My posts:", filtered.length) // 디버깅용
+    } else if (activeTab === "updates") filtered = posts.filter((post) => post.tag === "제작 업데이트")
     else if (activeTab === "analysis") filtered = posts.filter((post) => post.tag === "투자 분석")
     else if (activeTab === "news") filtered = posts.filter((post) => post.tag === "캐스팅 소식")
 
@@ -364,6 +481,16 @@ export function CommunityScreen() {
                   align="end"
                   className="rounded-xl bg-[#F9F9F9] dark:bg-[#3F3F3F] border-[#C2BDAD] dark:border-[#454858]"
                 >
+                  <DropdownMenuItem
+                    className="text-[#5F859F] cursor-pointer rounded-lg hover:bg-[#5F859F]/10"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleEditPost(post)
+                    }}
+                  >
+                    <PenSquare className="h-4 w-4 mr-2" />
+                    수정하기
+                  </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-[#D16561] cursor-pointer rounded-lg hover:bg-[#D16561]/10"
                     onClick={(e) => {
@@ -618,6 +745,63 @@ export function CommunityScreen() {
               onClick={handleDeletePost}
             >
               삭제하기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Post Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="w-[90vw] max-w-[500px] rounded-2xl bg-[#F9F9F9] dark:bg-[#3F3F3F] border border-[#C2BDAD] dark:border-[#454858]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-[#323233] dark:text-[#F5D949]">게시물 수정</DialogTitle>
+            <DialogDescription className="text-[#989898]">게시물의 제목과 내용을 수정할 수 있습니다.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <Label className="text-[#323233] dark:text-[#F5D949] font-medium">제목</Label>
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="게시글 제목을 입력하세요..."
+                className="mt-2 bg-[#FAFAFA] dark:bg-[#383B4B] border-[#BCBCBC] dark:border-[#454858] text-[#323233] dark:text-[#F5D949] focus:border-[#F9DF52] focus:ring-[#F9DF52]"
+              />
+            </div>
+
+            <div>
+              <Label className="text-[#323233] dark:text-[#F5D949] font-medium">내용</Label>
+              <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                placeholder="게시글 내용을 입력하세요..."
+                rows={8}
+                className="mt-2 bg-[#FAFAFA] dark:bg-[#383B4B] border-[#BCBCBC] dark:border-[#454858] text-[#323233] dark:text-[#F5D949] focus:border-[#F9DF52] focus:ring-[#F9DF52] resize-none"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 rounded-xl border-[#C2BDAD] dark:border-[#454858] text-[#989898] h-12"
+              onClick={() => {
+                setIsEditDialogOpen(false)
+                setEditingPost(null)
+                setEditTitle("")
+                setEditContent("")
+              }}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              className="flex-1 rounded-xl bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233] h-12 font-semibold"
+              onClick={handleSaveEdit}
+              disabled={!editTitle.trim() || !editContent.trim()}
+            >
+              수정 완료
             </Button>
           </DialogFooter>
         </DialogContent>

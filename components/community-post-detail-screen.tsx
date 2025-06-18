@@ -5,10 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { MessageCircle, ThumbsUp, Send, Trash2, MoreVertical, ChevronLeft, Clock, Eye } from "lucide-react"
+import { MessageCircle, ThumbsUp, Send, Trash2, ChevronLeft, Clock, Eye, Edit } from "lucide-react"
 import { Logo } from "@/components/logo"
 import { useToast } from "@/components/ui/use-toast"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { getUserFromStorage, getUserProfileImage } from "@/lib/auth"
 import {
   Dialog,
@@ -18,6 +17,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 
 interface Comment {
   id: string
@@ -54,6 +54,9 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
   const [currentUser, setCurrentUser] = useState("권용현")
   const [profileImage, setProfileImage] = useState<string>("/images/guest-profile.jpeg")
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [editTitle, setEditTitle] = useState("")
+  const [editContent, setEditContent] = useState("")
 
   useEffect(() => {
     // 사용자 정보 로드
@@ -71,8 +74,12 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
       const posts = JSON.parse(storedPosts)
       const foundPost = posts.find((p: Post) => p.id === postId)
       if (foundPost) {
-        // 조회수 증가
-        const updatedPost = { ...foundPost, views: (foundPost.views || 0) + 1 }
+        // Ensure comments is always an array
+        const updatedPost = {
+          ...foundPost,
+          views: (foundPost.views || 0) + 1,
+          comments: Array.isArray(foundPost.comments) ? foundPost.comments : [],
+        }
         setPost(updatedPost)
 
         // 조회수 업데이트된 게시물을 저장
@@ -115,7 +122,7 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
 
     const updatedPost = {
       ...post,
-      comments: [...post.comments, newCommentObj],
+      comments: Array.isArray(post.comments) ? [...post.comments, newCommentObj] : [newCommentObj],
     }
 
     setPost(updatedPost)
@@ -154,6 +161,34 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
     })
 
     router.push("/community")
+  }
+
+  const handleEditPost = () => {
+    if (!post || !editTitle.trim() || !editContent.trim()) return
+
+    const updatedPost = {
+      ...post,
+      title: editTitle,
+      content: editContent,
+    }
+
+    setPost(updatedPost)
+
+    // 로컬 스토리지 업데이트
+    const storedPosts = localStorage.getItem("communityPosts")
+    if (storedPosts) {
+      const posts = JSON.parse(storedPosts)
+      const updatedPosts = posts.map((p: Post) => (p.id === postId ? updatedPost : p))
+      localStorage.setItem("communityPosts", JSON.stringify(updatedPosts))
+    }
+
+    setIsEditDialogOpen(false)
+
+    toast({
+      title: "게시물 수정 완료",
+      description: "게시물이 성공적으로 수정되었습니다.",
+      duration: 2000,
+    })
   }
 
   const getTagColor = (tag: string) => {
@@ -199,22 +234,15 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
             <Logo size="md" showSubtitle={false} />
           </div>
           {post.author === currentUser && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <MoreVertical className="h-4 w-4 text-gray" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="rounded-xl">
-                <DropdownMenuItem
-                  className="text-red-500 cursor-pointer rounded-lg"
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  삭제하기
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300"
+              onClick={() => setIsDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              삭제
+            </Button>
           )}
         </div>
       </div>
@@ -263,6 +291,44 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
               </div>
             </div>
 
+            {/* 내가 쓴 글일 때 수정/삭제 버튼 */}
+            {post.author === currentUser && (
+              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-700 dark:text-blue-400">내가 작성한 게시물</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-500 mt-1">
+                      이 게시물을 수정하거나 삭제할 수 있습니다.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-blue-300 text-blue-600 hover:bg-blue-100 hover:border-blue-400"
+                      onClick={() => {
+                        setEditTitle(post.title)
+                        setEditContent(post.content)
+                        setIsEditDialogOpen(true)
+                      }}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      수정
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-red-300 text-red-600 hover:bg-red-100 hover:border-red-400"
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      삭제
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 게시물 내용 */}
             <h1 className="text-2xl font-bold mb-6 text-darkblue dark:text-light leading-tight">{post.title}</h1>
 
@@ -304,13 +370,7 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
                 댓글 {post.comments.length}개
               </h3>
 
-              {post.comments.length === 0 ? (
-                <div className="text-center py-8 text-gray">
-                  <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">아직 댓글이 없습니다.</p>
-                  <p className="text-xs mt-1">첫 댓글을 작성해보세요!</p>
-                </div>
-              ) : (
+              {post.comments && Array.isArray(post.comments) && post.comments.length > 0 ? (
                 <div className="space-y-4">
                   {post.comments.map((comment) => (
                     <div
@@ -345,6 +405,12 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
                       </div>
                     </div>
                   ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray">
+                  <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">아직 댓글이 없습니다.</p>
+                  <p className="text-xs mt-1">첫 댓글을 작성해보세요!</p>
                 </div>
               )}
             </div>
@@ -407,6 +473,54 @@ export function CommunityPostDetailScreen({ postId }: CommunityPostDetailScreenP
               onClick={handleDeletePost}
             >
               삭제하기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 수정 다이얼로그 */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] rounded-2xl bg-white dark:bg-darkblue border border-gray/20">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-darkblue dark:text-light">게시물 수정</DialogTitle>
+            <DialogDescription>게시물의 제목과 내용을 수정할 수 있습니다.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium text-darkblue dark:text-light mb-2 block">제목</label>
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                placeholder="제목을 입력하세요"
+                className="rounded-xl border-gray/20"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-darkblue dark:text-light mb-2 block">내용</label>
+              <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                placeholder="내용을 입력하세요"
+                className="rounded-xl border-gray/20 min-h-[120px] resize-none"
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex gap-3 sm:justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 rounded-xl border-gray/20 text-gray"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              취소
+            </Button>
+            <Button
+              type="button"
+              className="flex-1 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold"
+              onClick={handleEditPost}
+              disabled={!editTitle.trim() || !editContent.trim()}
+            >
+              수정 완료
             </Button>
           </DialogFooter>
         </DialogContent>
