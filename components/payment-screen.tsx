@@ -63,6 +63,14 @@ export function PaymentScreen() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [currentTransaction, setCurrentTransaction] = useState<TransactionRecord | null>(null)
 
+  const getFontSizeForAmount = (amount: number) => {
+    const amountStr = formatCurrency(amount)
+    if (amountStr.length > 12) return "text-sm"
+    if (amountStr.length > 10) return "text-base"
+    if (amountStr.length > 8) return "text-lg"
+    return "text-xl"
+  }
+
   // 투자 내역을 거래 내역으로 변환하는 함수
   const convertInvestmentsToTransactions = (investments: any[]): TransactionRecord[] => {
     return investments.map((investment) => ({
@@ -423,7 +431,9 @@ export function PaymentScreen() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-3xl font-bold">{formatCurrency(userBalance)}</p>
+                <p className={`${getFontSizeForAmount(userBalance)} font-bold truncate`}>
+                  {formatCurrency(userBalance)}
+                </p>
               </div>
             </div>
 
@@ -431,11 +441,15 @@ export function PaymentScreen() {
             <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/20">
               <div className="bg-white/10 rounded-xl p-3">
                 <p className="text-white/80 text-xs font-medium">총 투자금액</p>
-                <p className="text-lg font-bold">{formatCurrency(totalInvested)}</p>
+                <p className={`${getFontSizeForAmount(totalInvested)} font-bold truncate`}>
+                  {formatCurrency(totalInvested)}
+                </p>
               </div>
               <div className="bg-white/10 rounded-xl p-3">
                 <p className="text-white/80 text-xs font-medium">총 거래금액</p>
-                <p className="text-lg font-bold">{formatCurrency(userBalance + totalInvested)}</p>
+                <p className={`${getFontSizeForAmount(userBalance + totalInvested)} font-bold truncate`}>
+                  {formatCurrency(userBalance + totalInvested)}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -592,7 +606,11 @@ export function PaymentScreen() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`text-sm font-medium ${getAmountColor(record)}`}>{getAmountDisplay(record)}</p>
+                        <p
+                          className={`${getFontSizeForAmount(record.amount)} font-medium ${getAmountColor(record)} truncate`}
+                        >
+                          {getAmountDisplay(record)}
+                        </p>
                         <p className="text-xs text-[#989898]">{getStatusText(record.status, record.type)}</p>
                         {record.fee > 0 && (
                           <p className="text-xs text-[#989898]">수수료 {formatCurrency(record.fee)}</p>
@@ -626,7 +644,9 @@ export function PaymentScreen() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-[#4F8F78]">{formatCurrency(record.amount)}</p>
+                        <p className={`${getFontSizeForAmount(record.amount)} font-medium text-[#4F8F78] truncate`}>
+                          {formatCurrency(record.amount)}
+                        </p>
                         <p className="text-xs text-[#989898]">완료</p>
                         {record.fee > 0 && (
                           <p className="text-xs text-[#989898]">수수료 {formatCurrency(record.fee)}</p>
@@ -653,7 +673,9 @@ export function PaymentScreen() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-medium text-[#5F859F]">-{formatCurrency(record.amount)}</p>
+                          <p className={`${getFontSizeForAmount(record.amount)} font-medium text-[#5F859F] truncate`}>
+                            -{formatCurrency(record.amount)}
+                          </p>
                           <p className="text-xs text-[#989898]">투자완료</p>
                         </div>
                       </div>
@@ -683,7 +705,9 @@ export function PaymentScreen() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-medium text-[#F9DF52]">+{formatCurrency(record.amount)}</p>
+                          <p className={`${getFontSizeForAmount(record.amount)} font-medium text-[#F9DF52] truncate`}>
+                            +{formatCurrency(record.amount)}
+                          </p>
                           <p className="text-xs text-[#989898]">{getStatusText(record.status, record.type)}</p>
                         </div>
                       </div>
@@ -717,7 +741,9 @@ export function PaymentScreen() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-medium text-[#F9DF52]">{getAmountDisplay(record)}</p>
+                          <p className={`${getFontSizeForAmount(record.amount)} font-medium text-[#F9DF52] truncate`}>
+                            {getAmountDisplay(record)}
+                          </p>
                           <p className="text-xs text-[#989898]">처리중</p>
                         </div>
                       </div>
@@ -750,7 +776,11 @@ export function PaymentScreen() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-[#989898] text-sm">충전 금액</span>
-                  <span className="font-bold text-[#323233] dark:text-[#F9DF52]">{chargeAmount}원</span>
+                  <span
+                    className={`${getFontSizeForAmount(Number.parseInt(chargeAmount.replace(/,/g, "")))} font-bold text-[#323233] dark:text-[#F9DF52] truncate`}
+                  >
+                    {chargeAmount}원
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#989898] text-sm">결제 수단</span>
@@ -765,7 +795,9 @@ export function PaymentScreen() {
                 <div className="border-t border-[#BCBCBC] pt-2 mt-2">
                   <div className="flex justify-between">
                     <span className="text-[#323233] dark:text-[#F9DF52] font-bold">총 결제 금액</span>
-                    <span className="font-bold text-[#323233] dark:text-[#F9DF52]">
+                    <span
+                      className={`${getFontSizeForAmount(Number.parseInt(chargeAmount.replace(/,/g, "")) + (Number.parseInt(chargeAmount.replace(/,/g, "")) >= 50000 ? 0 : 500))} font-bold text-[#323233] dark:text-[#F9DF52] truncate`}
+                    >
                       {formatCurrency(
                         Number.parseInt(chargeAmount.replace(/,/g, "")) +
                           (Number.parseInt(chargeAmount.replace(/,/g, "")) >= 50000 ? 0 : 500),
@@ -816,7 +848,9 @@ export function PaymentScreen() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-[#989898] text-sm">충전 금액</span>
-                    <span className="font-bold text-[#323233] dark:text-[#F9DF52]">
+                    <span
+                      className={`${getFontSizeForAmount(currentTransaction.amount)} font-bold text-[#323233] dark:text-[#F9DF52] truncate`}
+                    >
                       {formatCurrency(currentTransaction.amount)}
                     </span>
                   </div>
@@ -839,7 +873,9 @@ export function PaymentScreen() {
                   <div className="border-t border-[#BCBCBC] pt-2 mt-2">
                     <div className="flex justify-between">
                       <span className="text-[#323233] dark:text-[#F9DF52] font-bold">충전 후 잔액</span>
-                      <span className="font-bold text-[#4F8F78] text-lg">{formatCurrency(userBalance)}</span>
+                      <span className={`${getFontSizeForAmount(userBalance)} font-bold text-[#4F8F78] truncate`}>
+                        {formatCurrency(userBalance)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -887,7 +923,9 @@ export function PaymentScreen() {
 
               <div className="bg-gradient-to-r from-[#F9DF52] to-[#F5C882] rounded-xl p-4 mb-6">
                 <p className="text-[#323233] text-sm font-medium mb-1">현재 잔액</p>
-                <p className="text-[#323233] text-2xl font-bold">{formatCurrency(userBalance)}</p>
+                <p className={`${getFontSizeForAmount(userBalance)} text-[#323233] font-bold truncate`}>
+                  {formatCurrency(userBalance)}
+                </p>
               </div>
 
               <Button

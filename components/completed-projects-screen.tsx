@@ -1,393 +1,363 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, CheckCircle, Calendar, Award, Star, MessageCircle, Send } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { getInvestments } from "@/lib/db"
-import { investmentWebtoons } from "@/data/webtoons"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { ChevronLeft, TrendingUp, Calendar, CheckCircle, Star, Play, Award, Download, Eye } from "lucide-react"
+import { Logo } from "@/components/logo"
+import { formatKoreanCurrency } from "@/lib/format-currency"
+import { getWebtoonById } from "@/data/webtoons"
+import { getUserFromStorage } from "@/lib/auth"
 
 interface CompletedProject {
   id: string
   title: string
-  author: string
   thumbnail: string
+  investmentAmount: number
+  currentValue: number
+  returnAmount: number
+  returnRate: number
   completedDate: string
-  finalAmount: number
-  targetAmount: number
-  totalReturn: number
-  returnPercentage: number
-  investorCount: number
-  rating: number
-  myInvestment?: number
-  myReturn?: number
-  slug: string
-}
-
-interface Comment {
-  id: string
-  projectId: string
-  text: string
-  timestamp: string
+  status: "completed" | "distributed"
+  category: string
+  totalEpisodes?: number
+  viewCount?: number
+  rating?: number
 }
 
 export function CompletedProjectsScreen() {
   const router = useRouter()
   const [completedProjects, setCompletedProjects] = useState<CompletedProject[]>([])
-  const [comments, setComments] = useState<Comment[]>([])
-  const [newComments, setNewComments] = useState<{ [key: string]: string }>({})
-  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [totalInvestment, setTotalInvestment] = useState(0)
+  const [totalReturn, setTotalReturn] = useState(0)
+  const [totalMyReturn, setTotalMyReturn] = useState(0)
+
+  const getFontSizeForAmount = (amount: number) => {
+    const amountStr = formatKoreanCurrency(amount)
+    if (amountStr.length > 12) return "text-sm"
+    if (amountStr.length > 10) return "text-base"
+    if (amountStr.length > 8) return "text-lg"
+    return "text-xl"
+  }
 
   useEffect(() => {
-    const loadCompletedProjects = async () => {
-      const storedUserEmail = localStorage.getItem("userEmail")
-      setUserEmail(storedUserEmail)
+    const loadCompletedProjects = () => {
+      const user = getUserFromStorage()
+      if (!user) return
 
-      // 게스트 계정 확인을 더 확실하게 처리
-      if (!storedUserEmail || storedUserEmail === "guest_social@guest.fake" || storedUserEmail.includes("guest")) {
-        // 게스트 계정인 경우 철혈검가와 나쁜비서 완료된 프로젝트 표시
-        const guestCompletedProjects: CompletedProject[] = [
-          {
-            id: "bad-secretary",
-            title: "나쁜 비서",
-            author: "김작가",
-            thumbnail: "/webtoons/나쁜-비서.png",
-            completedDate: "2024-03-15",
-            finalAmount: 120000000,
-            targetAmount: 100000000,
-            totalReturn: 25000000,
-            returnPercentage: 20.8,
-            investorCount: 1250,
-            rating: 4.8,
-            myInvestment: 500000,
-            myReturn: 104000,
-            slug: "bad-secretary",
-          },
-          {
-            id: "blood-sword-family-hunting-dog",
-            title: "철혈검가 사냥개의 회귀",
-            author: "이작가",
-            thumbnail: "/images/철혈검가-사냥개의-회귀.png",
-            completedDate: "2024-03-10",
-            finalAmount: 150000000,
-            targetAmount: 120000000,
-            totalReturn: 30000000,
-            returnPercentage: 18.0,
-            investorCount: 1800,
-            rating: 4.9,
-            myInvestment: 750000,
-            myReturn: 135000,
-            slug: "blood-sword-family-hunting-dog",
-          },
-        ]
-
-        console.log("게스트 계정 완료된 프로젝트 설정:", guestCompletedProjects)
-        setCompletedProjects(guestCompletedProjects)
-        return
-      }
-
-      // 일반 유저인 경우 DB에서 완료된 투자 내역 가져오기
-      const userId = localStorage.getItem("userId")
-      if (userId) {
-        try {
-          const investments = await getInvestments(userId)
-          const completedInvestments = investments.filter((inv) => inv.status === "completed")
-
-          const completedProjects: CompletedProject[] = completedInvestments.map((investment) => {
-            const webtoon = investmentWebtoons.find((w) => w.id === investment.webtoon_id)
-            const slug =
-              webtoon?.title
-                .toLowerCase()
-                .replace(/[^a-z0-9가-힣]/g, "-")
-                .replace(/-+/g, "-") || investment.webtoon_id
+      // 실제로는 서버에서 완료된 프로젝트 데이터를 가져와야 함
+      // 여기서는 localStorage의 투자 내역 중 완료된 것들을 필터링
+      const investmentsStr = localStorage.getItem("userInvestments")
+      if (investmentsStr) {
+        const investments = JSON.parse(investmentsStr)
+        const completed = investments
+          .filter((inv: any) => inv.status === "완료")
+          .map((inv: any) => {
+            const webtoonData = getWebtoonById(inv.id)
+            const returnRate = inv.expectedROI || 25 // 예상 수익률
+            const currentValue = Math.round(inv.amount * (1 + returnRate / 100))
+            const returnAmount = currentValue - inv.amount
 
             return {
-              id: investment.webtoon_id,
-              title: webtoon?.title || "알 수 없는 웹툰",
-              author: webtoon?.director || "작가명",
-              thumbnail: webtoon?.thumbnail || "/placeholder.svg",
-              completedDate: new Date(investment.created_at).toISOString().split("T")[0],
-              finalAmount: webtoon?.currentRaised || webtoon?.goalAmount || 100000000,
-              targetAmount: webtoon?.goalAmount || 100000000,
-              totalReturn: investment.roi ? (investment.amount * investment.roi) / 100 : 0,
-              returnPercentage: investment.roi || 0,
-              investorCount: webtoon?.totalInvestors || 1000,
-              rating: 4.8,
-              myInvestment: investment.amount,
-              myReturn: investment.roi ? (investment.amount * investment.roi) / 100 : 0,
-              slug: slug,
+              id: inv.id,
+              title: webtoonData?.title || inv.title,
+              thumbnail: webtoonData?.thumbnail || inv.thumbnail,
+              investmentAmount: inv.amount,
+              currentValue,
+              returnAmount,
+              returnRate,
+              completedDate: inv.completedDate || "2024-01-20",
+              status: inv.distributionStatus || "completed",
+              category: webtoonData?.category || "드라마",
+              totalEpisodes: 12,
+              viewCount: Math.floor(Math.random() * 1000000) + 500000,
+              rating: 4.2 + Math.random() * 0.6,
             }
           })
 
-          setCompletedProjects(completedProjects)
-        } catch (error) {
-          console.error("Error loading completed investments:", error)
-          setCompletedProjects([])
-        }
-      } else {
-        setCompletedProjects([])
+        setCompletedProjects(completed)
+
+        // 총계 계산
+        const totalInv = completed.reduce((sum: number, proj: CompletedProject) => sum + proj.investmentAmount, 0)
+        const totalRet = completed.reduce((sum: number, proj: CompletedProject) => sum + proj.currentValue, 0)
+        const totalMyRet = completed.reduce((sum: number, proj: CompletedProject) => sum + proj.returnAmount, 0)
+
+        setTotalInvestment(totalInv)
+        setTotalReturn(totalRet)
+        setTotalMyReturn(totalMyRet)
       }
     }
 
     loadCompletedProjects()
 
-    // Load existing comments from localStorage
-    const savedComments = localStorage.getItem("completedProjectComments")
-    if (savedComments) {
-      setComments(JSON.parse(savedComments))
+    // 데이터 변경 감지
+    const handleDataChange = () => {
+      loadCompletedProjects()
+    }
+
+    window.addEventListener("storage", handleDataChange)
+    window.addEventListener("investmentUpdate", handleDataChange)
+
+    return () => {
+      window.removeEventListener("storage", handleDataChange)
+      window.removeEventListener("investmentUpdate", handleDataChange)
     }
   }, [])
 
-  const formatCurrency = (amount: number): string => {
-    if (amount >= 100000000) {
-      const eok = Math.floor(amount / 100000000)
-      const man = Math.floor((amount % 100000000) / 10000)
-      if (man === 0) {
-        return `${eok}억원`
-      }
-      return `${eok}억 ${man.toLocaleString()}만원`
-    } else if (amount >= 10000) {
-      return `${Math.floor(amount / 10000).toLocaleString()}만원`
-    }
-    return `${amount.toLocaleString()}원`
+  const averageReturnRate =
+    completedProjects.length > 0
+      ? completedProjects.reduce((sum, proj) => sum + proj.returnRate, 0) / completedProjects.length
+      : 0
+
+  const handleProjectClick = (projectId: string) => {
+    router.push(`/webtoon/${projectId}`)
   }
 
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString)
-    return `${date.getFullYear()}.${(date.getMonth() + 1).toString().padStart(2, "0")}.${date.getDate().toString().padStart(2, "0")}`
+  const handleDownloadReport = (project: CompletedProject) => {
+    // 실제로는 PDF 리포트 생성 및 다운로드
+    alert(`${project.title} 투자 리포트를 다운로드합니다.`)
   }
-
-  const handleCommentSubmit = (projectId: string) => {
-    const commentText = newComments[projectId]?.trim()
-    if (!commentText) return
-
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      projectId,
-      text: commentText,
-      timestamp: new Date().toISOString(),
-    }
-
-    const updatedComments = [...comments, newComment]
-    setComments(updatedComments)
-    localStorage.setItem("completedProjectComments", JSON.stringify(updatedComments))
-
-    setNewComments((prev) => ({ ...prev, [projectId]: "" }))
-  }
-
-  const getProjectComments = (projectId: string) => {
-    return comments.filter((comment) => comment.projectId === projectId)
-  }
-
-  const projectsWithInvestment = completedProjects.filter((project) => project.myInvestment)
-  const totalMyInvestment = projectsWithInvestment.reduce((sum, project) => sum + (project.myInvestment || 0), 0)
-  const totalMyReturn = projectsWithInvestment.reduce((sum, project) => sum + (project.myReturn || 0), 0)
-  const averageReturnRate = totalMyInvestment > 0 ? (totalMyReturn / totalMyInvestment) * 100 : 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FAFAFA] via-[#F9F9F9] to-[#E5E4DC] dark:from-[#323233] dark:via-[#3F3F3F] dark:to-[#3F4458]">
+    <div className="flex flex-col pb-20 bg-gradient-to-br from-[#FAFAFA] to-[#F0F0F0] dark:from-[#323233] dark:to-[#2A2A2B]">
       {/* 헤더 */}
-      <div className="sticky top-0 z-10 bg-[#FAFAFA]/80 dark:bg-[#323233]/80 backdrop-blur-md border-b border-[#BCBCBC]/50 dark:border-[#454858]/50">
-        <div className="flex items-center justify-between p-4 h-16">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.back()}
-            className="flex items-center gap-2 hover:bg-[#E5E4DC] dark:hover:bg-[#454858] rounded-xl text-[#323233] dark:text-[#F5D949]"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="font-medium">뒤로</span>
-          </Button>
-          <h1 className="text-xl font-bold text-[#323233] dark:text-[#F5D949]">완료된 프로젝트</h1>
-          <div className="w-16" />
-        </div>
+      <div className="flex items-center p-4 border-b border-[#C2BDAD]/20 bg-[#FAFAFA]/80 dark:bg-[#3F3F3F]/80 backdrop-blur-sm sticky top-0 z-40 h-16">
+        <Button variant="ghost" size="icon" className="mr-2" onClick={() => router.back()}>
+          <ChevronLeft className="h-5 w-5 text-[#58678C]" />
+        </Button>
+        <Logo size="sm" showSubtitle={false} />
       </div>
 
-      <div className="p-4 pb-24">
-        {/* 요약 카드 */}
-        {projectsWithInvestment.length > 0 && (
-          <div className="bg-gradient-to-r from-[#F9DF52] to-[#F5C882] rounded-2xl p-6 mb-6 text-[#323233] shadow-lg border border-[#C2BDAD]">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-[#323233]/20 rounded-full flex items-center justify-center">
-                <Award className="h-6 w-6 text-[#323233]" />
+      <div className="p-4 space-y-6">
+        {/* 투자 성과 요약 */}
+        <Card className="bg-gradient-to-br from-[#4F8F78] to-[#6CB9B1] text-white border-0 shadow-xl">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <Award className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">투자 성과 요약</h2>
-                <p className="text-[#323233]/80 text-sm">완료된 {projectsWithInvestment.length}개 프로젝트</p>
+                <h2 className="text-xl font-bold">완료된 투자 성과</h2>
+                <p className="text-white/80 text-sm">성공적으로 완료된 프로젝트들</p>
               </div>
             </div>
-
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <p className="text-[#323233]/80 text-xs mb-1">총 투자금</p>
-                <p className="font-bold text-lg">{formatCurrency(totalMyInvestment)}</p>
+                <p className="text-white/80 text-xs mb-1">총 투자금</p>
+                <p className={`${getFontSizeForAmount(totalInvestment)} font-bold truncate`}>
+                  {formatKoreanCurrency(totalInvestment)}
+                </p>
               </div>
               <div className="text-center">
-                <p className="text-[#323233]/80 text-xs mb-1">총 수익</p>
-                <p className="font-bold text-lg text-[#4F8F78]">+{formatCurrency(totalMyReturn)}</p>
+                <p className="text-white/80 text-xs mb-1">총 수익</p>
+                <p className={`${getFontSizeForAmount(totalMyReturn)} font-bold text-[#F9DF52] truncate`}>
+                  +{formatKoreanCurrency(totalMyReturn)}
+                </p>
               </div>
               <div className="text-center">
-                <p className="text-[#323233]/80 text-xs mb-1">평균 수익률</p>
-                <p className="font-bold text-lg text-[#4F8F78]">+{averageReturnRate.toFixed(1)}%</p>
+                <p className="text-white/80 text-xs mb-1">평균 수익률</p>
+                <p className={`${getFontSizeForAmount(Math.abs(averageReturnRate))} font-bold text-[#F9DF52] truncate`}>
+                  +{averageReturnRate.toFixed(1)}%
+                </p>
               </div>
             </div>
-          </div>
-        )}
 
-        {completedProjects.length === 0 &&
-        userEmail &&
-        !userEmail.includes("guest") &&
-        userEmail !== "guest_social@guest.fake" ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-20 h-20 bg-gradient-to-r from-[#C2BDAD] to-[#989898] rounded-full flex items-center justify-center mb-4 shadow-lg">
-              <CheckCircle className="h-10 w-10 text-[#323233] dark:text-[#F5D949]" />
-            </div>
-            <h3 className="text-lg font-semibold text-[#989898] mb-2">완료된 프로젝트가 없습니다</h3>
-            <p className="text-sm text-[#989898] text-center">투자한 프로젝트가 완료되면 여기에 표시됩니다</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {completedProjects.map((project) => (
-              <div
-                key={project.id}
-                className="bg-[#FAFAFA] dark:bg-[#3F3F3F] rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all duration-300 border border-[#C2BDAD] dark:border-[#454858]"
-              >
-                <div className="flex gap-4 mb-4">
-                  {/* 썸네일 */}
-                  <div className="relative">
-                    <img
-                      src={project.thumbnail || "/placeholder.svg"}
-                      alt={project.title}
-                      className="w-20 h-28 object-cover rounded-xl shadow-md"
-                    />
-                    <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-[#4F8F78] to-[#6CB9B1] rounded-full flex items-center justify-center shadow-lg">
-                      <CheckCircle className="h-4 w-4 text-[#FAFAFA]" />
-                    </div>
-                  </div>
-
-                  {/* 정보 */}
-                  <div className="flex-1 space-y-3">
-                    <div>
-                      <h3 className="font-bold text-[#323233] dark:text-[#F5D949] text-lg leading-tight">
-                        {project.title}
-                      </h3>
-                      <p className="text-sm text-[#989898]">{project.author}</p>
-                      <div className="flex items-center gap-4 mt-1">
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 text-[#F9DF52] fill-current" />
-                          <span className="text-sm font-medium text-[#323233] dark:text-[#F5C882]">
-                            {project.rating}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4 text-[#989898]" />
-                          <span className="text-xs text-[#989898]">{formatDate(project.completedDate)} 완료</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 성과 정보 - 투자 데이터가 있는 경우만 표시 */}
-                    {project.myInvestment && (
-                      <div className="bg-gradient-to-r from-[#E5E4DC] to-[#C2BDAD] dark:from-[#454858] dark:to-[#383B4B] p-3 rounded-xl">
-                        <div className="grid grid-cols-2 gap-3 text-xs">
-                          <div>
-                            <p className="text-[#989898] mb-1">내 투자금</p>
-                            <p className="font-bold text-[#323233] dark:text-[#F5D949]">
-                              {formatCurrency(project.myInvestment)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[#989898] mb-1">내 수익</p>
-                            <p className="font-bold text-[#4F8F78]">+{formatCurrency(project.myReturn || 0)}</p>
-                          </div>
-                          <div>
-                            <p className="text-[#989898] mb-1">수익률</p>
-                            <p className="font-bold text-[#4F8F78]">
-                              +{project.myReturn ? ((project.myReturn / project.myInvestment) * 100).toFixed(1) : 0}%
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[#989898] mb-1">투자자 수</p>
-                            <p className="font-bold text-[#5F859F]">{project.investorCount.toLocaleString()}명</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 프로젝트 성과 */}
-                    <div className="bg-gradient-to-r from-[#F9F9F9] to-[#E5E4DC] dark:from-[#3F4458] dark:to-[#383B4B] p-3 rounded-xl">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs text-[#989898]">프로젝트 성과</span>
-                        <span className="text-xs font-bold text-[#4F8F78]">
-                          목표 달성률 {((project.finalAmount / project.targetAmount) * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <div>
-                          <p className="text-[#989898]">최종 모금액</p>
-                          <p className="font-bold text-[#323233] dark:text-[#F5D949]">
-                            {formatCurrency(project.finalAmount)}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[#989898]">목표 금액</p>
-                          <p className="font-bold text-[#323233] dark:text-[#F5C882]">
-                            {formatCurrency(project.targetAmount)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 상세보기 버튼 */}
-                    <Button
-                      onClick={() => router.push(`/webtoon/${project.slug}`)}
-                      variant="outline"
-                      className="w-full border-2 border-[#5F859F] text-[#5F859F] hover:bg-[#E5E4DC] dark:hover:bg-[#454858] rounded-xl py-3 font-medium"
-                    >
-                      상세보기
-                    </Button>
-                  </div>
-                </div>
-
-                {/* 댓글 섹션 */}
-                <div className="border-t border-[#BCBCBC] dark:border-[#454858] pt-4 mt-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <MessageCircle className="h-4 w-4 text-[#5F859F]" />
-                    <span className="text-sm font-medium text-[#323233] dark:text-[#F5D949]">댓글</span>
-                  </div>
-
-                  {/* 기존 댓글 표시 */}
-                  {getProjectComments(project.id).map((comment) => (
-                    <div key={comment.id} className="bg-[#F9F9F9] dark:bg-[#383B4B] rounded-lg p-3 mb-2">
-                      <p className="text-sm text-[#323233] dark:text-[#F5C882] mb-1">{comment.text}</p>
-                      <p className="text-xs text-[#989898]">
-                        {new Date(comment.timestamp).toLocaleDateString("ko-KR")}
-                      </p>
-                    </div>
-                  ))}
-
-                  {/* 새 댓글 입력 */}
-                  <div className="flex gap-2">
-                    <Textarea
-                      placeholder="이 프로젝트에 대한 의견을 남겨보세요..."
-                      value={newComments[project.id] || ""}
-                      onChange={(e) => setNewComments((prev) => ({ ...prev, [project.id]: e.target.value }))}
-                      className="flex-1 min-h-[80px] border-[#BCBCBC] focus:border-[#5F859F] focus:ring-[#5F859F] bg-[#FAFAFA] dark:bg-[#3F4458] text-[#323233] dark:text-[#F5D949] rounded-xl"
-                    />
-                    <Button
-                      onClick={() => handleCommentSubmit(project.id)}
-                      disabled={!newComments[project.id]?.trim()}
-                      className="bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233] rounded-xl px-4 disabled:opacity-50"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+            <div className="bg-white/10 rounded-xl p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-white/80 text-sm">총 현재 가치</span>
+                <span className={`${getFontSizeForAmount(totalReturn)} font-bold truncate`}>
+                  {formatKoreanCurrency(totalReturn)}
+                </span>
               </div>
-            ))}
+              <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#F9DF52] to-[#F5C882] transition-all duration-1000"
+                  style={{ width: `${Math.min((totalMyReturn / totalInvestment) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 완료된 프로젝트 목록 */}
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-[#323233] dark:text-[#F5D949]">완료된 프로젝트</h3>
+            <Badge className="bg-[#4F8F78]/10 text-[#4F8F78] border-[#4F8F78]/20">
+              {completedProjects.length}개 완료
+            </Badge>
           </div>
-        )}
+
+          {completedProjects.length > 0 ? (
+            <div className="space-y-4">
+              {completedProjects.map((project) => (
+                <Card
+                  key={project.id}
+                  className="border-[#C2BDAD]/20 bg-white dark:bg-[#3F3F3F] shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
+                  onClick={() => handleProjectClick(project.id)}
+                >
+                  <CardContent className="p-0">
+                    <div className="flex">
+                      {/* 썸네일 */}
+                      <div className="relative w-24 h-32 flex-shrink-0">
+                        <img
+                          src={project.thumbnail || "/placeholder.svg?height=128&width=96"}
+                          alt={project.title}
+                          className="w-full h-full object-cover rounded-l-lg"
+                        />
+                        <div className="absolute top-2 right-2">
+                          <div className="bg-[#4F8F78] text-white p-1.5 rounded-full shadow-lg">
+                            <CheckCircle className="h-3 w-3" />
+                          </div>
+                        </div>
+                        <div className="absolute bottom-2 left-2 bg-gradient-to-r from-[#F9DF52] to-[#F5C882] text-[#323233] px-2 py-1 rounded-full shadow-lg">
+                          <span className="text-xs font-bold">+{project.returnRate}%</span>
+                        </div>
+                      </div>
+
+                      {/* 프로젝트 정보 */}
+                      <div className="flex-1 p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-[#323233] dark:text-[#F5D949] mb-1 text-base leading-tight">
+                              {project.title}
+                            </h4>
+                            <div className="flex items-center gap-2 text-xs text-[#989898] mb-2">
+                              <Calendar className="h-3 w-3" />
+                              <span>완료일: {project.completedDate}</span>
+                            </div>
+                          </div>
+                          <Badge
+                            className={`ml-2 ${
+                              project.status === "distributed"
+                                ? "bg-[#4F8F78]/10 text-[#4F8F78] border-[#4F8F78]/20"
+                                : "bg-[#5F859F]/10 text-[#5F859F] border-[#5F859F]/20"
+                            }`}
+                          >
+                            {project.status === "distributed" ? "수익 분배됨" : "완료"}
+                          </Badge>
+                        </div>
+
+                        {/* 투자 성과 */}
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div className="bg-[#E5E4DC]/50 dark:bg-[#454858]/30 p-3 rounded-lg">
+                            <p className="text-xs text-[#989898] mb-1">투자 금액</p>
+                            <p
+                              className={`${getFontSizeForAmount(project.investmentAmount)} font-bold text-[#323233] dark:text-[#F5D949] truncate`}
+                            >
+                              {formatKoreanCurrency(project.investmentAmount)}
+                            </p>
+                          </div>
+                          <div className="bg-[#4F8F78]/10 dark:bg-[#4F8F78]/20 p-3 rounded-lg">
+                            <p className="text-xs text-[#989898] mb-1">현재 가치</p>
+                            <p
+                              className={`${getFontSizeForAmount(project.currentValue)} font-bold text-[#4F8F78] truncate`}
+                            >
+                              {formatKoreanCurrency(project.currentValue)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* 수익 정보 */}
+                        <div className="bg-gradient-to-r from-[#F9DF52]/10 to-[#F5C882]/10 p-3 rounded-lg mb-3">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <TrendingUp className="h-4 w-4 text-[#F9DF52]" />
+                              <span className="text-xs text-[#989898]">수익</span>
+                            </div>
+                            <div className="text-right">
+                              <p
+                                className={`${getFontSizeForAmount(project.returnAmount)} font-bold text-[#F9DF52] truncate`}
+                              >
+                                +{formatKoreanCurrency(project.returnAmount)}
+                              </p>
+                              <p className="text-xs text-[#F9DF52]">+{project.returnRate}%</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 프로젝트 성과 */}
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          <div className="text-center bg-[#5F859F]/10 p-2 rounded-lg">
+                            <div className="flex items-center justify-center gap-1 mb-1">
+                              <Play className="h-3 w-3 text-[#5F859F]" />
+                              <span className="text-xs text-[#989898]">에피소드</span>
+                            </div>
+                            <p className="text-sm font-bold text-[#5F859F]">{project.totalEpisodes}화</p>
+                          </div>
+                          <div className="text-center bg-[#706FB9]/10 p-2 rounded-lg">
+                            <div className="flex items-center justify-center gap-1 mb-1">
+                              <Eye className="h-3 w-3 text-[#706FB9]" />
+                              <span className="text-xs text-[#989898]">조회수</span>
+                            </div>
+                            <p className="text-sm font-bold text-[#706FB9]">
+                              {project.viewCount ? `${Math.floor(project.viewCount! / 10000)}만` : "0"}
+                            </p>
+                          </div>
+                          <div className="text-center bg-[#F9DF52]/10 p-2 rounded-lg">
+                            <div className="flex items-center justify-center gap-1 mb-1">
+                              <Star className="h-3 w-3 text-[#F9DF52]" />
+                              <span className="text-xs text-[#989898]">평점</span>
+                            </div>
+                            <p className="text-sm font-bold text-[#F9DF52]">{project.rating?.toFixed(1)}</p>
+                          </div>
+                        </div>
+
+                        {/* 액션 버튼 */}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDownloadReport(project)
+                            }}
+                            className="flex-1 border-[#C2BDAD] text-[#989898] hover:bg-[#E5E4DC] dark:hover:bg-[#454858] text-xs"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            리포트
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleProjectClick(project.id)
+                            }}
+                            className="flex-1 bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233] text-xs"
+                          >
+                            상세보기
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="border-[#C2BDAD]/20 bg-white dark:bg-[#3F3F3F]">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <div className="w-16 h-16 bg-[#E5E4DC] dark:bg-[#454858] rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-[#989898]" />
+                </div>
+                <h3 className="text-lg font-bold text-[#323233] dark:text-[#F5D949] mb-2">
+                  완료된 프로젝트가 없습니다
+                </h3>
+                <p className="text-[#989898] text-center mb-4">투자한 프로젝트가 완료되면 여기에 표시됩니다.</p>
+                <Button
+                  onClick={() => router.push("/webtoons")}
+                  className="bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233]"
+                >
+                  투자 가능한 웹툰 보기
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   )

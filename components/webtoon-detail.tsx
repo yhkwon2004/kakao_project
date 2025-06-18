@@ -63,6 +63,14 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
   const user = getUserFromStorage()
   const [webtoon, setWebtoon] = useState(webtoonData)
 
+  const getFontSizeForAmount = (amount: number) => {
+    const amountStr = formatKoreanCurrency(amount)
+    if (amountStr.length > 12) return "text-sm"
+    if (amountStr.length > 10) return "text-base"
+    if (amountStr.length > 8) return "text-lg"
+    return "text-xl"
+  }
+
   useEffect(() => {
     if (user) {
       setUserBalance(user.balance || 0)
@@ -412,8 +420,12 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   />
                 </div>
                 <div className="flex justify-between text-sm text-[#989898]">
-                  <span>{formatKoreanCurrency(dynamicCurrentRaised)}</span>
-                  <span>{formatKoreanCurrency(webtoon.goalAmount)}</span>
+                  <span className={`${getFontSizeForAmount(dynamicCurrentRaised)} truncate`}>
+                    {formatKoreanCurrency(dynamicCurrentRaised)}
+                  </span>
+                  <span className={`${getFontSizeForAmount(webtoon.goalAmount)} truncate`}>
+                    {formatKoreanCurrency(webtoon.goalAmount)}
+                  </span>
                 </div>
               </div>
 
@@ -450,7 +462,9 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                     <Target className="h-4 w-4 text-[#D16561]" />
                     <span className="text-sm font-medium text-[#989898]">남은 금액</span>
                   </div>
-                  <p className="text-lg font-bold text-[#D16561]">{formatKoreanCurrency(remainingAmount)}</p>
+                  <p className={`${getFontSizeForAmount(remainingAmount)} font-bold text-[#D16561] truncate`}>
+                    {formatKoreanCurrency(remainingAmount)}
+                  </p>
                 </div>
               </div>
 
@@ -466,13 +480,17 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[#989898]">투자 금액</span>
-                    <span className="text-lg font-bold text-[#323233] dark:text-[#F5D949]">
+                    <span
+                      className={`${getFontSizeForAmount(userInvestmentAmount)} font-bold text-[#323233] dark:text-[#F5D949] truncate`}
+                    >
                       {formatKoreanCurrency(userInvestmentAmount)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center mt-1">
                     <span className="text-[#989898]">예상 수익</span>
-                    <span className="text-lg font-bold text-[#4F8F78]">
+                    <span
+                      className={`${getFontSizeForAmount(Math.round(userInvestmentAmount * (1 + Number(webtoon.expectedROI) / 100)))} font-bold text-[#4F8F78] truncate`}
+                    >
                       {formatKoreanCurrency(Math.round(userInvestmentAmount * (1 + Number(webtoon.expectedROI) / 100)))}
                     </span>
                   </div>
@@ -591,7 +609,7 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                     </div>
                     <div>
                       <p className="text-sm text-[#989898] mb-1">플랫폼</p>
-                      <p className="font-medium text-[#323233] dark:text-[#F5C882]">카카오페이지</p>
+                      <p className="font-medium text-[#323233] dark:text-[#F5C882]">웹툰, OTT</p>
                     </div>
                   </div>
                 </CardContent>
@@ -599,20 +617,29 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
 
               <Card className="border-[#C2BDAD] dark:border-[#454858] bg-[#F9F9F9] dark:bg-[#3F3F3F]">
                 <CardHeader>
-                  <h3 className="font-bold text-[#323233] dark:text-[#F5D949]">투자 조건</h3>
+                  <h3 className="font-bold text-[#323233] dark:text-[#F5D949] flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-[#4F8F78]" />
+                    투자 안전장치
+                  </h3>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-[#E5E4DC] dark:bg-[#383B4B] rounded-lg">
-                    <span className="text-[#989898]">최소 투자 금액</span>
-                    <span className="font-bold text-[#323233] dark:text-[#F5D949]">10,000원</span>
+                  <div className="p-3 bg-[#4F8F78]/10 dark:bg-[#4F8F78]/20 rounded-lg border border-[#4F8F78]/20">
+                    <p className="font-medium text-[#4F8F78] mb-1">목표 달성 보장</p>
+                    <p className="text-sm text-[#323233] dark:text-[#F5C882]">
+                      목표 금액 달성 시에만 제작이 시작되며, 미달성 시 전액 환불
+                    </p>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-[#E5E4DC] dark:bg-[#383B4B] rounded-lg">
-                    <span className="text-[#989898]">예상 수익률</span>
-                    <span className="font-bold text-[#4F8F78]">+{webtoon.expectedROI}%</span>
+                  <div className="p-3 bg-[#5F859F]/10 dark:bg-[#5F859F]/20 rounded-lg border border-[#5F859F]/20">
+                    <p className="font-medium text-[#5F859F] mb-1">진행 상황 투명 공개</p>
+                    <p className="text-sm text-[#323233] dark:text-[#F5C882]">
+                      제작 과정을 실시간으로 공개하여 투자자가 확인 가능
+                    </p>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-[#E5E4DC] dark:bg-[#383B4B] rounded-lg">
-                    <span className="text-[#989898]">수익 분배 시기</span>
-                    <span className="font-bold text-[#323233] dark:text-[#F5D949]">작품 완성 후</span>
+                  <div className="p-3 bg-[#F9DF52]/10 dark:bg-[#F9DF52]/20 rounded-lg border border-[#F9DF52]/20">
+                    <p className="font-medium text-[#F9DF52] mb-1">24시간 환불 보장</p>
+                    <p className="text-sm text-[#323233] dark:text-[#F5C882]">
+                      투자 후 24시간 내 무조건 환불 가능 (수수료 없음)
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -625,19 +652,28 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="border-l-4 border-[#F9DF52] pl-4">
-                    <p className="font-medium text-[#323233] dark:text-[#F5D949] mb-1">캐스팅 완료</p>
-                    <p className="text-sm text-[#989898] mb-2">주요 성우진 캐스팅이 완료되었습니다.</p>
-                    <p className="text-xs text-[#989898]">2024.01.15</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Zap className="h-4 w-4 text-[#F9DF52]" />
+                      <span className="text-sm text-[#989898]">2024.01.15</span>
+                    </div>
+                    <p className="font-medium text-[#323233] dark:text-[#F5D949] mb-1">투자 목표 80% 달성!</p>
+                    <p className="text-sm text-[#989898]">많은 분들의 관심 덕분에 목표의 80%를 달성했습니다.</p>
                   </div>
                   <div className="border-l-4 border-[#5F859F] pl-4">
-                    <p className="font-medium text-[#323233] dark:text-[#F5D949] mb-1">스토리보드 완성</p>
-                    <p className="text-sm text-[#989898] mb-2">전체 에피소드의 스토리보드 작업이 완료되었습니다.</p>
-                    <p className="text-xs text-[#989898]">2024.01.10</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <BookOpen className="h-4 w-4 text-[#5F859F]" />
+                      <span className="text-sm text-[#989898]">2024.01.10</span>
+                    </div>
+                    <p className="font-medium text-[#323233] dark:text-[#F5D949] mb-1">캐릭터 디자인 공개</p>
+                    <p className="text-sm text-[#989898]">주요 캐릭터들의 초기 디자인을 공개합니다.</p>
                   </div>
                   <div className="border-l-4 border-[#4F8F78] pl-4">
-                    <p className="font-medium text-[#323233] dark:text-[#F5D949] mb-1">투자 목표 50% 달성</p>
-                    <p className="text-sm text-[#989898] mb-2">투자 목표 금액의 50%를 달성했습니다!</p>
-                    <p className="text-xs text-[#989898]">2024.01.05</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Play className="h-4 w-4 text-[#4F8F78]" />
+                      <span className="text-sm text-[#989898]">2024.01.05</span>
+                    </div>
+                    <p className="font-medium text-[#323233] dark:text-[#F5D949] mb-1">투자 프로젝트 시작</p>
+                    <p className="text-sm text-[#989898]">드디어 투자 모집을 시작합니다!</p>
                   </div>
                 </CardContent>
               </Card>
@@ -647,94 +683,79 @@ export function WebtoonDetail({ id }: WebtoonDetailProps) {
       </div>
 
       {/* 하단 투자 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#F9F9F9] dark:bg-[#3F3F3F] border-t border-[#C2BDAD] dark:border-[#454858] backdrop-blur-sm">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#F9F9F9] dark:bg-[#3F3F3F] border-t border-[#C2BDAD] dark:border-[#454858] p-4 z-30">
         <div className="flex gap-3">
           <div className="flex-1">
-            <p className="text-xs text-[#989898] mb-1">현재 잔액</p>
-            <p className="text-lg font-bold text-[#323233] dark:text-[#F5D949]">{formatKoreanCurrency(userBalance)}</p>
+            <p className="text-xs text-[#989898] mb-1">내 잔액</p>
+            <p className={`${getFontSizeForAmount(userBalance)} font-bold text-[#323233] dark:text-[#F5D949] truncate`}>
+              {formatKoreanCurrency(userBalance)}
+            </p>
           </div>
           <Button
             onClick={handleInvest}
-            disabled={isCompleted}
-            className={`flex-2 h-14 text-lg font-bold rounded-xl transition-all duration-200 ${
+            disabled={isCompleted || hasInvested}
+            className={`px-8 py-3 font-bold text-lg rounded-xl ${
               isCompleted
                 ? "bg-[#989898] text-[#F9F9F9] cursor-not-allowed"
-                : userBalance < 10000
-                  ? "bg-[#D16561] hover:bg-[#D16561]/90 text-[#F9F9F9]"
-                  : "bg-gradient-to-r from-[#F9DF52] to-[#F5C882] hover:from-[#F5C882] hover:to-[#F9DF52] text-[#323233]"
+                : hasInvested
+                  ? "bg-[#4F8F78] text-[#F9F9F9] cursor-not-allowed"
+                  : "bg-[#F9DF52] hover:bg-[#F5C882] text-[#323233]"
             }`}
           >
-            <div className="flex items-center gap-2">
-              {isCompleted ? (
-                <>
-                  <Shield className="h-5 w-5" />
-                  <span>투자 완료</span>
-                </>
-              ) : userBalance < 10000 ? (
-                <>
-                  <Zap className="h-5 w-5" />
-                  <span>충전 후 투자하기</span>
-                </>
-              ) : (
-                <>
-                  <Zap className="h-5 w-5" />
-                  <span>투자하기</span>
-                </>
-              )}
-            </div>
+            {isCompleted ? "투자 마감" : hasInvested ? "투자 완료" : "투자하기"}
           </Button>
         </div>
       </div>
 
       {/* 환불 확인 모달 */}
       <Dialog open={isRefundModalOpen} onOpenChange={setIsRefundModalOpen}>
-        <DialogContent className="sm:max-w-[400px] rounded-2xl bg-white dark:bg-darkblue border-0 shadow-2xl">
-          <DialogHeader className="text-center pb-4">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-r from-orange-400 to-red-500 rounded-full flex items-center justify-center mb-3 shadow-lg">
-              <AlertTriangle className="h-10 w-10 text-white drop-shadow-sm" />
-            </div>
-            <DialogTitle className="text-xl font-bold text-darkblue dark:text-light">투자 환불</DialogTitle>
-            <DialogDescription className="text-gray-600 dark:text-gray-300">
-              정말로 이 투자를 환불하시겠습니까?
+        <DialogContent className="bg-[#F9F9F9] dark:bg-[#3F3F3F] border-[#C2BDAD] dark:border-[#454858]">
+          <DialogHeader>
+            <DialogTitle className="text-[#323233] dark:text-[#F5D949] flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              투자 환불 확인
+            </DialogTitle>
+            <DialogDescription className="text-[#989898]">
+              정말로 이 투자를 환불하시겠습니까? 이 작업은 되돌릴 수 없습니다.
             </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-3 mb-4">
-            <div className="bg-gradient-to-r from-blue/10 to-blue/5 p-3 rounded-xl border border-blue/20">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-darkblue dark:text-light">웹툰</span>
-                <span className="text-lg font-bold text-blue-600">{webtoon.title}</span>
+          <div className="space-y-4">
+            <div className="bg-[#E5E4DC] dark:bg-[#383B4B] p-4 rounded-lg">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-[#989898]">웹툰</span>
+                  <span className="font-medium text-[#323233] dark:text-[#F5D949]">{webtoon.title}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#989898]">환불 금액</span>
+                  <span className={`${getFontSizeForAmount(userInvestmentAmount)} font-bold text-[#4F8F78] truncate`}>
+                    {formatKoreanCurrency(userInvestmentAmount)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#989898]">투자일</span>
+                  <span className="text-[#323233] dark:text-[#F5D949]">{userInvestmentDate}</span>
+                </div>
               </div>
             </div>
-
-            <div className="bg-gradient-to-r from-red/10 to-red/5 p-3 rounded-xl border border-red/20">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-darkblue dark:text-light">환불 금액</span>
-                <span className="text-lg font-bold text-red-600">₩{userInvestmentAmount.toLocaleString()}</span>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-r from-yellow/10 to-yellow/5 p-3 rounded-xl border border-yellow/20">
-              <div className="text-center">
-                <p className="text-sm text-yellow-600 font-medium">환불 처리까지 1-2일 소요될 수 있습니다.</p>
-              </div>
+            <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg border border-orange-200 dark:border-orange-800">
+              <p className="text-sm text-orange-700 dark:text-orange-300">
+                • 환불은 24시간 내에만 가능합니다
+                <br />• 환불 후에는 다시 투자할 수 없습니다
+                <br />• 환불 금액은 즉시 잔액에 반영됩니다
+              </p>
             </div>
           </div>
-
-          <DialogFooter className="flex flex-col gap-2">
+          <DialogFooter>
             <Button
-              onClick={handleRefund}
-              className="w-full h-11 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              환불 신청하기
-            </Button>
-            <Button
-              onClick={() => setIsRefundModalOpen(false)}
               variant="outline"
-              className="w-full h-11 border-2 border-gray/30 text-gray-600 hover:bg-gray/10 font-semibold rounded-xl transition-all duration-200"
+              onClick={() => setIsRefundModalOpen(false)}
+              className="border-[#C2BDAD] text-[#989898] hover:bg-[#E5E4DC] dark:hover:bg-[#454858]"
             >
-              계속 투자하기
+              취소
+            </Button>
+            <Button onClick={handleRefund} className="bg-orange-500 hover:bg-orange-600 text-white">
+              환불하기
             </Button>
           </DialogFooter>
         </DialogContent>

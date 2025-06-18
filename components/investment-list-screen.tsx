@@ -29,6 +29,14 @@ export function InvestmentListScreen() {
   const [activeTab, setActiveTab] = useState("all")
   const [investments, setInvestments] = useState<Investment[]>([])
 
+  const getFontSizeForAmount = (amount: number) => {
+    const amountStr = formatKoreanCurrency(amount)
+    if (amountStr.length > 12) return "text-sm"
+    if (amountStr.length > 10) return "text-base"
+    if (amountStr.length > 8) return "text-lg"
+    return "text-xl"
+  }
+
   useEffect(() => {
     const loadInvestments = async () => {
       const user = getUserFromStorage()
@@ -256,13 +264,17 @@ export function InvestmentListScreen() {
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div className="bg-gradient-to-r from-blue/10 to-blue/5 p-3 rounded-xl border border-blue/20">
                   <p className="text-xs text-gray mb-1">투자 금액</p>
-                  <p className="font-bold text-darkblue dark:text-light text-sm">
+                  <p
+                    className={`${getFontSizeForAmount(investment.amount || 0)} font-bold text-darkblue dark:text-light truncate`}
+                  >
                     {formatKoreanCurrency(investment.amount || 0)}
                   </p>
                 </div>
                 <div className="bg-gradient-to-r from-purple/10 to-purple/5 p-3 rounded-xl border border-purple/20">
                   <p className="text-xs text-gray mb-1">현재 가치</p>
-                  <p className="font-bold text-darkblue dark:text-light text-sm">
+                  <p
+                    className={`${getFontSizeForAmount(currentValue)} font-bold text-darkblue dark:text-light truncate`}
+                  >
                     {formatKoreanCurrency(currentValue)}
                   </p>
                 </div>
@@ -288,7 +300,9 @@ export function InvestmentListScreen() {
                       <span className="text-xs text-gray">수익/손실</span>
                     </div>
                     <div className="text-right">
-                      <p className={`font-bold text-sm ${isProfit ? "text-green-600" : "text-red-500"}`}>
+                      <p
+                        className={`${getFontSizeForAmount(Math.abs(profit))} font-bold ${isProfit ? "text-green-600" : "text-red-500"} truncate`}
+                      >
                         {isProfit ? "+" : ""}
                         {formatKoreanCurrency(profit)}
                       </p>
@@ -374,11 +388,15 @@ export function InvestmentListScreen() {
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div className="bg-white/10 rounded-xl p-3">
                 <p className="text-blue-100 text-xs font-medium">총 투자금액</p>
-                <p className="text-xl font-bold">{formatKoreanCurrency(totalInvested)}</p>
+                <p className={`${getFontSizeForAmount(totalInvested)} font-bold truncate`}>
+                  {formatKoreanCurrency(totalInvested)}
+                </p>
               </div>
               <div className="bg-white/10 rounded-xl p-3">
                 <p className="text-blue-100 text-xs font-medium">현재 가치</p>
-                <p className="text-xl font-bold">{formatKoreanCurrency(totalCurrentValue)}</p>
+                <p className={`${getFontSizeForAmount(totalCurrentValue)} font-bold truncate`}>
+                  {formatKoreanCurrency(totalCurrentValue)}
+                </p>
               </div>
             </div>
 
@@ -386,7 +404,9 @@ export function InvestmentListScreen() {
               <div className="flex justify-between items-center mb-3">
                 <div>
                   <p className="text-blue-100 text-xs font-medium">총 수익</p>
-                  <p className={`text-2xl font-bold ${totalProfit >= 0 ? "text-green-300" : "text-red-300"}`}>
+                  <p
+                    className={`${getFontSizeForAmount(Math.abs(totalProfit))} font-bold ${totalProfit >= 0 ? "text-green-300" : "text-red-300"} truncate`}
+                  >
                     {totalProfit >= 0 ? "+" : ""}
                     {formatKoreanCurrency(totalProfit)}
                   </p>

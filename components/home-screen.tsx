@@ -20,6 +20,14 @@ export function HomeScreen() {
   const [totalProjects, setTotalProjects] = useState(0)
   const [dynamicWebtoons, setDynamicWebtoons] = useState(investmentWebtoons)
 
+  const getFontSizeForAmount = (amount: number) => {
+    const amountStr = formatCurrency(amount)
+    if (amountStr.length > 12) return "text-sm"
+    if (amountStr.length > 10) return "text-base"
+    if (amountStr.length > 8) return "text-lg"
+    return "text-xl"
+  }
+
   // 웹툰 진행 상황 업데이트 감지
   useEffect(() => {
     const updateWebtoonProgress = () => {
@@ -164,7 +172,9 @@ export function HomeScreen() {
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray">내 잔액</p>
-                <p className="text-lg font-bold text-green">{formatCurrency(userBalance)}</p>
+                <p className={`${getFontSizeForAmount(userBalance)} font-bold text-green truncate`}>
+                  {formatCurrency(userBalance)}
+                </p>
               </div>
             </div>
           </div>
@@ -190,7 +200,9 @@ export function HomeScreen() {
                 </div>
                 <div>
                   <p className="text-xs text-gray">총 투자액</p>
-                  <p className="font-bold text-blue-600">{formatCurrency(totalInvested)}</p>
+                  <p className={`${getFontSizeForAmount(totalInvested)} font-bold text-blue-600 truncate`}>
+                    {formatCurrency(totalInvested)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -275,7 +287,7 @@ export function HomeScreen() {
                       <div className="text-white space-y-2">
                         {/* 진행률과 목표 금액 */}
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-white/80">
+                          <span className="text-white/80 truncate">
                             {formatCurrency(webtoon.currentRaised || 0)} / {formatCurrency(webtoon.goalAmount)}
                           </span>
                         </div>

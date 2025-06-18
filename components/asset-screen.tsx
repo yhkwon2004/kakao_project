@@ -30,6 +30,14 @@ export function AssetScreen() {
   const [selectedInvestment, setSelectedInvestment] = useState<any>(null)
   const [user, setUser] = useState<any>(null)
 
+  const getFontSizeForAmount = (amount: number) => {
+    const amountStr = formatKoreanCurrency(amount)
+    if (amountStr.length > 12) return "text-sm"
+    if (amountStr.length > 10) return "text-base"
+    if (amountStr.length > 8) return "text-lg"
+    return "text-xl"
+  }
+
   useEffect(() => {
     const loadInvestments = () => {
       const user = getUserFromStorage()
@@ -289,13 +297,17 @@ export function AssetScreen() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-[#F9F9F9]/60 dark:bg-[#3F3F3F]/20 p-4 rounded-xl">
                     <p className="text-sm text-[#989898] mb-1">총 투자금액</p>
-                    <p className="text-xl font-bold text-[#323233] dark:text-[#F5D949]">
+                    <p
+                      className={`${getFontSizeForAmount(totalInvestment)} font-bold text-[#323233] dark:text-[#F5D949] truncate`}
+                    >
                       {formatKoreanCurrency(totalInvestment)}
                     </p>
                   </div>
                   <div className="bg-[#F9F9F9]/60 dark:bg-[#3F3F3F]/20 p-4 rounded-xl">
                     <p className="text-sm text-[#989898] mb-1">예상 수익금</p>
-                    <p className="text-xl font-bold text-[#323233] dark:text-[#F5D949]">
+                    <p
+                      className={`${getFontSizeForAmount(totalReturn)} font-bold text-[#323233] dark:text-[#F5D949] truncate`}
+                    >
                       {formatKoreanCurrency(totalReturn)}
                     </p>
                   </div>
@@ -304,7 +316,9 @@ export function AssetScreen() {
                 <div className="bg-[#F9F9F9]/60 dark:bg-[#3F3F3F]/20 p-4 rounded-xl">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium text-[#989898]">수익/손실</span>
-                    <span className={`text-2xl font-bold ${profitLoss >= 0 ? "text-[#4F8F78]" : "text-[#D16561]"}`}>
+                    <span
+                      className={`${getFontSizeForAmount(Math.abs(profitLoss))} font-bold ${profitLoss >= 0 ? "text-[#4F8F78]" : "text-[#D16561]"} truncate`}
+                    >
                       {profitLoss >= 0 ? "+" : ""}
                       {formatKoreanCurrency(profitLoss)}
                     </span>
@@ -395,6 +409,7 @@ export function AssetScreen() {
                             investment.webtoonThumbnail ||
                             getWebtoonImage(investment.id) ||
                             "/placeholder.svg?height=60&width=60&query=webtoon cover" ||
+                            "/placeholder.svg" ||
                             "/placeholder.svg" ||
                             "/placeholder.svg" ||
                             "/placeholder.svg" ||
